@@ -14,6 +14,7 @@ files:
 asarUnpack:
   - resources/**
   - external_tools/**
+  - drizzle/**
 win:
   executableName: Icosa
   icon: resources/icon.ico
