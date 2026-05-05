@@ -7,7 +7,7 @@ import type { BasePipeline, PipelineOptions } from '../pipelines/base.pipeline'
 import { DeepLPipeline } from '../pipelines/deepl.pipeline'
 import { ManualPipeline } from '../pipelines/manual.pipeline'
 import { OpenAIPipeline } from '../pipelines/openai.pipeline'
-import { translateText as translateDeepL } from '../services/deepl.service'
+import { translateBatch as translateDeepLBatch, translateText as translateDeepL } from '../services/deepl.service'
 import { translateText as translateOpenAI } from '../services/openai.service'
 
 export type TranslationProvider = 'openai' | 'deepl' | 'manual'
@@ -110,29 +110,53 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
         return
       }
 
-      for (const entry of entries) {
+      if (provider === 'deepl') {
+        // DeepL: send all texts in bulk (50 per HTTP request), preserving order
+        const texts = entries.map((e) => e.source)
         try {
-          const translated =
-            provider === 'deepl'
-              ? await translateDeepL(entry.source, sourceLang, targetLang, apiKey)
-              : await translateOpenAI(entry.source, sourceLang, targetLang, apiKey)
+          const translated = await translateDeepLBatch(texts, sourceLang, targetLang, apiKey)
           const win = getWindow()
           if (win && !win.isDestroyed()) {
-            win.webContents.send('translation:batchProgress', {
-              uid: entry.uid,
-              target: translated
-            })
+            for (let i = 0; i < entries.length; i++) {
+              win.webContents.send('translation:batchProgress', {
+                uid: entries[i].uid,
+                target: translated[i] ?? ''
+              })
+            }
           }
         } catch (err) {
           const win = getWindow()
           if (win && !win.isDestroyed()) {
             win.webContents.send('translation:batchProgress', {
-              uid: entry.uid,
+              uid: '',
               target: null,
               error: err instanceof Error ? err.message : String(err)
             })
           }
         }
+      } else {
+        // OpenAI: parallel worker pool (10 concurrent requests)
+        await runConcurrent(entries, 10, async (entry) => {
+          try {
+            const translated = await translateOpenAI(entry.source, sourceLang, targetLang, apiKey)
+            const win = getWindow()
+            if (win && !win.isDestroyed()) {
+              win.webContents.send('translation:batchProgress', {
+                uid: entry.uid,
+                target: translated
+              })
+            }
+          } catch (err) {
+            const win = getWindow()
+            if (win && !win.isDestroyed()) {
+              win.webContents.send('translation:batchProgress', {
+                uid: entry.uid,
+                target: null,
+                error: err instanceof Error ? err.message : String(err)
+              })
+            }
+          }
+        })
       }
     }
   )
@@ -163,4 +187,20 @@ function buildPipeline(payload: TranslationStartPayload): BasePipeline {
     default:
       throw new Error(`Unknown translation provider: ${payload.provider}`)
   }
+}
+
+// Worker pool: runs fn over items with at most `concurrency` parallel executions
+async function runConcurrent<T>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<void>
+): Promise<void> {
+  let index = 0
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (index < items.length) {
+      const item = items[index++]
+      await fn(item)
+    }
+  })
+  await Promise.all(workers)
 }
