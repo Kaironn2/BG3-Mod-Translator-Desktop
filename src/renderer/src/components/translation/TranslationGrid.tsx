@@ -1,5 +1,5 @@
 import { AlertTriangle, BookOpen, Check, Search, Sparkles, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { XmlEntry } from '@/types'
 
@@ -123,6 +123,11 @@ export function TranslationGrid({
   const [filter, setFilter] = useState<FilterMode>('all')
   const [focusedUid, setFocusedUid] = useState<string | null>(null)
 
+  // Maps uid → textarea DOM element so Enter can jump to the next row
+  const textareaRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map())
+  // Tracks which entries were saved via Enter to skip the subsequent onBlur save
+  const savedByEnterRef = useRef<Set<string>>(new Set())
+
   const counts = useMemo(
     () => ({
       dictionary: entries.filter((e) => getCategory(e) === 'dictionary').length,
@@ -153,10 +158,40 @@ export function TranslationGrid({
     )
   }
 
-  const handleEntryBlur = (entry: XmlEntry, value: string) => {
+  const saveEntry = (entry: XmlEntry, value: string) => {
     if (value !== entry.target) {
       onEntryChange(entry.uid, value)
       if (entry.matchType === 'none') onEntryManualEdit(entry.uid)
+    }
+  }
+
+  const handleEntryBlur = (entry: XmlEntry, value: string) => {
+    // Skip if Enter already saved this entry (blur fires right after Enter navigates away)
+    if (savedByEnterRef.current.has(entry.uid)) {
+      savedByEnterRef.current.delete(entry.uid)
+      return
+    }
+    saveEntry(entry, value)
+  }
+
+  const handleEnterKey = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>,
+    entry: XmlEntry
+  ) => {
+    if (e.key !== 'Enter' || e.shiftKey) return
+    e.preventDefault()
+
+    saveEntry(entry, e.currentTarget.value)
+    savedByEnterRef.current.add(entry.uid)
+
+    const nextIdx = filteredEntries.findIndex((fe) => fe.uid === entry.uid) + 1
+    const nextEntry = filteredEntries[nextIdx]
+    if (nextEntry) {
+      const nextTextarea = textareaRefs.current.get(nextEntry.uid)
+      if (nextTextarea) {
+        nextTextarea.focus()
+        nextTextarea.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      }
     }
   }
 
@@ -318,9 +353,14 @@ export function TranslationGrid({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <textarea
+                    ref={(el) => {
+                      if (el) textareaRefs.current.set(entry.uid, el)
+                      else textareaRefs.current.delete(entry.uid)
+                    }}
                     defaultValue={entry.target}
                     onFocus={() => setFocusedUid(entry.uid)}
                     onBlur={(e) => handleEntryBlur(entry, e.target.value)}
+                    onKeyDown={(e) => handleEnterKey(e, entry)}
                     rows={rows}
                     placeholder="Tradução..."
                     className="flex-1 w-full resize-none bg-[#131518] border border-[#1f2329] rounded-md px-2.5 py-2 text-[13px] text-neutral-200 leading-[1.55] placeholder:text-neutral-600 placeholder:italic focus:outline-none focus:border-amber-500/60 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)] transition-[border-color,box-shadow]"
@@ -535,9 +575,14 @@ export function TranslationGrid({
 
                     {/* Translation textarea */}
                     <textarea
+                      ref={(el) => {
+                        if (el) textareaRefs.current.set(entry.uid, el)
+                        else textareaRefs.current.delete(entry.uid)
+                      }}
                       defaultValue={entry.target}
                       onFocus={() => setFocusedUid(entry.uid)}
                       onBlur={(e) => handleEntryBlur(entry, e.target.value)}
+                      onKeyDown={(e) => handleEnterKey(e, entry)}
                       rows={rows}
                       placeholder={isDone ? '' : 'Comece a digitar a tradução...'}
                       className="w-full resize-none bg-[#0c0d0f] border border-[#1f2329] rounded-lg px-3.5 py-3 text-[13px] text-neutral-200 leading-[1.6] placeholder:text-neutral-600 placeholder:italic focus:outline-none focus:border-amber-500 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.25)] min-h-11 transition-[border-color,box-shadow]"
