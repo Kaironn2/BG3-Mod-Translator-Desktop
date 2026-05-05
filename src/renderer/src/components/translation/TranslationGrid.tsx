@@ -1,4 +1,4 @@
-import { BookOpen, Search, Sparkles, X } from 'lucide-react'
+import { AlertTriangle, BookOpen, Check, Search, Sparkles, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { XmlEntry } from '@/types'
@@ -55,7 +55,7 @@ const CAT = {
   },
 }
 
-// Highlights XML tags and {placeholders} in source text
+// Highlights <xml tags> and {placeholders} in source text
 function renderSource(text: string): React.ReactNode {
   const parts: React.ReactNode[] = []
   let lastIndex = 0
@@ -89,6 +89,22 @@ function renderSource(text: string): React.ReactNode {
 function KbdHint({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center justify-center h-4.5 min-w-4.5 px-1 rounded bg-[#181b1f] border border-[#2a2f37] border-b-2 font-mono text-[10px] text-neutral-400">
+      {children}
+    </span>
+  )
+}
+
+// ── Tag pill (EN / PT-BR labels in cards) ─────────────────────────────────
+function LangTag({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center h-5 px-2 rounded font-mono text-[10px] font-bold tracking-[0.06em]',
+        accent
+          ? 'bg-amber-500/14 text-amber-400'
+          : 'bg-[#131518] border border-[#1f2329] text-neutral-400'
+      )}
+    >
       {children}
     </span>
   )
@@ -201,13 +217,13 @@ export function TranslationGrid({
     </div>
   )
 
-  // ── Side-by-side view ────────────────────────────────────────────────────
+  // ── Side-by-side view (Direction A — IDE Pro) ────────────────────────────
   if (viewMode === 'side') {
     return (
       <div className="flex flex-col h-full min-h-0">
         {searchBar}
 
-        {/* Column headers — grid mirrors row layout */}
+        {/* Column headers */}
         <div
           className="grid shrink-0 border-b border-[#1f2329] bg-[#0f1114] select-none"
           style={{ gridTemplateColumns: '80px 1fr 1fr' }}
@@ -228,7 +244,7 @@ export function TranslationGrid({
           </div>
         </div>
 
-        {/* Single scroll container — one scrollbar for the whole grid */}
+        {/* Single scroll container */}
         <div className="flex-1 min-h-0 overflow-y-auto icosa-scroll">
           {filteredEntries.map((entry, idx) => {
             const cat = getCategory(entry)
@@ -251,7 +267,7 @@ export function TranslationGrid({
                 )}
                 style={{ gridTemplateColumns: '80px 1fr 1fr' }}
               >
-                {/* Gutter — checkbox, line number, status dot */}
+                {/* Gutter */}
                 <div
                   className="flex flex-col items-center gap-2 py-4 px-3 border-r border-[#1f2329] bg-[#0f1114] cursor-pointer"
                   onClick={() => setFocusedUid(isFocused ? null : entry.uid)}
@@ -274,7 +290,7 @@ export function TranslationGrid({
                   />
                 </div>
 
-                {/* Source — monospace text + badges */}
+                {/* Source */}
                 <div
                   className="flex flex-col gap-2 py-4 px-4 min-w-0 cursor-pointer"
                   onClick={() => setFocusedUid(isFocused ? null : entry.uid)}
@@ -286,21 +302,17 @@ export function TranslationGrid({
                       <span className="text-neutral-600 italic">vazio</span>
                     )}
                   </div>
-
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {isDict && (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-500/12 text-blue-400">
-                        <BookOpen size={10} /> D{' '}
-                        <span className="text-blue-500/70">1</span>
+                        <BookOpen size={10} /> D <span className="text-blue-500/70">1</span>
                       </span>
                     )}
-                    <span className="text-[10px] font-mono text-neutral-600">
-                      {charCount} c
-                    </span>
+                    <span className="text-[10px] font-mono text-neutral-600">{charCount} c</span>
                   </div>
                 </div>
 
-                {/* Target — textarea + action bar when focused */}
+                {/* Target */}
                 <div
                   className="flex flex-col gap-2 py-4 px-4 border-l border-[#1f2329] min-w-0"
                   onClick={(e) => e.stopPropagation()}
@@ -313,22 +325,19 @@ export function TranslationGrid({
                     placeholder="Tradução..."
                     className="flex-1 w-full resize-none bg-[#131518] border border-[#1f2329] rounded-md px-2.5 py-2 text-[13px] text-neutral-200 leading-[1.55] placeholder:text-neutral-600 placeholder:italic focus:outline-none focus:border-amber-500/60 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)] transition-[border-color,box-shadow]"
                   />
-
                   {isFocused && (
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1 h-6 px-2 rounded border-0 bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                        className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
                       >
-                        <Sparkles size={11} />
-                        Sugerir IA
+                        <Sparkles size={11} /> Sugerir IA
                       </button>
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1 h-6 px-2 rounded border-0 bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                        className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
                       >
-                        <BookOpen size={11} />
-                        Aplicar dicionário
+                        <BookOpen size={11} /> Aplicar dicionário
                       </button>
                       <span className="ml-auto flex items-center gap-1 text-[11px] text-neutral-500">
                         <KbdHint>↵</KbdHint> próximo
@@ -346,72 +355,193 @@ export function TranslationGrid({
     )
   }
 
-  // ── Stacked view ─────────────────────────────────────────────────────────
+  // ── Stacked view (Direction B — Focus Stack) ─────────────────────────────
   return (
     <div className="flex flex-col h-full min-h-0">
       {searchBar}
 
+      {/* Thin select-all bar */}
+      <div className="flex items-center gap-2 border-b border-[#1f2329] bg-[#0f1114] px-7 py-2 shrink-0 select-none">
+        <input
+          type="checkbox"
+          checked={allFiltered}
+          onChange={(e) => handleSelectAll(e.target.checked)}
+          className="accent-amber-500 cursor-pointer"
+        />
+        <span className="text-[11px] text-neutral-500 font-medium tabular-nums">
+          {filteredEntries.length} entradas
+        </span>
+      </div>
+
+      {/* Card list */}
       <div className="flex-1 min-h-0 overflow-y-auto icosa-scroll">
-        <div className="flex items-center gap-2 border-b border-[#1f2329] bg-[#0f1114] px-3 py-2 sticky top-0 z-10 select-none">
-          <input
-            type="checkbox"
-            checked={allFiltered}
-            onChange={(e) => handleSelectAll(e.target.checked)}
-            className="accent-amber-500 cursor-pointer"
-          />
-          <span className="text-xs text-neutral-500 font-medium">
-            {filteredEntries.length} entradas
-          </span>
+        <div className="px-7 pt-5 pb-20">
+          <div className="flex flex-col gap-3.5 max-w-275 mx-auto">
+            {filteredEntries.map((entry, idx) => {
+              const cat = getCategory(entry)
+              const isDone = entry.target.trim() !== ''
+              const isFocused = focusedUid === entry.uid
+              const isSelected = selectedUids.has(entry.uid)
+              const isDict = cat === 'dictionary'
+              const hasTags = /(<[^>]+>|\{[^}]+\})/.test(entry.source)
+              const wordCount = entry.source.split(/\s+/).filter(Boolean).length
+              const charCount = entry.source.length
+              const rows = Math.max(2, Math.ceil(charCount / 70))
+
+              return (
+                <div
+                  key={entry.uid}
+                  className={cn(
+                    'grid overflow-hidden rounded-xl border cursor-pointer transition-all duration-120',
+                    // base
+                    'bg-[#0f1114] border-[#1f2329]',
+                    // hover
+                    !isFocused && 'hover:border-[#2a2f37] hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.18)]',
+                    // focused
+                    isFocused &&
+                      'border-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.25),0_8px_24px_rgba(0,0,0,0.24)]',
+                    // selected tint
+                    isSelected && !isFocused && 'border-blue-700/40 bg-blue-950/10'
+                  )}
+                  style={{ gridTemplateColumns: '56px 1fr' }}
+                  onClick={() => setFocusedUid(isFocused ? null : entry.uid)}
+                >
+                  {/* Side column — checkbox, vertical number, status circle */}
+                  <div className="flex flex-col items-center gap-3 py-4.5 border-r border-[#1f2329] bg-[#0c0d0f]">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={(e) => onSelectionChange(entry.uid, e.target.checked)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="accent-amber-500 cursor-pointer"
+                    />
+
+                    {/* Vertical line number */}
+                    <span
+                      className="font-mono text-[11px] text-neutral-600 tracking-widest mt-auto"
+                      style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                    >
+                      #{String(idx + 1).padStart(3, '0')}
+                    </span>
+
+                    {/* Status circle */}
+                    <div
+                      className={cn(
+                        'w-5.5 h-5.5 rounded-full border flex items-center justify-center transition-colors',
+                        isDone
+                          ? 'bg-amber-500 border-amber-500 text-white'
+                          : 'bg-[#131518] border-[#1f2329]'
+                      )}
+                    >
+                      {isDone ? (
+                        <Check size={11} strokeWidth={2.5} />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card body */}
+                  <div
+                    className="flex flex-col gap-3 py-4.5 px-5.5"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Header row: EN tag + meta + badges */}
+                    <div className="flex items-center gap-2.5">
+                      <LangTag>EN</LangTag>
+                      <span className="font-mono text-[10px] text-neutral-600 tracking-[0.02em]">
+                        {charCount} caracteres · {wordCount} palavras
+                      </span>
+                      <span className="flex-1" />
+                      {isDict && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-blue-500/12 text-blue-400">
+                          <BookOpen size={11} />
+                          {entry.matchType === 'uid' ? '1 termo (uid)' : '1 termo'}
+                        </span>
+                      )}
+                      {hasTags && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/12 text-amber-400">
+                          <AlertTriangle size={11} /> contém tags
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Source text */}
+                    <div className="font-mono text-[14px] leading-[1.65] text-neutral-200 whitespace-pre-wrap wrap-break-word">
+                      {entry.source ? (
+                        renderSource(entry.source)
+                      ) : (
+                        <span className="text-neutral-600 italic">vazio</span>
+                      )}
+                    </div>
+
+                    {/* Dict strip — shown when focused and is a dict match */}
+                    {isFocused && isDict && (
+                      <div className="flex items-center gap-2 px-3 py-2 bg-[#0c0d0f] border border-dashed border-[#2a2f37] rounded-lg flex-wrap">
+                        <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-[0.08em]">
+                          Dicionário sugere:
+                        </span>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#0f1114] border border-[#1f2329] rounded-full text-[12px] cursor-pointer hover:border-amber-500 hover:bg-amber-500/10 transition-colors"
+                          onClick={() => {
+                            onEntryChange(entry.uid, entry.target)
+                          }}
+                        >
+                          <span className="font-mono text-neutral-400">
+                            {entry.source.slice(0, 24)}
+                            {entry.source.length > 24 ? '…' : ''}
+                          </span>
+                          <span className="text-neutral-600">→</span>
+                          <span className="text-neutral-200 font-medium">
+                            {entry.target || '—'}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* PT-BR tag row + action bar */}
+                    <div className="flex items-center gap-2.5 pt-1 border-t border-dashed border-[#1f2329] mt-1">
+                      <LangTag accent>PT-BR</LangTag>
+                      {isFocused && (
+                        <div className="flex-1 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                          >
+                            <Sparkles size={11} /> Sugerir IA
+                          </button>
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                          >
+                            <Check size={11} /> Marcar como traduzida
+                          </button>
+                          <span className="flex-1" />
+                          <span className="flex items-center gap-1 text-[11px] text-neutral-500">
+                            <KbdHint>↵</KbdHint> próximo
+                            <span className="mx-0.5 text-neutral-700">·</span>
+                            <KbdHint>⇧↵</KbdHint> nova linha
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Translation textarea */}
+                    <textarea
+                      defaultValue={entry.target}
+                      onFocus={() => setFocusedUid(entry.uid)}
+                      onBlur={(e) => handleEntryBlur(entry, e.target.value)}
+                      rows={rows}
+                      placeholder={isDone ? '' : 'Comece a digitar a tradução...'}
+                      className="w-full resize-none bg-[#0c0d0f] border border-[#1f2329] rounded-lg px-3.5 py-3 text-[13px] text-neutral-200 leading-[1.6] placeholder:text-neutral-600 placeholder:italic focus:outline-none focus:border-amber-500 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.25)] min-h-11 transition-[border-color,box-shadow]"
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
-
-        {filteredEntries.map((entry, idx) => {
-          const cat = getCategory(entry)
-          const s = CAT[cat]
-          const isSelected = selectedUids.has(entry.uid)
-          return (
-            <div
-              key={entry.uid}
-              className={cn(
-                'border-b border-[#1f2329]',
-                isSelected && 'bg-blue-950/10'
-              )}
-            >
-              <div className="flex items-center gap-2 px-3 pt-3 pb-1.5">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={(e) => onSelectionChange(entry.uid, e.target.checked)}
-                  className="accent-amber-500 cursor-pointer shrink-0"
-                />
-                <span className="text-xs text-neutral-600">#{idx + 1}</span>
-                {cat !== 'none' && (
-                  <span className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded', s.badge)}>
-                    {s.label}
-                  </span>
-                )}
-              </div>
-
-              <p className="px-3 pb-2.5 text-sm text-neutral-300 leading-relaxed whitespace-pre-wrap wrap-break-word">
-                {entry.source || <span className="text-neutral-600 italic">vazio</span>}
-              </p>
-
-              <div className="mx-3 border-t border-[#1f2329]/60" />
-
-              <textarea
-                defaultValue={entry.target}
-                onBlur={(e) => {
-                  if (e.target.value !== entry.target) {
-                    onEntryChange(entry.uid, e.target.value)
-                    if (entry.matchType === 'none') onEntryManualEdit(entry.uid)
-                  }
-                }}
-                rows={2}
-                className="w-full resize-none bg-transparent px-3 py-2.5 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:bg-[#131518]/40"
-                placeholder="Tradução..."
-              />
-            </div>
-          )
-        })}
       </div>
     </div>
   )
