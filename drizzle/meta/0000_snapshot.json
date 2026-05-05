@@ -100,11 +100,7 @@
       "indexes": {
         "idx_dict_lang_uid": {
           "name": "idx_dict_lang_uid",
-          "columns": [
-            "language1",
-            "language2",
-            "uid"
-          ],
+          "columns": ["language1", "language2", "uid"],
           "isUnique": true
         }
       },
@@ -113,12 +109,8 @@
           "name": "dictionary_language1_language_code_fk",
           "tableFrom": "dictionary",
           "tableTo": "language",
-          "columnsFrom": [
-            "language1"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["language1"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -126,12 +118,8 @@
           "name": "dictionary_language2_language_code_fk",
           "tableFrom": "dictionary",
           "tableTo": "language",
-          "columnsFrom": [
-            "language2"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["language2"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -139,12 +127,8 @@
           "name": "dictionary_mod_name_mod_name_fk",
           "tableFrom": "dictionary",
           "tableTo": "mod",
-          "columnsFrom": [
-            "mod_name"
-          ],
-          "columnsTo": [
-            "name"
-          ],
+          "columnsFrom": ["mod_name"],
+          "columnsTo": ["name"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -197,9 +181,7 @@
       "indexes": {
         "language_code_unique": {
           "name": "language_code_unique",
-          "columns": [
-            "code"
-          ],
+          "columns": ["code"],
           "isUnique": true
         }
       },
@@ -245,9 +227,7 @@
       "indexes": {
         "mod_name_unique": {
           "name": "mod_name_unique",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },

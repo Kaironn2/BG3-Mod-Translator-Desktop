@@ -32,11 +32,17 @@ export class DictionaryRepository {
     return this.db
       .select()
       .from(dictionary)
-      .where(and(eq(dictionary.language1, l1), eq(dictionary.language2, l2), eq(dictionary.uid, uid)))
+      .where(
+        and(eq(dictionary.language1, l1), eq(dictionary.language2, l2), eq(dictionary.uid, uid))
+      )
       .get() as DictionaryEntry | undefined
   }
 
-  findByText(sourceLang: string, targetLang: string, sourceText: string): DictionaryEntry | undefined {
+  findByText(
+    sourceLang: string,
+    targetLang: string,
+    sourceText: string
+  ): DictionaryEntry | undefined {
     const [l1, l2, swapped] = normalizeLangs(sourceLang, targetLang)
     const col = swapped ? dictionary.textLanguage2 : dictionary.textLanguage1
     return this.db

@@ -6,10 +6,7 @@ import { randomUUID } from 'crypto'
 // Handles any attribute order within the tag.
 function updateAttributeValue(xml: string, attrId: string, newValue: string): string {
   const escaped = escapeXmlAttr(newValue)
-  return xml.replace(
-    new RegExp(`(<attribute[^>]+id="${attrId}"[^>]+value=")[^"]*`),
-    `$1${escaped}`
-  )
+  return xml.replace(new RegExp(`(<attribute[^>]+id="${attrId}"[^>]+value=")[^"]*`), `$1${escaped}`)
 }
 
 function escapeXmlAttr(value: string): string {

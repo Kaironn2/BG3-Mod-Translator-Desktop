@@ -32,8 +32,6 @@ export function closeDb(): void {
 }
 
 function getMigrationsFolder(): string {
-  const base = is.dev
-    ? app.getAppPath()
-    : app.getAppPath().replace('app.asar', 'app.asar.unpacked')
+  const base = is.dev ? app.getAppPath() : app.getAppPath().replace('app.asar', 'app.asar.unpacked')
   return path.join(base, 'drizzle')
 }
