@@ -118,10 +118,7 @@ export abstract class BasePipeline {
       await packMod(outDir, outPakPath)
 
       // 10 — wrap in .zip for distribution
-      const finalZip = path.join(
-        path.dirname(ctx.filePath),
-        `${ctx.modName}_${ctx.targetLang}.zip`
-      )
+      const finalZip = path.join(path.dirname(ctx.filePath), `${ctx.modName}_${ctx.targetLang}.zip`)
       createZip(path.dirname(outPakPath), finalZip)
 
       this.emitDone(finalZip)
@@ -197,8 +194,8 @@ export abstract class BasePipeline {
     _targetLang: string
   ): string {
     // language1 < language2 invariant: decide which column is the target
-    const sourceIsL1 = entry.language1 === [sourceLang, _targetLang].sort()[0]
-      && sourceLang < _targetLang
+    const sourceIsL1 =
+      entry.language1 === [sourceLang, _targetLang].sort()[0] && sourceLang < _targetLang
     return sourceIsL1 ? entry.textLanguage2 : entry.textLanguage1
   }
 
