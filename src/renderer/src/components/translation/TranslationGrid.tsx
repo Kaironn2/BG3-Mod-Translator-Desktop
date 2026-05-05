@@ -325,27 +325,30 @@ export function TranslationGrid({
                     placeholder="Tradução..."
                     className="flex-1 w-full resize-none bg-[#131518] border border-[#1f2329] rounded-md px-2.5 py-2 text-[13px] text-neutral-200 leading-[1.55] placeholder:text-neutral-600 placeholder:italic focus:outline-none focus:border-amber-500/60 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)] transition-[border-color,box-shadow]"
                   />
-                  {isFocused && (
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
-                      >
-                        <Sparkles size={11} /> Sugerir IA
-                      </button>
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
-                      >
-                        <BookOpen size={11} /> Aplicar dicionário
-                      </button>
-                      <span className="ml-auto flex items-center gap-1 text-[11px] text-neutral-500">
-                        <KbdHint>↵</KbdHint> próximo
-                        <span className="mx-1 text-neutral-700">·</span>
-                        <KbdHint>⇧↵</KbdHint> nova linha
-                      </span>
-                    </div>
-                  )}
+                  <div
+                    className={cn(
+                      'flex items-center gap-1.5 transition-opacity duration-150',
+                      isFocused ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                    )}
+                  >
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                    >
+                      <Sparkles size={11} /> Sugerir IA
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                    >
+                      <BookOpen size={11} /> Aplicar dicionário
+                    </button>
+                    <span className="ml-auto flex items-center gap-1 text-[11px] text-neutral-500">
+                      <KbdHint>↵</KbdHint> próximo
+                      <span className="mx-1 text-neutral-700">·</span>
+                      <KbdHint>⇧↵</KbdHint> nova linha
+                    </span>
+                  </div>
                 </div>
               </div>
             )
@@ -503,28 +506,31 @@ export function TranslationGrid({
                     {/* PT-BR tag row + action bar */}
                     <div className="flex items-center gap-2.5 pt-1 border-t border-dashed border-[#1f2329] mt-1">
                       <LangTag accent>PT-BR</LangTag>
-                      {isFocused && (
-                        <div className="flex-1 flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
-                          >
-                            <Sparkles size={11} /> Sugerir IA
-                          </button>
-                          <button
-                            type="button"
-                            className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
-                          >
-                            <Check size={11} /> Marcar como traduzida
-                          </button>
-                          <span className="flex-1" />
-                          <span className="flex items-center gap-1 text-[11px] text-neutral-500">
-                            <KbdHint>↵</KbdHint> próximo
-                            <span className="mx-0.5 text-neutral-700">·</span>
-                            <KbdHint>⇧↵</KbdHint> nova linha
-                          </span>
-                        </div>
-                      )}
+                      <div
+                        className={cn(
+                          'flex-1 flex items-center gap-1.5 transition-opacity duration-150',
+                          isFocused ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                        )}
+                      >
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                        >
+                          <Sparkles size={11} /> Sugerir IA
+                        </button>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                        >
+                          <Check size={11} /> Marcar como traduzida
+                        </button>
+                        <span className="flex-1" />
+                        <span className="flex items-center gap-1 text-[11px] text-neutral-500">
+                          <KbdHint>↵</KbdHint> próximo
+                          <span className="mx-0.5 text-neutral-700">·</span>
+                          <KbdHint>⇧↵</KbdHint> nova linha
+                        </span>
+                      </div>
                     </div>
 
                     {/* Translation textarea */}
