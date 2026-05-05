@@ -160,12 +160,6 @@ export function TranslationGrid({
     )
   }
 
-  // Shrinks/grows textarea to exactly fit its content
-  const autoResize = (el: HTMLTextAreaElement) => {
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }
-
   const saveEntry = (entry: XmlEntry, value: string) => {
     if (value !== entry.target) {
       onEntryChange(entry.uid, value)
@@ -365,21 +359,16 @@ export function TranslationGrid({
                 >
                   <textarea
                     ref={(el) => {
-                      if (el) {
-                        textareaRefs.current.set(entry.uid, el)
-                        autoResize(el)
-                      } else {
-                        textareaRefs.current.delete(entry.uid)
-                      }
+                      if (el) textareaRefs.current.set(entry.uid, el)
+                      else textareaRefs.current.delete(entry.uid)
                     }}
                     defaultValue={entry.target}
                     onFocus={() => setFocusedUid(entry.uid)}
                     onBlur={(e) => handleEntryBlur(entry, e.target.value)}
                     onKeyDown={(e) => handleEnterKey(e, entry)}
-                    onChange={(e) => autoResize(e.currentTarget)}
                     rows={1}
                     placeholder="Tradução..."
-                    className="w-full resize-none overflow-hidden bg-[#131518] border border-[#1f2329] rounded-md px-2.5 py-2 text-[13px] text-neutral-200 leading-[1.55] placeholder:text-neutral-600 placeholder:italic focus:outline-none focus:border-amber-500/60 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)] transition-[border-color,box-shadow]"
+                    className="w-full resize-none field-sizing-content bg-[#131518] border border-[#1f2329] rounded-md px-2.5 py-2 text-[13px] text-neutral-200 leading-[1.55] placeholder:text-neutral-600 placeholder:italic focus:outline-none focus:border-amber-500/60 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)] transition-[border-color,box-shadow]"
                   />
                   <div
                     className={cn(

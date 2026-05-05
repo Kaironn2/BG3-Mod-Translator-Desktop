@@ -90,7 +90,7 @@ export function Sidebar(): React.JSX.Element {
   return (
     <aside
       style={{ transition: 'width 180ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}
-      className="group/sidebar flex h-screen w-14 flex-col shrink-0 overflow-hidden border-r border-[#1f2329] bg-[#0f1114] hover:w-55"
+      className="group/sidebar fixed top-0 left-0 z-40 flex h-screen w-14 flex-col overflow-hidden border-r border-[#1f2329] bg-[#0f1114] hover:w-55"
     >
       {/* Brand — direction-a: padding 4px 8px 14px 8px, border-bottom, mb-6px */}
       <div className="flex items-center gap-2.5 px-2 pt-1 pb-3.5 mb-1.5 border-b border-[#1f2329]">
