@@ -1,45 +1,126 @@
+import { BookOpen, Languages, Package, PackageOpen, Settings } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
-import { Languages, BookOpen, PackageOpen, Package, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+// direction-a.css:
+//   .ide-nav-item         h-9, px-2, rounded-md, gap-3, text-neutral-400
+//   .ide-nav-item:hover   bg-[#1c1f24] text-neutral-200
+//   .ide-nav-item.active  bg-amber-500/14 text-amber-500
+//   .ide-nav-label        opacity-0, transition: opacity 120ms 60ms
+//   .ide-nav-kbd          opacity-0, transition: opacity 120ms 60ms, text-neutral-600
+//   .ide-sidebar:hover    width: 220px (w-55)
+
 const NAV_ITEMS = [
-  { to: '/translate', icon: Languages, label: 'Translate', shortcut: 'Ctrl+1' },
-  { to: '/dictionary', icon: BookOpen, label: 'Dictionary', shortcut: 'Ctrl+2' },
-  { to: '/extract', icon: PackageOpen, label: 'Extract Mod', shortcut: 'Ctrl+3' },
-  { to: '/package', icon: Package, label: 'Create Package', shortcut: 'Ctrl+4' },
-  { to: '/settings', icon: Settings, label: 'Settings', shortcut: 'Ctrl+5' }
+  { to: '/translate', icon: Languages, label: 'Translate', kbd: '⌃1' },
+  { to: '/dictionary', icon: BookOpen, label: 'Dictionary', kbd: '⌃2' },
+  { to: '/extract', icon: PackageOpen, label: 'Extract Mod', kbd: '⌃3' },
+  { to: '/package', icon: Package, label: 'Create Package', kbd: '⌃4' },
 ] as const
+
+const FOOTER_ITEMS = [
+  { to: '/settings', icon: Settings, label: 'Settings', kbd: '⌃5' },
+] as const
+
+function IcosaLogo() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      fill="none"
+      stroke="white"
+      strokeWidth="2"
+      strokeLinejoin="round"
+    >
+      <path d="M12 2L3 7v10l9 5 9-5V7L12 2z" />
+      <path d="M3 7l9 5 9-5M12 12v10" />
+    </svg>
+  )
+}
+
+function NavItem({
+  to,
+  icon: Icon,
+  label,
+  kbd,
+}: {
+  to: string
+  icon: React.ElementType
+  label: string
+  kbd: string
+}) {
+  return (
+    <NavLink
+      to={to}
+      title={label}
+      className={({ isActive }) =>
+        cn(
+          'flex items-center gap-3 h-9 px-2 rounded-md cursor-pointer transition-colors select-none w-full',
+          isActive
+            ? 'bg-amber-500/14 text-amber-500'
+            : 'text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200'
+        )
+      }
+    >
+      {/* Fixed-width icon container — always visible */}
+      <span className="w-6 flex items-center justify-center shrink-0">
+        <Icon size={16} />
+      </span>
+
+      {/* Label — fades in when sidebar expands */}
+      <span
+        style={{ transition: 'opacity 120ms 60ms' }}
+        className="flex-1 text-sm font-medium opacity-0 group-hover/sidebar:opacity-100 whitespace-nowrap"
+      >
+        {label}
+      </span>
+
+      {/* Kbd shortcut — fades in after label */}
+      <span
+        style={{ transition: 'opacity 120ms 60ms' }}
+        className="font-mono text-[10px] text-neutral-600 opacity-0 group-hover/sidebar:opacity-100 whitespace-nowrap"
+      >
+        {kbd}
+      </span>
+    </NavLink>
+  )
+}
 
 export function Sidebar(): React.JSX.Element {
   return (
-    <aside className="flex h-screen w-52 flex-col border-r border-neutral-800 bg-neutral-950">
-      <div className="flex h-14 items-center px-4">
-        <span className="text-sm font-semibold tracking-widest text-neutral-200 uppercase">
-          Icosa
+    <aside
+      style={{ transition: 'width 180ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}
+      className="group/sidebar flex h-screen w-14 flex-col shrink-0 overflow-hidden border-r border-[#1f2329] bg-[#0f1114] hover:w-55"
+    >
+      {/* Brand — direction-a: padding 4px 8px 14px 8px, border-bottom, mb-6px */}
+      <div className="flex items-center gap-2.5 px-2 pt-1 pb-3.5 mb-1.5 border-b border-[#1f2329]">
+        <div
+          className="w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0 bg-linear-to-br from-amber-500 to-orange-600"
+          style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.06) inset, 0 4px 12px rgba(245,158,11,0.18)' }}
+        >
+          <IcosaLogo />
+        </div>
+        <span
+          style={{ transition: 'opacity 120ms 60ms' }}
+          className="font-bold tracking-[0.06em] text-[13px] text-neutral-200 opacity-0 group-hover/sidebar:opacity-100 whitespace-nowrap"
+        >
+          ICOSA
         </span>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 px-2">
-        {NAV_ITEMS.map(({ to, icon: Icon, label, shortcut }) => (
-          <NavLink
-            key={to}
-            to={to}
-            title={shortcut}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-                isActive
-                  ? 'bg-neutral-800 text-white'
-                  : 'text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200'
-              )
-            }
-          >
-            <Icon size={16} />
-            <span className="flex-1">{label}</span>
-            <span className="text-xs text-neutral-600">{shortcut.replace('Ctrl+', '⌃')}</span>
-          </NavLink>
+      {/* Main nav — direction-a: gap-2px, px-2 */}
+      <nav className="flex flex-1 flex-col gap-0.5 px-2 py-1.5">
+        {NAV_ITEMS.map((item) => (
+          <NavItem key={item.to} {...item} />
         ))}
       </nav>
+
+      {/* Footer nav — direction-a: border-top, pt-2 */}
+      <div className="px-2 py-2 border-t border-[#1f2329]">
+        {FOOTER_ITEMS.map((item) => (
+          <NavItem key={item.to} {...item} />
+        ))}
+      </div>
     </aside>
   )
 }
