@@ -1,11 +1,25 @@
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { MainLayout } from './components/layout/MainLayout'
+import { TranslatePage } from './pages/TranslatePage'
+import { DictionaryPage } from './pages/DictionaryPage'
+import { ExtractPage } from './pages/ExtractPage'
+import { PackagePage } from './pages/PackagePage'
+import { SettingsPage } from './pages/SettingsPage'
+
 function App(): React.JSX.Element {
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-neutral-950">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-white">Icosa</h1>
-        <p className="mt-2 text-neutral-400">BG3 Mod Translator</p>
-      </div>
-    </div>
+    <HashRouter>
+      <Routes>
+        <Route element={<MainLayout />}>
+          <Route index element={<Navigate to="/translate" replace />} />
+          <Route path="/translate" element={<TranslatePage />} />
+          <Route path="/dictionary" element={<DictionaryPage />} />
+          <Route path="/extract" element={<ExtractPage />} />
+          <Route path="/package" element={<PackagePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </HashRouter>
   )
 }
 
