@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { DragDrop } from '@/components/shared/DragDrop'
 import { LanguageSelect } from '@/components/shared/LanguageSelect'
 
@@ -20,13 +21,17 @@ export function ExtractPage(): React.JSX.Element {
     setLog([])
     try {
       const result = await window.api.mod.extract({ inputPath, outputPath, sourceLang })
-      setLog([
+      const lines = [
         `Extracted successfully.`,
         `Found ${result.xmlFiles.length} localization XML(s):`,
         ...result.xmlFiles.map((f) => `  ${f}`)
-      ])
+      ]
+      setLog(lines)
+      toast.success(`Extracted - ${result.xmlFiles.length} XML(s) found`)
     } catch (err) {
-      setLog([`Error: ${err instanceof Error ? err.message : String(err)}`])
+      const msg = err instanceof Error ? err.message : String(err)
+      setLog([`Error: ${msg}`])
+      toast.error(msg)
     } finally {
       setRunning(false)
     }

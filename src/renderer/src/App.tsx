@@ -1,4 +1,5 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { MainLayout } from './components/layout/MainLayout'
 import { TranslatePage } from './pages/TranslatePage'
 import { DictionaryPage } from './pages/DictionaryPage'
@@ -9,6 +10,7 @@ import { SettingsPage } from './pages/SettingsPage'
 function App(): React.JSX.Element {
   return (
     <HashRouter>
+      <Toaster position="bottom-right" theme="dark" richColors />
       <Routes>
         <Route element={<MainLayout />}>
           <Route index element={<Navigate to="/translate" replace />} />

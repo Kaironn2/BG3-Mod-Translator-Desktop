@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { useConfig } from '@/hooks/useConfig'
 import type { ConfigKey } from '@/types'
 
@@ -25,6 +26,7 @@ function SettingField({
   const handleSave = async () => {
     await onSave(configKey, draft)
     setSaved(true)
+    toast.success(`${label} saved`)
     setTimeout(() => setSaved(false), 1500)
   }
 

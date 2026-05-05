@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { useDictionary } from '@/hooks/useDictionary'
 import { LanguageSelect } from '@/components/shared/LanguageSelect'
 import { EditableTable, type Column } from '@/components/shared/EditableTable'
@@ -30,7 +31,7 @@ export function DictionaryPage(): React.JSX.Element {
     if (!paths[0]) return
     const count = await importCsv(paths[0])
     load({ lang1, lang2, text })
-    alert(`Imported ${count} entries`)
+    toast.success(`Imported ${count} entries`)
   }
 
   const handleExport = async () => {

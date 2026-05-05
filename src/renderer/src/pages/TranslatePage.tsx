@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useTranslation } from '@/hooks/useTranslation'
 import { ProviderForm, type ProviderFields } from '@/components/translation/ProviderForm'
@@ -28,6 +29,12 @@ export function TranslatePage(): React.JSX.Element {
   const translation = useTranslation()
 
   const isRunning = translation.status === 'running'
+
+  useEffect(() => {
+    if (translation.status === 'done') toast.success('Translation complete!')
+    if (translation.status === 'error') toast.error(translation.error ?? 'Translation failed')
+    if (translation.status === 'cancelled') toast.info('Translation cancelled')
+  }, [translation.status, translation.error])
 
   const handleStart = async () => {
     if (!fields.filePath || !fields.modName || !fields.sourceLang || !fields.targetLang) return

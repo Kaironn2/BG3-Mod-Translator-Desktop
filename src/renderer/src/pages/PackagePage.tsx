@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 export function PackagePage(): React.JSX.Element {
   const [inputFolder, setInputFolder] = useState('')
@@ -26,8 +27,11 @@ export function PackagePage(): React.JSX.Element {
     try {
       const result = await window.api.mod.pack({ inputFolder, outputPath })
       setLog([`Package created: ${result.pakPath}`])
+      toast.success('Package created successfully')
     } catch (err) {
-      setLog([`Error: ${err instanceof Error ? err.message : String(err)}`])
+      const msg = err instanceof Error ? err.message : String(err)
+      setLog([`Error: ${msg}`])
+      toast.error(msg)
     } finally {
       setRunning(false)
     }
