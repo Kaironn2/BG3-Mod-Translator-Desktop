@@ -1,16 +1,16 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { randomUUID } from 'crypto'
+import { DeepLPipeline } from '../pipelines/deepl.pipeline'
+import { OpenAIPipeline } from '../pipelines/openai.pipeline'
+import { ManualPipeline } from '../pipelines/manual.pipeline'
+import type { BasePipeline, PipelineOptions } from '../pipelines/base.pipeline'
 
 export type TranslationProvider = 'openai' | 'deepl' | 'manual'
 
-export interface TranslationStartPayload {
+export interface TranslationStartPayload extends PipelineOptions {
   provider: TranslationProvider
-  filePath: string
-  modName: string
-  sourceLang: string
-  targetLang: string
   apiKey?: string
-  author?: string
+  model?: string
 }
 
 // Active jobs keyed by jobId - AbortController allows cancellation
@@ -22,7 +22,19 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
     const controller = new AbortController()
     activeJobs.set(jobId, controller)
 
-    runPipeline(jobId, payload, controller.signal, getWindow)
+    const pipeline = buildPipeline(payload)
+
+    pipeline
+      .run({
+        jobId,
+        signal: controller.signal,
+        getWindow,
+        filePath: payload.filePath,
+        modName: payload.modName,
+        sourceLang: payload.sourceLang,
+        targetLang: payload.targetLang,
+        author: payload.author
+      })
       .then(() => {
         activeJobs.delete(jobId)
       })
@@ -46,12 +58,20 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
   })
 }
 
-// Placeholder - real pipeline calls will be wired in Phase 3
-async function runPipeline(
-  _jobId: string,
-  payload: TranslationStartPayload,
-  _signal: AbortSignal,
-  _getWindow: () => BrowserWindow | null
-): Promise<void> {
-  throw new Error(`Pipeline '${payload.provider}' is not yet implemented (Phase 3)`)
+function buildPipeline(payload: TranslationStartPayload): BasePipeline {
+  switch (payload.provider) {
+    case 'deepl':
+      if (!payload.apiKey) throw new Error('DeepL API key is required')
+      return new DeepLPipeline(payload.apiKey)
+
+    case 'openai':
+      if (!payload.apiKey) throw new Error('OpenAI API key is required')
+      return new OpenAIPipeline(payload.apiKey, payload.model)
+
+    case 'manual':
+      return new ManualPipeline()
+
+    default:
+      throw new Error(`Unknown translation provider: ${payload.provider}`)
+  }
 }
