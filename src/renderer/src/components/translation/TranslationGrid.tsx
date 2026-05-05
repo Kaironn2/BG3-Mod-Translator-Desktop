@@ -223,9 +223,9 @@ export function TranslationGrid({
       <div className="flex flex-col h-full min-h-0">
         {searchBar}
 
-        {/* Column headers */}
+        {/* Column headers — pr-3 compensates for the 12px scrollbar-gutter below */}
         <div
-          className="grid shrink-0 border-b border-[#1f2329] bg-[#0f1114] select-none"
+          className="grid shrink-0 border-b border-[#1f2329] bg-[#0f1114] select-none pr-3"
           style={{ gridTemplateColumns: '80px 1fr 1fr' }}
         >
           <div className="flex items-center justify-center px-3 py-2 border-r border-[#1f2329]">
@@ -244,8 +244,8 @@ export function TranslationGrid({
           </div>
         </div>
 
-        {/* Single scroll container */}
-        <div className="flex-1 min-h-0 overflow-y-auto icosa-scroll">
+        {/* Single scroll container — scrollbar-gutter:stable always reserves 12px for the scrollbar */}
+        <div className="flex-1 min-h-0 overflow-y-auto icosa-scroll [scrollbar-gutter:stable]">
           {filteredEntries.map((entry, idx) => {
             const cat = getCategory(entry)
             const isDone = entry.target.trim() !== ''
