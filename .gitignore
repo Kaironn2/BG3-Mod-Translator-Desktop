@@ -7,3 +7,5 @@ out
 CLAUDE.md
 PLANNING.md
 .claude/
+.env.local
+.env
