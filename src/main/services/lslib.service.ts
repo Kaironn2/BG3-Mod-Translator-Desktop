@@ -8,7 +8,7 @@ const execFileAsync = promisify(execFile)
 
 function getDivinePath(): string {
   const base = is.dev ? app.getAppPath() : app.getAppPath().replace('app.asar', 'app.asar.unpacked')
-  return path.join(base, 'external_tools', 'lslib', 'Divine.exe')
+  return path.join(base, 'external', 'lslib', 'Divine.exe')
 }
 
 export async function unpackMod(pakPath: string, outputDir: string): Promise<void> {

@@ -10,10 +10,10 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
   - '!bkp/**'
-  - 'external_tools/**'
+  - 'external/**'
 asarUnpack:
   - resources/**
-  - external_tools/**
+  - external/**
   - drizzle/**
 win:
   executableName: Icosa
