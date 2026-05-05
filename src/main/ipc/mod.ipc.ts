@@ -19,6 +19,7 @@ interface PackPayload {
 export function registerModHandlers(): void {
   ipcMain.handle('mod:extract', async (_event, payload: ExtractPayload) => {
     const { inputPath, outputPath, sourceLang = 'English' } = payload
+
     const ext = path.extname(inputPath).toLowerCase()
 
     let pakPath = inputPath

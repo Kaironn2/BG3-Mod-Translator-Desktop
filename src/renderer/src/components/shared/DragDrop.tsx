@@ -41,8 +41,7 @@ export function DragDrop({ accept, onFile, label, className }: DragDropProps): R
         return
       }
 
-      // Electron exposes the real path on File objects
-      const filePath = (file as File & { path?: string }).path ?? file.name
+      const filePath = window.api.fs.getPathForFile(file)
       onFile(filePath)
     },
     [accept, onFile]

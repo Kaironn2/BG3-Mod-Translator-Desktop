@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { IpcRendererEvent } from 'electron'
 
@@ -113,7 +113,10 @@ const api = {
       filters?: Electron.FileFilter[]
     }): Promise<string | null> => ipcRenderer.invoke('fs:saveDialog', params),
 
-    openFolder: (): Promise<string | null> => ipcRenderer.invoke('fs:openFolder')
+    openFolder: (): Promise<string | null> => ipcRenderer.invoke('fs:openFolder'),
+
+    // Replaces the deprecated file.path property (removed in Electron 32+)
+    getPathForFile: (file: File): string => webUtils.getPathForFile(file)
   }
 }
 

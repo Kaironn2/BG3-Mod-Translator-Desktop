@@ -75,6 +75,7 @@ interface FsApi {
     filters?: Electron.FileFilter[]
   }): Promise<string | null>
   openFolder(): Promise<string | null>
+  getPathForFile(file: File): string
 }
 
 declare global {
