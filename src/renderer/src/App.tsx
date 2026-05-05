@@ -1,11 +1,13 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { MainLayout } from './components/layout/MainLayout'
-import { TranslatePage } from './pages/TranslatePage'
+import { TranslationSessionProvider } from './context/TranslationSession'
 import { DictionaryPage } from './pages/DictionaryPage'
+import { EntryEditPage } from './pages/EntryEditPage'
 import { ExtractPage } from './pages/ExtractPage'
 import { PackagePage } from './pages/PackagePage'
 import { SettingsPage } from './pages/SettingsPage'
+import { TranslatePage } from './pages/TranslatePage'
 
 function App(): React.JSX.Element {
   return (
@@ -14,7 +16,16 @@ function App(): React.JSX.Element {
       <Routes>
         <Route element={<MainLayout />}>
           <Route index element={<Navigate to="/translate" replace />} />
-          <Route path="/translate" element={<TranslatePage />} />
+          <Route
+            element={
+              <TranslationSessionProvider>
+                <Outlet />
+              </TranslationSessionProvider>
+            }
+          >
+            <Route path="/translate" element={<TranslatePage />} />
+            <Route path="/translate/entry/:uid" element={<EntryEditPage />} />
+          </Route>
           <Route path="/dictionary" element={<DictionaryPage />} />
           <Route path="/extract" element={<ExtractPage />} />
           <Route path="/package" element={<PackagePage />} />
