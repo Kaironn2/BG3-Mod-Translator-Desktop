@@ -1,1 +1,25 @@
 @import 'tailwindcss';
+
+/* Modern scrollbar — ICOSA design tokens */
+.icosa-scroll::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+.icosa-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.icosa-scroll::-webkit-scrollbar-thumb {
+  background: #2a2f37;
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  transition: background 120ms;
+}
+.icosa-scroll::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+.icosa-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
