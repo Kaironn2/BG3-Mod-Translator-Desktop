@@ -9,6 +9,7 @@ interface TranslationGridProps {
   entries: XmlEntry[]
   onEntryChange: (uid: string, target: string) => void
   onEntryManualEdit: (uid: string) => void
+  onEntrySave: (uid: string, target: string) => void
   selectedUids: Set<string>
   onSelectionChange: (uid: string, selected: boolean) => void
   onSelectAll: (uids: string[], selected: boolean) => void
@@ -114,6 +115,7 @@ export function TranslationGrid({
   entries,
   onEntryChange,
   onEntryManualEdit,
+  onEntrySave,
   selectedUids,
   onSelectionChange,
   onSelectAll,
@@ -181,8 +183,12 @@ export function TranslationGrid({
     if (e.key !== 'Enter' || e.shiftKey) return
     e.preventDefault()
 
-    saveEntry(entry, e.currentTarget.value)
+    const value = e.currentTarget.value
+    saveEntry(entry, value)
     savedByEnterRef.current.add(entry.uid)
+
+    // Persist to database only if value is non-empty
+    if (value.trim()) onEntrySave(entry.uid, value)
 
     const nextIdx = filteredEntries.findIndex((fe) => fe.uid === entry.uid) + 1
     const nextEntry = filteredEntries[nextIdx]

@@ -274,6 +274,27 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
     [session]
   )
 
+  const handleEntrySave = useCallback(
+    async (uid: string, target: string) => {
+      if (!target.trim()) return
+      const entry = session.entries.find((e) => e.uid === uid)
+      if (!entry) return
+      try {
+        await window.api.dictionary.upsert({
+          language1: session.sourceLang,
+          language2: session.targetLang,
+          textLanguage1: entry.source,
+          textLanguage2: target,
+          modName: session.modName || null,
+          uid: uid || null,
+        })
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erro ao salvar entrada')
+      }
+    },
+    [session]
+  )
+
   const handleBatchTranslate = useCallback(
     async (provider: 'openai' | 'deepl') => {
       const selectedEntries = session.entries
@@ -519,6 +540,7 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
           entries={session.entries}
           onEntryChange={session.updateEntry}
           onEntryManualEdit={handleEntryManualEdit}
+          onEntrySave={handleEntrySave}
           selectedUids={selectedUids}
           onSelectionChange={handleSelectionChange}
           onSelectAll={handleSelectAll}
