@@ -1,6 +1,6 @@
-import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { IpcRendererEvent } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 type UnsubscribeFn = () => void
 
@@ -38,7 +38,25 @@ const api = {
       on('translation:done', cb),
 
     onError: (cb: (data: { jobId: string; message: string }) => void): UnsubscribeFn =>
-      on('translation:error', cb)
+      on('translation:error', cb),
+
+    single: (payload: {
+      provider: 'openai' | 'deepl'
+      text: string
+      sourceLang: string
+      targetLang: string
+    }): Promise<string> => ipcRenderer.invoke('translation:single', payload),
+
+    batch: (payload: {
+      entries: { uid: string; source: string }[]
+      provider: 'openai' | 'deepl'
+      sourceLang: string
+      targetLang: string
+    }): Promise<void> => ipcRenderer.invoke('translation:batch', payload),
+
+    onBatchProgress: (
+      cb: (data: { uid: string; target: string | null; error?: string }) => void
+    ): UnsubscribeFn => on('translation:batchProgress', cb)
   },
 
   dictionary: {
@@ -89,7 +107,33 @@ const api = {
     pack: (params: {
       inputFolder: string
       outputPath: string
-    }): Promise<{ success: boolean; pakPath: string }> => ipcRenderer.invoke('mod:pack', params)
+    }): Promise<{ success: boolean; pakPath: string }> => ipcRenderer.invoke('mod:pack', params),
+
+    getAll: (): Promise<string[]> => ipcRenderer.invoke('mod:getAll'),
+
+    upsert: (params: { name: string }): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('mod:upsert', params)
+  },
+
+  xml: {
+    load: (params: {
+      inputPath: string
+      sourceLang: string
+      targetLang: string
+    }): Promise<
+      {
+        uid: string
+        version: string
+        source: string
+        target: string
+        matchType: 'none' | 'uid' | 'text' | 'manual'
+      }[]
+    > => ipcRenderer.invoke('xml:load', params),
+
+    export: (params: {
+      outputPath: string
+      entries: { uid: string; version: string; source: string; target: string; matchType: string }[]
+    }): Promise<void> => ipcRenderer.invoke('xml:export', params)
   },
 
   config: {
@@ -128,8 +172,8 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-ignore (define in dts)
+  // @ts-expect-error (define in dts)
   window.electron = electronAPI
-  // @ts-ignore (define in dts)
+  // @ts-expect-error (define in dts)
   window.api = api
 }

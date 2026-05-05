@@ -1,9 +1,11 @@
 import { ipcMain } from 'electron'
 import fs from 'fs'
 import path from 'path'
-import { unpackMod, packMod } from '../services/lslib.service'
-import { extract } from '../services/zip.service'
+import { getDb } from '../database/connection'
+import { ModRepository } from '../database/repositories/mod.repo'
+import { packMod, unpackMod } from '../services/lslib.service'
 import { findLocalizationXmls } from '../services/xml-parser.service'
+import { extract } from '../services/zip.service'
 
 interface ExtractPayload {
   inputPath: string
@@ -43,6 +45,19 @@ export function registerModHandlers(): void {
     fs.mkdirSync(path.dirname(outputPath), { recursive: true })
     await packMod(inputFolder, outputPath)
     return { success: true, pakPath: outputPath }
+  })
+
+  ipcMain.handle('mod:getAll', () => {
+    const db = getDb()
+    const repo = new ModRepository(db)
+    return repo.getAllNames()
+  })
+
+  ipcMain.handle('mod:upsert', (_event, { name }: { name: string }) => {
+    const db = getDb()
+    const repo = new ModRepository(db)
+    repo.upsert(name)
+    return { success: true }
   })
 }
 

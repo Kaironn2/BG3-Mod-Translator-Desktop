@@ -1,14 +1,15 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
+import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { getDb, closeDb } from './database/connection'
-import { registerTranslationHandlers } from './ipc/translation.ipc'
+import { closeDb, getDb } from './database/connection'
+import { registerConfigHandlers } from './ipc/config.ipc'
 import { registerDictionaryHandlers } from './ipc/dictionary.ipc'
+import { registerFsHandlers } from './ipc/fs.ipc'
 import { registerLanguageHandlers } from './ipc/language.ipc'
 import { registerModHandlers } from './ipc/mod.ipc'
-import { registerConfigHandlers } from './ipc/config.ipc'
-import { registerFsHandlers } from './ipc/fs.ipc'
+import { registerTranslationHandlers } from './ipc/translation.ipc'
+import { registerXmlHandlers } from './ipc/xml.ipc'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -63,10 +64,11 @@ app.whenReady().then(() => {
   registerModHandlers()
   registerConfigHandlers()
   registerFsHandlers()
+  registerXmlHandlers()
 
   createWindow()
 
-  app.on('activate', function () {
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })

@@ -78,3 +78,13 @@ export type ConfigKey =
   | 'last_target_lang'
   | 'author'
   | 'divine_path'
+
+export type XmlMatchType = 'none' | 'uid' | 'text' | 'manual'
+
+export interface XmlEntry {
+  uid: string
+  version: string
+  source: string
+  target: string
+  matchType: XmlMatchType
+}

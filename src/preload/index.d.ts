@@ -3,10 +3,11 @@ import type {
   DictionaryEntry,
   Language,
   SimilarEntry,
-  TranslationStartPayload,
-  TranslationProgressEvent,
   TranslationDoneEvent,
-  TranslationErrorEvent
+  TranslationErrorEvent,
+  TranslationProgressEvent,
+  TranslationStartPayload,
+  XmlEntry
 } from '../renderer/src/types'
 
 type UnsubscribeFn = () => void
@@ -17,6 +18,21 @@ interface TranslationApi {
   onProgress(cb: (data: TranslationProgressEvent) => void): UnsubscribeFn
   onDone(cb: (data: TranslationDoneEvent) => void): UnsubscribeFn
   onError(cb: (data: TranslationErrorEvent) => void): UnsubscribeFn
+  single(payload: {
+    provider: 'openai' | 'deepl'
+    text: string
+    sourceLang: string
+    targetLang: string
+  }): Promise<string>
+  batch(payload: {
+    entries: { uid: string; source: string }[]
+    provider: 'openai' | 'deepl'
+    sourceLang: string
+    targetLang: string
+  }): Promise<void>
+  onBatchProgress(
+    cb: (data: { uid: string; target: string | null; error?: string }) => void
+  ): UnsubscribeFn
 }
 
 interface DictionaryApi {
@@ -60,6 +76,13 @@ interface ModApi {
     inputFolder: string
     outputPath: string
   }): Promise<{ success: boolean; pakPath: string }>
+  getAll(): Promise<string[]>
+  upsert(params: { name: string }): Promise<{ success: boolean }>
+}
+
+interface XmlApi {
+  load(params: { inputPath: string; sourceLang: string; targetLang: string }): Promise<XmlEntry[]>
+  export(params: { outputPath: string; entries: XmlEntry[] }): Promise<void>
 }
 
 interface ConfigApi {
@@ -88,6 +111,7 @@ declare global {
       mod: ModApi
       config: ConfigApi
       fs: FsApi
+      xml: XmlApi
     }
   }
 }
