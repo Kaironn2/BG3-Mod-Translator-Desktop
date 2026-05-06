@@ -9,6 +9,7 @@ import { registerFsHandlers } from './ipc/fs.ipc'
 import { registerLanguageHandlers } from './ipc/language.ipc'
 import { registerModHandlers } from './ipc/mod.ipc'
 import { registerTranslationHandlers } from './ipc/translation.ipc'
+import { registerWindowHandlers, setupWindowEvents } from './ipc/window.ipc'
 import { registerXmlHandlers } from './ipc/xml.ipc'
 
 let mainWindow: BrowserWindow | null = null
@@ -22,6 +23,8 @@ function createWindow(): void {
     width: 1600,
     height: 900,
     show: false,
+    frame: false,
+    titleBarStyle: 'hidden',
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -33,6 +36,8 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow!.show()
   })
+
+  setupWindowEvents(mainWindow)
 
   mainWindow.on('closed', () => {
     mainWindow = null
@@ -58,6 +63,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  registerWindowHandlers(getWindow)
   registerTranslationHandlers(getWindow)
   registerDictionaryHandlers()
   registerLanguageHandlers()

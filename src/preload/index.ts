@@ -146,6 +146,15 @@ const api = {
     getAll: (): Promise<Record<string, string>> => ipcRenderer.invoke('config:getAll')
   },
 
+  window: {
+    minimize: (): Promise<void> => ipcRenderer.invoke('window:minimize'),
+    maximize: (): Promise<void> => ipcRenderer.invoke('window:maximize'),
+    close: (): Promise<void> => ipcRenderer.invoke('window:close'),
+    isMaximized: (): Promise<boolean> => ipcRenderer.invoke('window:isMaximized'),
+    onMaximizeChange: (cb: (isMaximized: boolean) => void): UnsubscribeFn =>
+      on('window:maximizeChange', cb)
+  },
+
   fs: {
     openDialog: (params?: {
       filters?: Electron.FileFilter[]

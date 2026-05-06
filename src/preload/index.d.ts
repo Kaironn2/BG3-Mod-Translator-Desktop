@@ -91,6 +91,14 @@ interface ConfigApi {
   getAll(): Promise<Record<string, string>>
 }
 
+interface WindowApi {
+  minimize(): Promise<void>
+  maximize(): Promise<void>
+  close(): Promise<void>
+  isMaximized(): Promise<boolean>
+  onMaximizeChange(cb: (isMaximized: boolean) => void): UnsubscribeFn
+}
+
 interface FsApi {
   openDialog(params?: { filters?: Electron.FileFilter[]; multiple?: boolean }): Promise<string[]>
   saveDialog(params?: {
@@ -112,6 +120,7 @@ declare global {
       config: ConfigApi
       fs: FsApi
       xml: XmlApi
+      window: WindowApi
     }
   }
 }
