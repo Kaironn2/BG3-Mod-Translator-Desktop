@@ -10,3 +10,4 @@ PLANNING.md
 .env.local
 .env
 *.md
+data/
