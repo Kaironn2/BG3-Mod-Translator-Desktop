@@ -59,7 +59,12 @@ function reducer(state: State, action: Action): State {
 }
 
 interface TranslationSessionContext extends State {
-  loadSession: (inputPath: string, sourceLang: string, targetLang: string) => Promise<void>
+  loadSession: (
+    inputPath: string,
+    sourceLang: string,
+    targetLang: string,
+    modName: string
+  ) => Promise<void>
   updateEntry: (uid: string, target: string) => void
   markManual: (uid: string) => void
   setModName: (name: string) => void
@@ -70,8 +75,8 @@ interface TranslationSessionContext extends State {
 
 const Context = createContext<TranslationSessionContext | null>(null)
 
-const DEFAULT_SOURCE = 'English'
-const DEFAULT_TARGET = 'Brazilian Portuguese'
+const DEFAULT_SOURCE = 'en'
+const DEFAULT_TARGET = 'pt-BR'
 
 export function TranslationSessionProvider({
   children
@@ -89,18 +94,27 @@ export function TranslationSessionProvider({
 
   useEffect(() => {
     window.api.config.getAll().then((cfg) => {
-      if (cfg['last_source_lang'])
-        dispatch({ type: 'SET_SOURCE_LANG', lang: cfg['last_source_lang'] })
-      if (cfg['last_target_lang'])
-        dispatch({ type: 'SET_TARGET_LANG', lang: cfg['last_target_lang'] })
+      if (cfg.last_source_lang) dispatch({ type: 'SET_SOURCE_LANG', lang: cfg.last_source_lang })
+      if (cfg.last_target_lang) dispatch({ type: 'SET_TARGET_LANG', lang: cfg.last_target_lang })
     })
   }, [])
 
   const loadSession = useCallback(
-    async (inputPath: string, sourceLang: string, targetLang: string) => {
+    async (inputPath: string, sourceLang: string, targetLang: string, modName: string) => {
       dispatch({ type: 'SET_PHASE', phase: 'loading' })
       dispatch({ type: 'SET_INPUT_PATH', path: inputPath })
-      const entries = await window.api.xml.load({ inputPath, sourceLang, targetLang })
+      dispatch({ type: 'SET_MOD_NAME', name: modName })
+      const [{ storedPath }, entries] = await Promise.all([
+        window.api.mod.storeFile({ modName, filePath: inputPath }),
+        window.api.xml.load({ inputPath, sourceLang, targetLang })
+      ])
+      if (modName) {
+        await window.api.mod.upsert({
+          name: modName,
+          totalStrings: entries.length > 0 ? entries.length : undefined,
+          lastFilePath: storedPath
+        })
+      }
       dispatch({ type: 'SET_ENTRIES', entries })
     },
     []

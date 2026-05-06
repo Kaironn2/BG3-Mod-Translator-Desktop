@@ -16,7 +16,7 @@ export function ModSelector({ value, onChange, className }: ModSelectorProps): R
   const inputId = 'mod-new-input'
 
   useEffect(() => {
-    window.api.mod.getAll().then(setMods)
+    window.api.mod.getAll().then((result) => setMods(result.map((m) => m.name)))
   }, [])
 
   useEffect(() => {
