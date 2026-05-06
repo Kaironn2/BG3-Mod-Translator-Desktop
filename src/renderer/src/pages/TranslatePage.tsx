@@ -1,4 +1,4 @@
-import { ArrowRight, Check, ChevronDown, ChevronRight, Columns2, Download, File, Focus, Loader2, Redo2, Rows2, Save, Search, Undo2, Upload, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronRight, Columns2, Download, File, Focus, Loader2, Redo2, Rows2, Save, Search, Undo2, Upload, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { BatchActionBar } from '@/components/translation/BatchActionBar'
@@ -18,6 +18,7 @@ const IconSave = Save
 const IconExport = Download
 const IconChevR = ChevronRight
 const IconArrow = ArrowRight
+const IconBack = ArrowLeft
 const IconCheck = Check
 const IconChevDown = ChevronDown
 const IconSearch = Search
@@ -287,7 +288,7 @@ function IdlePhase({ session }: IdlePhaseProps): React.JSX.Element {
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-6 pt-7 pb-6 min-h-0">
+      <div className="flex-1 overflow-y-auto icosa-scroll [scrollbar-gutter:stable] px-6 pt-7 pb-6 min-h-0">
         <div className="max-w-220 mx-auto flex flex-col gap-3.5">
           {/* Card 01 - Languages */}
           <section className="grid grid-cols-[56px_1fr] bg-[#131518] border border-[#1f2329] rounded-xl overflow-hidden hover:border-neutral-700 transition-colors">
@@ -688,16 +689,16 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
 
 
   const handleEntryManualEdit = useCallback(
-    (uid: string) => {
-      session.markManual(uid)
+    (rowId: string) => {
+      session.markManual(rowId)
     },
     [session]
   )
 
   const handleEntrySave = useCallback(
-    async (uid: string, target: string) => {
+    async (rowId: string, target: string) => {
       if (!target.trim()) return
-      const entry = session.entries.find((e) => e.uid === uid)
+      const entry = session.entries.find((e) => e.rowId === rowId)
       if (!entry) return
       try {
         await window.api.dictionary.upsert({
@@ -706,7 +707,7 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
           textLanguage1: entry.source,
           textLanguage2: target,
           modName: session.modName || null,
-          uid: uid || null
+          uid: entry.uid || null
         })
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Erro ao salvar entrada')
@@ -718,8 +719,8 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
   const handleBatchTranslate = useCallback(
     async (provider: 'openai' | 'deepl') => {
       const selectedEntries = session.entries
-        .filter((e) => session.selectedUids.has(e.uid))
-        .map((e) => ({ uid: e.uid, source: e.source }))
+        .filter((e) => session.selectedUids.has(e.rowId))
+        .map((e) => ({ uid: e.rowId, source: e.source }))
 
       setIsBatchTranslating(true)
 
@@ -863,8 +864,8 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
             </button>
 
             <button type="button" className={btnBase} onClick={session.resetSession}>
-              <IconFile />
-              Novo
+              <IconBack />
+              Voltar
             </button>
 
             <button

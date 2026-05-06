@@ -1,26 +1,32 @@
 import { AlertTriangle, BookOpen, Check, Search, Sparkles, X } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
-import { useTranslationSession } from '@/context/TranslationSession'
-import { CAT, type TranslationCategory } from '@/lib/categories'
+import {
+  type TranslationSessionEntry,
+  useTranslationSession
+} from '@/context/TranslationSession'
 import { cn } from '@/lib/utils'
-import type { XmlEntry } from '@/types'
 import { renderSource } from '@/utils/renderSource'
 
-type FilterMode = 'all' | 'dictionary' | 'tool' | 'manual'
+type TranslationCategory = 'dictionary' | 'tool' | 'manual' | 'none'
+type FilterMode = 'all' | 'untranslated' | 'translated' | 'dictionary' | 'tags'
 
 interface TranslationGridProps {
-  entries: XmlEntry[]
-  onEntryChange: (uid: string, target: string) => void
-  onEntryManualEdit: (uid: string) => void
-  onEntrySave: (uid: string, target: string) => void
+  entries: TranslationSessionEntry[]
+  onEntryChange: (rowId: string, target: string) => void
+  onEntryManualEdit: (rowId: string) => void
+  onEntrySave: (rowId: string, target: string) => void
   viewMode: 'stacked' | 'side'
 }
 
-function getCategory(entry: XmlEntry): TranslationCategory {
+function getCategory(entry: TranslationSessionEntry): TranslationCategory {
   if (entry.matchType === 'uid' || entry.matchType === 'text') return 'dictionary'
   if (entry.matchType === 'manual') return 'manual'
   if (entry.target.trim()) return 'tool'
   return 'none'
+}
+
+function hasXmlTags(entry: TranslationSessionEntry): boolean {
+  return /(<[^>]+>|\{[^}]+\})/.test(entry.source)
 }
 
 function KbdHint({ children }: { children: React.ReactNode }) {
@@ -57,25 +63,34 @@ export function TranslationGrid({
   const { selectedUids, selectEntry, selectEntries } = useTranslationSession()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterMode>('all')
-  const [focusedUid, setFocusedUid] = useState<string | null>(null)
 
   // Maps uid → textarea DOM element so Enter can jump to the next row
   const textareaRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map())
   // Tracks which entries were saved via Enter to skip the subsequent onBlur save
   const savedByEnterRef = useRef<Set<string>>(new Set())
 
-  const counts = useMemo(
-    () => ({
-      dictionary: entries.filter((e) => getCategory(e) === 'dictionary').length,
-      tool: entries.filter((e) => getCategory(e) === 'tool').length,
-      manual: entries.filter((e) => getCategory(e) === 'manual').length,
-    }),
-    [entries]
-  )
+  const counts = useMemo(() => {
+    let translated = 0
+    let untranslated = 0
+    let dictionary = 0
+    let tags = 0
+
+    for (const entry of entries) {
+      if (entry.target.trim()) translated += 1
+      else untranslated += 1
+      if (getCategory(entry) === 'dictionary') dictionary += 1
+      if (hasXmlTags(entry)) tags += 1
+    }
+
+    return { translated, untranslated, dictionary, tags }
+  }, [entries])
 
   const filteredEntries = useMemo(() => {
     return entries.filter((e) => {
-      if (filter !== 'all' && getCategory(e) !== filter) return false
+      if (filter === 'untranslated' && e.target.trim()) return false
+      if (filter === 'translated' && !e.target.trim()) return false
+      if (filter === 'dictionary' && getCategory(e) !== 'dictionary') return false
+      if (filter === 'tags' && !hasXmlTags(e)) return false
       if (search) {
         const q = search.toLowerCase()
         return e.source.toLowerCase().includes(q) || e.target.toLowerCase().includes(q)
@@ -85,49 +100,53 @@ export function TranslationGrid({
   }, [entries, filter, search])
 
   const allFiltered =
-    filteredEntries.length > 0 && filteredEntries.every((e) => selectedUids.has(e.uid))
+    filteredEntries.length > 0 && filteredEntries.every((e) => selectedUids.has(e.rowId))
 
   const handleSelectAll = (checked: boolean) => {
     selectEntries(
-      filteredEntries.map((e) => e.uid),
+      filteredEntries.map((e) => e.rowId),
       checked
     )
   }
 
-  const saveEntry = (entry: XmlEntry, value: string) => {
+  const focusEntry = (rowId: string) => {
+    textareaRefs.current.get(rowId)?.focus()
+  }
+
+  const updateEntryTarget = (entry: TranslationSessionEntry, value: string) => {
     if (value !== entry.target) {
-      onEntryChange(entry.uid, value)
-      if (entry.matchType === 'none') onEntryManualEdit(entry.uid)
+      onEntryChange(entry.rowId, value)
+      if (entry.matchType === 'none') onEntryManualEdit(entry.rowId)
     }
   }
 
-  const handleEntryBlur = (entry: XmlEntry, value: string) => {
-    // Skip if Enter already saved this entry (blur fires right after Enter navigates away)
-    if (savedByEnterRef.current.has(entry.uid)) {
-      savedByEnterRef.current.delete(entry.uid)
+  const handleEntryBlur = (entry: TranslationSessionEntry, value: string) => {
+    // Skip if Enter already persisted this entry (blur fires right after Enter navigates away)
+    if (savedByEnterRef.current.has(entry.rowId)) {
+      savedByEnterRef.current.delete(entry.rowId)
       return
     }
-    saveEntry(entry, value)
+    updateEntryTarget(entry, value)
   }
 
   const handleEnterKey = (
     e: React.KeyboardEvent<HTMLTextAreaElement>,
-    entry: XmlEntry
+    entry: TranslationSessionEntry
   ) => {
     if (e.key !== 'Enter' || e.shiftKey) return
     e.preventDefault()
 
     const value = e.currentTarget.value
-    saveEntry(entry, value)
-    savedByEnterRef.current.add(entry.uid)
+    updateEntryTarget(entry, value)
+    savedByEnterRef.current.add(entry.rowId)
 
     // Persist to database only if value is non-empty
-    if (value.trim()) onEntrySave(entry.uid, value)
+    if (value.trim()) onEntrySave(entry.rowId, value)
 
-    const nextIdx = filteredEntries.findIndex((fe) => fe.uid === entry.uid) + 1
+    const nextIdx = filteredEntries.findIndex((fe) => fe.rowId === entry.rowId) + 1
     const nextEntry = filteredEntries[nextIdx]
     if (nextEntry) {
-      const nextTextarea = textareaRefs.current.get(nextEntry.uid)
+      const nextTextarea = textareaRefs.current.get(nextEntry.rowId)
       if (nextTextarea) {
         nextTextarea.focus()
         nextTextarea.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
@@ -136,58 +155,87 @@ export function TranslationGrid({
   }
 
   // ── IDE Pro search + filter bar ──────────────────────────────────────────
+  const filterItems: {
+    mode: FilterMode
+    label: string
+    count: number
+    dot?: string
+  }[] = [
+    {
+      mode: 'untranslated',
+      label: 'Nao traduzidas',
+      count: counts.untranslated,
+      dot: 'bg-slate-500'
+    },
+    { mode: 'translated', label: 'Traduzidas', count: counts.translated, dot: 'bg-amber-400' },
+    { mode: 'dictionary', label: 'Com dicionario', count: counts.dictionary, dot: 'bg-blue-500' },
+    { mode: 'tags', label: 'Com tags XML', count: counts.tags, dot: 'bg-amber-500' }
+  ]
+
   const searchBar = (
-    <div className="flex items-center gap-2 border-b border-[#1f2329] bg-[#0c0d0f] px-3 py-2 shrink-0">
-      <div className="flex items-center gap-1.5 flex-1 min-w-0 rounded-md border border-[#1f2329] bg-[#131518] px-2.5 py-1.5 focus-within:border-neutral-600 transition-colors">
+    <div className="flex items-center gap-3 border-b border-[#1f2329] bg-[#0c0d0f] px-5 py-1 shrink-0">
+      <div className="flex h-8 w-[292px] min-w-45 items-center gap-2 rounded-md border border-[#1f2329] bg-[#131518] px-3 focus-within:border-neutral-600 transition-colors">
         <Search size={13} className="text-neutral-500 shrink-0" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar entradas..."
-          className="flex-1 min-w-0 bg-transparent text-sm text-neutral-300 placeholder:text-neutral-600 focus:outline-none"
+          placeholder="Buscar em strings..."
+          className="flex-1 min-w-0 bg-transparent text-xs font-medium text-neutral-300 placeholder:text-neutral-600 focus:outline-none"
         />
         {search && (
           <button type="button" onClick={() => setSearch('')} className="shrink-0">
             <X size={13} className="text-neutral-500 hover:text-neutral-300 transition-colors" />
           </button>
         )}
+        <span className="inline-flex items-center justify-center h-5 min-w-6 rounded border border-[#252a32] bg-[#0f1114] px-1 font-mono text-[10px] text-neutral-500">
+          ⌘F
+        </span>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
         <button
           type="button"
           onClick={() => setFilter('all')}
           className={cn(
-            'flex items-center gap-1.5 rounded border px-2 py-1 text-xs transition-colors',
+            'flex h-8 cursor-pointer items-center gap-2 rounded-md border px-3 text-xs font-semibold transition-colors focus:outline-none focus-visible:border-[#2a2f37] focus-visible:bg-[#181b1f] focus-visible:text-neutral-100',
             filter === 'all'
-              ? 'border-[#2a2f37] bg-[#181b1f] text-neutral-200'
-              : 'border-transparent text-neutral-500 hover:text-neutral-300'
+              ? 'border-[#2a2f37] bg-[#181b1f] text-neutral-100'
+              : 'border-transparent text-neutral-400 hover:border-[#2a2f37] hover:bg-[#181b1f] hover:text-neutral-200'
           )}
         >
           Todas
-          <span className="text-neutral-600 tabular-nums">{entries.length}</span>
+          <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[11px] text-neutral-500 tabular-nums">
+            {entries.length}
+          </span>
         </button>
 
-        {(['dictionary', 'tool', 'manual'] as const).map((cat) => {
-          const s = CAT[cat]
-          const count = counts[cat]
-          const active = filter === cat
+        {filterItems.map((item) => {
+          const active = filter === item.mode
           return (
             <button
-              key={cat}
+              key={item.mode}
               type="button"
-              onClick={() => setFilter(cat)}
+              onClick={() => setFilter(item.mode)}
               className={cn(
-                'flex items-center gap-1.5 rounded border px-2 py-1 text-xs transition-colors',
-                active ? s.chipActive : s.chipIdle
+                'flex h-8 cursor-pointer items-center gap-2 rounded-md border px-2 text-xs font-semibold transition-colors focus:outline-none focus-visible:border-[#2a2f37] focus-visible:bg-[#181b1f] focus-visible:text-neutral-100',
+                active
+                  ? 'border-[#2a2f37] bg-[#181b1f] text-neutral-100'
+                  : 'border-transparent text-neutral-400 hover:border-[#2a2f37] hover:bg-[#181b1f] hover:text-neutral-200'
               )}
             >
-              <span className={cn('inline-block w-1.5 h-1.5 rounded-full shrink-0', s.badge)} />
-              {s.label}
-              <span className="tabular-nums opacity-70">{count}</span>
+              <span className={cn('inline-block h-1.5 w-1.5 rounded-full shrink-0', item.dot)} />
+              {item.label}
+              <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[11px] text-neutral-600 tabular-nums">
+                {item.count}
+              </span>
             </button>
           )
         })}
+      </div>
+
+      <div className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-neutral-400">
+        <span className="font-mono text-neutral-500">⌘</span>
+        Atalhos
       </div>
     </div>
   )
@@ -224,32 +272,28 @@ export function TranslationGrid({
           {filteredEntries.map((entry, idx) => {
             const cat = getCategory(entry)
             const isDone = entry.target.trim() !== ''
-            const isFocused = focusedUid === entry.uid
-            const isSelected = selectedUids.has(entry.uid)
+            const isSelected = selectedUids.has(entry.rowId)
             const isDict = cat === 'dictionary'
             const charCount = entry.source.length
 
             return (
               <div
-                key={entry.uid}
+                key={entry.rowId}
                 className={cn(
-                  'grid border-b border-[#1f2329] transition-colors',
-                  isFocused
-                    ? 'bg-[#131518] shadow-[inset_3px_0_0_#f59e0b]'
-                    : 'hover:bg-[#131518]/60',
-                  isSelected && !isFocused && 'bg-blue-950/10'
+                  'group grid border-b border-[#1f2329] transition-colors hover:bg-[#131518]/60 focus-within:bg-[#131518] focus-within:shadow-[inset_3px_0_0_#f59e0b]',
+                  isSelected && 'bg-blue-950/10'
                 )}
                 style={{ gridTemplateColumns: '80px 1fr 1fr' }}
               >
                 {/* Gutter */}
                 <div
                   className="flex flex-col items-center gap-2 py-3 px-3 border-r border-[#1f2329] bg-[#0f1114] cursor-pointer"
-                  onClick={() => setFocusedUid(isFocused ? null : entry.uid)}
+                  onClick={() => focusEntry(entry.rowId)}
                 >
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    onChange={(e) => selectEntry(entry.uid, e.target.checked)}
+                    onChange={(e) => selectEntry(entry.rowId, e.target.checked)}
                     onClick={(e) => e.stopPropagation()}
                     className="accent-amber-500 cursor-pointer"
                   />
@@ -267,7 +311,7 @@ export function TranslationGrid({
                 {/* Source */}
                 <div
                   className="flex flex-col gap-2 py-3 px-4 min-w-0 cursor-pointer"
-                  onClick={() => setFocusedUid(isFocused ? null : entry.uid)}
+                  onClick={() => focusEntry(entry.rowId)}
                 >
                   <div className="font-mono text-[13px] text-neutral-200 leading-[1.6] whitespace-pre-wrap wrap-break-word">
                     {entry.source ? (
@@ -293,11 +337,11 @@ export function TranslationGrid({
                 >
                   <textarea
                     ref={(el) => {
-                      if (el) textareaRefs.current.set(entry.uid, el)
-                      else textareaRefs.current.delete(entry.uid)
+                      if (el) textareaRefs.current.set(entry.rowId, el)
+                      else textareaRefs.current.delete(entry.rowId)
                     }}
+                    key={`${entry.rowId}:${entry.target}`}
                     defaultValue={entry.target}
-                    onFocus={() => setFocusedUid(entry.uid)}
                     onBlur={(e) => handleEntryBlur(entry, e.target.value)}
                     onKeyDown={(e) => handleEnterKey(e, entry)}
                     rows={1}
@@ -306,8 +350,7 @@ export function TranslationGrid({
                   />
                   <div
                     className={cn(
-                      'flex items-center gap-1.5 transition-opacity duration-150',
-                      isFocused ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                      'flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
                     )}
                   >
                     <button
@@ -362,38 +405,36 @@ export function TranslationGrid({
             {filteredEntries.map((entry, idx) => {
               const cat = getCategory(entry)
               const isDone = entry.target.trim() !== ''
-              const isFocused = focusedUid === entry.uid
-              const isSelected = selectedUids.has(entry.uid)
+              const isSelected = selectedUids.has(entry.rowId)
               const isDict = cat === 'dictionary'
-              const hasTags = /(<[^>]+>|\{[^}]+\})/.test(entry.source)
+              const hasTags = hasXmlTags(entry)
               const wordCount = entry.source.split(/\s+/).filter(Boolean).length
               const charCount = entry.source.length
               const rows = Math.max(2, Math.ceil(charCount / 70))
 
               return (
                 <div
-                  key={entry.uid}
+                  key={entry.rowId}
                   className={cn(
-                    'grid overflow-hidden rounded-xl border cursor-pointer transition-all duration-120',
+                    'group grid overflow-hidden rounded-xl border cursor-pointer transition-all duration-120',
                     // base
                     'bg-[#0f1114] border-[#1f2329]',
                     // hover
-                    !isFocused && 'hover:border-[#2a2f37] hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.18)]',
-                    // focused
-                    isFocused &&
-                      'border-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.25),0_8px_24px_rgba(0,0,0,0.24)]',
+                    'hover:border-[#2a2f37] hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.18)]',
+                    // focused via textarea focus
+                    'focus-within:border-amber-500 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.25),0_8px_24px_rgba(0,0,0,0.24)]',
                     // selected tint
-                    isSelected && !isFocused && 'border-blue-700/40 bg-blue-950/10'
+                    isSelected && 'border-blue-700/40 bg-blue-950/10'
                   )}
                   style={{ gridTemplateColumns: '56px 1fr' }}
-                  onClick={() => setFocusedUid(isFocused ? null : entry.uid)}
+                  onClick={() => focusEntry(entry.rowId)}
                 >
                   {/* Side column — checkbox, vertical number, status circle */}
                   <div className="flex flex-col items-center gap-3 py-4.5 border-r border-[#1f2329] bg-[#0c0d0f]">
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      onChange={(e) => selectEntry(entry.uid, e.target.checked)}
+                      onChange={(e) => selectEntry(entry.rowId, e.target.checked)}
                       onClick={(e) => e.stopPropagation()}
                       className="accent-amber-500 cursor-pointer"
                     />
@@ -458,8 +499,8 @@ export function TranslationGrid({
                     </div>
 
                     {/* Dict strip — shown when focused and is a dict match */}
-                    {isFocused && isDict && (
-                      <div className="flex items-center gap-2 px-3 py-2 bg-[#0c0d0f] border border-dashed border-[#2a2f37] rounded-lg flex-wrap">
+                    {isDict && (
+                      <div className="hidden items-center gap-2 px-3 py-2 bg-[#0c0d0f] border border-dashed border-[#2a2f37] rounded-lg flex-wrap group-focus-within:flex">
                         <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-[0.08em]">
                           Dicionário sugere:
                         </span>
@@ -467,7 +508,7 @@ export function TranslationGrid({
                           type="button"
                           className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#0f1114] border border-[#1f2329] rounded-full text-[12px] cursor-pointer hover:border-amber-500 hover:bg-amber-500/10 transition-colors"
                           onClick={() => {
-                            onEntryChange(entry.uid, entry.target)
+                            onEntryChange(entry.rowId, entry.target)
                           }}
                         >
                           <span className="font-mono text-neutral-400">
@@ -487,8 +528,7 @@ export function TranslationGrid({
                       <LangTag accent>PT-BR</LangTag>
                       <div
                         className={cn(
-                          'flex-1 flex items-center gap-1.5 transition-opacity duration-150',
-                          isFocused ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                          'flex-1 flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
                         )}
                       >
                         <button
@@ -515,11 +555,11 @@ export function TranslationGrid({
                     {/* Translation textarea */}
                     <textarea
                       ref={(el) => {
-                        if (el) textareaRefs.current.set(entry.uid, el)
-                        else textareaRefs.current.delete(entry.uid)
+                        if (el) textareaRefs.current.set(entry.rowId, el)
+                        else textareaRefs.current.delete(entry.rowId)
                       }}
+                      key={`${entry.rowId}:${entry.target}`}
                       defaultValue={entry.target}
-                      onFocus={() => setFocusedUid(entry.uid)}
                       onBlur={(e) => handleEntryBlur(entry, e.target.value)}
                       onKeyDown={(e) => handleEnterKey(e, entry)}
                       rows={rows}
