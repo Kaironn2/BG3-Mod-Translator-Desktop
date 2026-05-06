@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { useDictionary } from '@/hooks/useDictionary'
 import { LanguageSelect } from '@/components/shared/LanguageSelect'
 import { EditableTable, type Column } from '@/components/shared/EditableTable'
+import { useDebouncedFilter } from '@/hooks/useDebouncedFilter'
+import { useDictionaryIO } from '@/hooks/useDictionaryIO'
+import { useDictionaryMutations } from '@/hooks/useDictionaryMutations'
+import { useDictionaryQuery } from '@/hooks/useDictionaryQuery'
 import type { DictionaryEntry } from '@/types'
 
 const COLUMNS: Column<DictionaryEntry>[] = [
@@ -18,11 +21,14 @@ export function DictionaryPage(): React.JSX.Element {
   const [lang1, setLang1] = useState('')
   const [lang2, setLang2] = useState('')
   const [text, setText] = useState('')
-  const { entries, loading, load, update, importCsv, exportCsv } = useDictionary()
+  const debouncedText = useDebouncedFilter(text)
+  const { entries, loading, load, setEntries } = useDictionaryQuery()
+  const { update } = useDictionaryMutations(entries, setEntries)
+  const { importCsv, exportCsv } = useDictionaryIO()
 
   useEffect(() => {
-    load({ lang1, lang2, text })
-  }, [lang1, lang2, text, load])
+    load({ lang1, lang2, text: debouncedText })
+  }, [debouncedText, lang1, lang2, load])
 
   const handleImport = async () => {
     const paths = await window.api.fs.openDialog({
@@ -30,7 +36,7 @@ export function DictionaryPage(): React.JSX.Element {
     })
     if (!paths[0]) return
     const count = await importCsv(paths[0])
-    load({ lang1, lang2, text })
+    load({ lang1, lang2, text: debouncedText })
     toast.success(`Imported ${count} entries`)
   }
 

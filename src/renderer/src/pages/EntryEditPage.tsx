@@ -1,24 +1,33 @@
 import { ArrowLeft, Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useTranslationSession } from '@/context/TranslationSession'
+import type { XmlEntry } from '@/types'
 
-export function EntryEditPage(): React.JSX.Element | null {
+export function EntryEditPage(): React.JSX.Element {
   const { uid } = useParams<{ uid: string }>()
+  const session = useTranslationSession()
+
+  const entry = session.entries.find((e) => e.uid === uid)
+
+  if (!entry) return <Navigate to="/translate" replace />
+
+  return <EntryEditor entry={entry} session={session} />
+}
+
+function EntryEditor({
+  entry,
+  session
+}: {
+  entry: XmlEntry
+  session: ReturnType<typeof useTranslationSession>
+}): React.JSX.Element {
   const navigate = useNavigate()
-  const { entries, sourceLang, targetLang, updateEntry, markManual } = useTranslationSession()
-
-  const entry = entries.find((e) => e.uid === uid)
-
-  useEffect(() => {
-    if (!entry) navigate('/translate', { replace: true })
-  }, [entry, navigate])
+  const { sourceLang, targetLang, updateEntry, markManual } = session
 
   const [target, setTarget] = useState(entry?.target ?? '')
   const [translating, setTranslating] = useState<'deepl' | 'openai' | null>(null)
-
-  if (!entry) return null
 
   const handleTranslate = async (provider: 'deepl' | 'openai') => {
     setTranslating(provider)

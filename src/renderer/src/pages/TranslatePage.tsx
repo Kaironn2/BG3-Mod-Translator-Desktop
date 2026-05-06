@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { BatchActionBar } from '@/components/translation/BatchActionBar'
 import { TranslationGrid } from '@/components/translation/TranslationGrid'
 import { useTranslationSession } from '@/context/TranslationSession'
+import { useClickOutside } from '@/hooks/useClickOutside'
 import { cn } from '@/lib/utils'
 import type { Language, ModInfo } from '@/types'
 
@@ -235,17 +236,14 @@ function LangPicker({
       l.code.toLowerCase().includes(query.toLowerCase())
   )
 
-  useEffect(() => {
-    if (!open) return
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-        setQuery('')
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
+  useClickOutside(
+    ref,
+    () => {
+      setOpen(false)
+      setQuery('')
+    },
+    open
+  )
 
   return (
     <div ref={ref} className="relative">
@@ -815,7 +813,6 @@ interface LoadedPhaseProps {
 }
 
 function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
-  const [selectedUids, setSelectedUids] = useState<Set<string>>(new Set())
   const [isBatchTranslating, setIsBatchTranslating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [viewMode, setViewMode] = useState<'side' | 'stacked'>('side')
@@ -834,29 +831,6 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
     ? (session.inputPath.split(/[\\/]/).pop() ?? session.modName)
     : session.modName || 'arquivo.xml'
 
-  const handleSelectionChange = useCallback((uid: string, selected: boolean) => {
-    setSelectedUids((prev) => {
-      const next = new Set(prev)
-      if (selected) next.add(uid)
-      else next.delete(uid)
-      return next
-    })
-  }, [])
-
-  const handleSelectAll = useCallback((uids: string[], selected: boolean) => {
-    setSelectedUids((prev) => {
-      const next = new Set(prev)
-      if (selected)
-        uids.forEach((uid) => {
-          next.add(uid)
-        })
-      else
-        uids.forEach((uid) => {
-          next.delete(uid)
-        })
-      return next
-    })
-  }, [])
 
   const handleEntryManualEdit = useCallback(
     (uid: string) => {
@@ -889,7 +863,7 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
   const handleBatchTranslate = useCallback(
     async (provider: 'openai' | 'deepl') => {
       const selectedEntries = session.entries
-        .filter((e) => selectedUids.has(e.uid))
+        .filter((e) => session.selectedUids.has(e.uid))
         .map((e) => ({ uid: e.uid, source: e.source }))
 
       setIsBatchTranslating(true)
@@ -917,10 +891,10 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
         batchUnsubRef.current?.()
         batchUnsubRef.current = null
         setIsBatchTranslating(false)
-        setSelectedUids(new Set())
+        session.clearSelection()
       }
     },
-    [session, selectedUids]
+    [session]
   )
 
   const handleSave = async () => {
@@ -1116,18 +1090,15 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
           onEntryChange={session.updateEntry}
           onEntryManualEdit={handleEntryManualEdit}
           onEntrySave={handleEntrySave}
-          selectedUids={selectedUids}
-          onSelectionChange={handleSelectionChange}
-          onSelectAll={handleSelectAll}
           viewMode={viewMode}
         />
       </div>
 
       <BatchActionBar
-        selectedCount={selectedUids.size}
+        selectedCount={session.selectedUids.size}
         onTranslateDeepL={() => handleBatchTranslate('deepl')}
         onTranslateGPT={() => handleBatchTranslate('openai')}
-        onClearSelection={() => setSelectedUids(new Set())}
+        onClearSelection={session.clearSelection}
         isTranslating={isBatchTranslating}
       />
     </div>

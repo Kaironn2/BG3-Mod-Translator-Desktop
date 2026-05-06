@@ -6,6 +6,7 @@ type Phase = 'idle' | 'loading' | 'loaded'
 interface State {
   phase: Phase
   entries: XmlEntry[]
+  selectedUids: Set<string>
   modName: string
   sourceLang: string
   targetLang: string
@@ -17,6 +18,9 @@ type Action =
   | { type: 'SET_ENTRIES'; entries: XmlEntry[] }
   | { type: 'UPDATE_ENTRY'; uid: string; target: string }
   | { type: 'MARK_MANUAL'; uid: string }
+  | { type: 'SELECT_ENTRY'; uid: string; selected: boolean }
+  | { type: 'SELECT_ENTRIES'; uids: string[]; selected: boolean }
+  | { type: 'CLEAR_SELECTION' }
   | { type: 'SET_MOD_NAME'; name: string }
   | { type: 'SET_SOURCE_LANG'; lang: string }
   | { type: 'SET_TARGET_LANG'; lang: string }
@@ -28,7 +32,7 @@ function reducer(state: State, action: Action): State {
     case 'SET_PHASE':
       return { ...state, phase: action.phase }
     case 'SET_ENTRIES':
-      return { ...state, entries: action.entries, phase: 'loaded' }
+      return { ...state, entries: action.entries, selectedUids: new Set<string>(), phase: 'loaded' }
     case 'UPDATE_ENTRY':
       return {
         ...state,
@@ -43,6 +47,22 @@ function reducer(state: State, action: Action): State {
           e.uid === action.uid ? { ...e, matchType: 'manual' } : e
         )
       }
+    case 'SELECT_ENTRY': {
+      const selectedUids = new Set(state.selectedUids)
+      if (action.selected) selectedUids.add(action.uid)
+      else selectedUids.delete(action.uid)
+      return { ...state, selectedUids }
+    }
+    case 'SELECT_ENTRIES': {
+      const selectedUids = new Set(state.selectedUids)
+      for (const uid of action.uids) {
+        if (action.selected) selectedUids.add(uid)
+        else selectedUids.delete(uid)
+      }
+      return { ...state, selectedUids }
+    }
+    case 'CLEAR_SELECTION':
+      return { ...state, selectedUids: new Set<string>() }
     case 'SET_MOD_NAME':
       return { ...state, modName: action.name }
     case 'SET_SOURCE_LANG':
@@ -52,7 +72,13 @@ function reducer(state: State, action: Action): State {
     case 'SET_INPUT_PATH':
       return { ...state, inputPath: action.path }
     case 'RESET':
-      return { ...state, phase: 'idle', entries: [], inputPath: null }
+      return {
+        ...state,
+        phase: 'idle',
+        entries: [],
+        selectedUids: new Set<string>(),
+        inputPath: null
+      }
     default:
       return state
   }
@@ -67,6 +93,9 @@ interface TranslationSessionContext extends State {
   ) => Promise<void>
   updateEntry: (uid: string, target: string) => void
   markManual: (uid: string) => void
+  selectEntry: (uid: string, selected: boolean) => void
+  selectEntries: (uids: string[], selected: boolean) => void
+  clearSelection: () => void
   setModName: (name: string) => void
   setSourceLang: (lang: string) => void
   setTargetLang: (lang: string) => void
@@ -86,6 +115,7 @@ export function TranslationSessionProvider({
   const [state, dispatch] = useReducer(reducer, {
     phase: 'idle',
     entries: [],
+    selectedUids: new Set<string>(),
     modName: '',
     sourceLang: DEFAULT_SOURCE,
     targetLang: DEFAULT_TARGET,
@@ -128,6 +158,18 @@ export function TranslationSessionProvider({
     dispatch({ type: 'MARK_MANUAL', uid })
   }, [])
 
+  const selectEntry = useCallback((uid: string, selected: boolean) => {
+    dispatch({ type: 'SELECT_ENTRY', uid, selected })
+  }, [])
+
+  const selectEntries = useCallback((uids: string[], selected: boolean) => {
+    dispatch({ type: 'SELECT_ENTRIES', uids, selected })
+  }, [])
+
+  const clearSelection = useCallback(() => {
+    dispatch({ type: 'CLEAR_SELECTION' })
+  }, [])
+
   const setModName = useCallback((name: string) => {
     dispatch({ type: 'SET_MOD_NAME', name })
   }, [])
@@ -151,6 +193,9 @@ export function TranslationSessionProvider({
         loadSession,
         updateEntry,
         markManual,
+        selectEntry,
+        selectEntries,
+        clearSelection,
         setModName,
         setSourceLang,
         setTargetLang,
