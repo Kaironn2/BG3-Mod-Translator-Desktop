@@ -2,14 +2,16 @@ import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { useTranslationSession } from '@/context/TranslationSession'
-import type { XmlEntry } from '@/types'
+import {
+  type TranslationSessionEntry,
+  useTranslationSession
+} from '@/context/TranslationSession'
 
 export function EntryEditPage(): React.JSX.Element {
   const { uid } = useParams<{ uid: string }>()
   const session = useTranslationSession()
 
-  const entry = session.entries.find((e) => e.uid === uid)
+  const entry = session.entries.find((e) => e.rowId === uid)
 
   if (!entry) return <Navigate to="/translate" replace />
 
@@ -20,7 +22,7 @@ function EntryEditor({
   entry,
   session
 }: {
-  entry: XmlEntry
+  entry: TranslationSessionEntry
   session: ReturnType<typeof useTranslationSession>
 }): React.JSX.Element {
   const navigate = useNavigate()
@@ -39,7 +41,7 @@ function EntryEditor({
         targetLang
       })
       setTarget(result)
-      updateEntry(entry.uid, result)
+      updateEntry(entry.rowId, result)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao traduzir')
     } finally {
@@ -48,8 +50,8 @@ function EntryEditor({
   }
 
   const handleSave = () => {
-    updateEntry(entry.uid, target)
-    markManual(entry.uid)
+    updateEntry(entry.rowId, target)
+    markManual(entry.rowId)
     navigate(-1)
   }
 

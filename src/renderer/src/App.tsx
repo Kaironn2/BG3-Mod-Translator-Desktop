@@ -14,15 +14,15 @@ function App(): React.JSX.Element {
     <HashRouter>
       <Toaster position="bottom-right" theme="dark" richColors />
       <Routes>
-        <Route element={<MainLayout />}>
+        <Route
+          element={
+            <TranslationSessionProvider>
+              <MainLayout />
+            </TranslationSessionProvider>
+          }
+        >
           <Route index element={<Navigate to="/translate" replace />} />
-          <Route
-            element={
-              <TranslationSessionProvider>
-                <Outlet />
-              </TranslationSessionProvider>
-            }
-          >
+          <Route element={<Outlet />}>
             <Route path="/translate" element={<TranslatePage />} />
             <Route path="/translate/entry/:uid" element={<EntryEditPage />} />
           </Route>
