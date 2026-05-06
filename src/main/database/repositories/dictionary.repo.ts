@@ -1,6 +1,7 @@
 import { eq, and, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { dictionary, type DictionaryEntry, type NewDictionaryEntry } from '../schema'
+import { normalizeLangs } from '../../utils/languages'
 
 type AppDb = ReturnType<typeof drizzle>
 
@@ -16,12 +17,6 @@ export interface UpsertParams {
   targetText: string
   modName?: string
   uid?: string
-}
-
-// Invariant: language1 < language2 always - prevents mirrored duplicates
-function normalizeLangs(a: string, b: string): [string, string, swapped: boolean] {
-  const swapped = a > b
-  return swapped ? [b, a, true] : [a, b, false]
 }
 
 export class DictionaryRepository {

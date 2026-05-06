@@ -7,6 +7,7 @@ import { ModRepository } from '../database/repositories/mod.repo'
 import { packMod, unpackMod } from '../services/lslib.service'
 import { findLocalizationXmls } from '../services/xml-parser.service'
 import { extract } from '../services/zip.service'
+import { findPakFiles } from '../utils/findPakFiles'
 
 interface ExtractPayload {
   inputPath: string
@@ -111,14 +112,4 @@ export function registerModHandlers(): void {
       return { storedPath: destPath }
     }
   )
-}
-
-function findPakFiles(dir: string): string[] {
-  const results: string[] = []
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name)
-    if (entry.isDirectory()) results.push(...findPakFiles(full))
-    else if (entry.name.endsWith('.pak')) results.push(full)
-  }
-  return results
 }

@@ -7,10 +7,8 @@ import { dictionary } from '../database/schema'
 import { DictionaryRepository } from '../database/repositories/dictionary.repo'
 import { ModRepository } from '../database/repositories/mod.repo'
 import { findSimilar } from '../services/similarity.service'
-
-function normalizeLangs(a: string, b: string): [string, string] {
-  return a > b ? [b, a] : [a, b]
-}
+import { csvCell, parseCsv } from '../utils/csv'
+import { normalizeLangs } from '../utils/languages'
 
 export function registerDictionaryHandlers(): void {
   ipcMain.handle(
@@ -147,45 +145,4 @@ export function registerDictionaryHandlers(): void {
       return { success: true }
     }
   )
-}
-
-function csvCell(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`
-  }
-  return value
-}
-
-function parseCsv(content: string): Record<string, string>[] {
-  const lines = content.split('\n').filter(Boolean)
-  if (lines.length < 2) return []
-  const headers = lines[0].split(',').map((h) => h.trim())
-  return lines.slice(1).map((line) => {
-    const values = splitCsvLine(line)
-    return Object.fromEntries(headers.map((h, i) => [h, values[i]?.trim() ?? '']))
-  })
-}
-
-function splitCsvLine(line: string): string[] {
-  const result: string[] = []
-  let current = ''
-  let inQuotes = false
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i]
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"'
-        i++
-      } else {
-        inQuotes = !inQuotes
-      }
-    } else if (ch === ',' && !inQuotes) {
-      result.push(current)
-      current = ''
-    } else {
-      current += ch
-    }
-  }
-  result.push(current)
-  return result
 }

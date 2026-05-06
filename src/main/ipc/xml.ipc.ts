@@ -1,7 +1,4 @@
-import { randomUUID } from 'crypto'
 import { ipcMain } from 'electron'
-import fs from 'fs'
-import os from 'os'
 import path from 'path'
 import { getDb } from '../database/connection'
 import { DictionaryRepository } from '../database/repositories/dictionary.repo'
@@ -13,6 +10,8 @@ import {
   writeLocalizationXml
 } from '../services/xml-parser.service'
 import { extract } from '../services/zip.service'
+import { findPakFiles } from '../utils/findPakFiles'
+import { cleanupTempDir, createTempDir } from '../utils/tempDir'
 
 interface XmlEntry {
   uid: string
@@ -37,16 +36,6 @@ function extractTargetText(row: DictionaryEntry, sourceLang: string, targetLang:
   return sourceLang < targetLang ? (row.textLanguage2 ?? '') : (row.textLanguage1 ?? '')
 }
 
-function findPakFiles(dir: string): string[] {
-  const results: string[] = []
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name)
-    if (entry.isDirectory()) results.push(...findPakFiles(full))
-    else if (entry.name.endsWith('.pak')) results.push(full)
-  }
-  return results
-}
-
 async function loadXml(payload: LoadPayload): Promise<XmlEntry[]> {
   const { inputPath, sourceLang, targetLang } = payload
   const ext = path.extname(inputPath).toLowerCase()
@@ -58,19 +47,19 @@ async function loadXml(payload: LoadPayload): Promise<XmlEntry[]> {
     if (ext === '.xml') {
       xmlPath = inputPath
     } else if (ext === '.pak') {
-      const tmpDir = path.join(os.tmpdir(), `icosa_xml_${randomUUID()}`)
+      const tmpDir = createTempDir('icosa_xml')
       tmps.push(tmpDir)
       await unpackMod(inputPath, tmpDir)
       const xmlFiles = findLocalizationXmls(tmpDir, sourceLang)
       if (xmlFiles.length === 0) throw new Error(`No XML found for language "${sourceLang}" in pak`)
       xmlPath = xmlFiles[0]
     } else if (ext === '.zip') {
-      const tmpZip = path.join(os.tmpdir(), `icosa_zip_${randomUUID()}`)
+      const tmpZip = createTempDir('icosa_zip')
       tmps.push(tmpZip)
       extract(inputPath, tmpZip)
       const paks = findPakFiles(tmpZip)
       if (paks.length === 0) throw new Error('No .pak file found inside zip')
-      const tmpPak = path.join(os.tmpdir(), `icosa_pak_${randomUUID()}`)
+      const tmpPak = createTempDir('icosa_pak')
       tmps.push(tmpPak)
       await unpackMod(paks[0], tmpPak)
       const xmlFiles = findLocalizationXmls(tmpPak, sourceLang)
@@ -119,7 +108,7 @@ async function loadXml(payload: LoadPayload): Promise<XmlEntry[]> {
     })
   } finally {
     for (const tmp of tmps) {
-      fs.rm(tmp, { recursive: true, force: true }, () => {})
+      cleanupTempDir(tmp)
     }
   }
 }
