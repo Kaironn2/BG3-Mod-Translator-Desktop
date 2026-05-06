@@ -14,7 +14,7 @@ export class OpenAIPipeline extends BasePipeline {
     text: string,
     sourceLang: string,
     targetLang: string,
-    context: SimilarEntry[]
+    context: SimilarEntry[] = []
   ): Promise<string> {
     return translateText(text, sourceLang, targetLang, this.apiKey, context, this.model)
   }

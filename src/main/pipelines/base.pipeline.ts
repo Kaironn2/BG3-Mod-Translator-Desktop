@@ -48,7 +48,7 @@ export abstract class BasePipeline {
     text: string,
     sourceLang: string,
     targetLang: string,
-    context: SimilarEntry[]
+    context?: SimilarEntry[]
   ): Promise<string>
 
   async run(ctx: PipelineContext): Promise<string> {

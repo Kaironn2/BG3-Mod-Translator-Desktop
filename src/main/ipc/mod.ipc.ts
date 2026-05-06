@@ -1,9 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { app, ipcMain } from 'electron'
-import { getDb } from '../database/connection'
-import { DictionaryRepository } from '../database/repositories/dictionary.repo'
-import { ModRepository } from '../database/repositories/mod.repo'
+import type { RepositoryRegistry } from '../database/repositories/registry'
 import { packMod, unpackMod } from '../services/lslib.service'
 import { findLocalizationXmls } from '../services/xml-parser.service'
 import { extract } from '../services/zip.service'
@@ -32,7 +30,7 @@ function sanitizeModName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)
 }
 
-export function registerModHandlers(): void {
+export function registerModHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle('mod:extract', async (_event, payload: ExtractPayload) => {
     const { inputPath, outputPath, sourceLang = 'English' } = payload
 
@@ -62,16 +60,13 @@ export function registerModHandlers(): void {
   })
 
   ipcMain.handle('mod:getAll', (_event, params?: { lang1?: string; lang2?: string }) => {
-    const db = getDb()
-    const modRepo = new ModRepository(db)
-    const dictRepo = new DictionaryRepository(db)
-    const mods = modRepo.getAll()
+    const mods = repos.mod.getAll()
     const { lang1, lang2 } = params ?? {}
     return mods.map(
       (m): ModInfo => ({
         name: m.name,
         totalStrings: m.totalStrings ?? 0,
-        translatedStrings: lang1 && lang2 ? dictRepo.countByMod(m.name, lang1, lang2) : 0,
+        translatedStrings: lang1 && lang2 ? repos.dictionary.countByMod(m.name, lang1, lang2) : 0,
         lastFilePath: m.lastFilePath ?? null,
         updatedAt: m.updatedAt ?? null
       })
@@ -88,9 +83,7 @@ export function registerModHandlers(): void {
         lastFilePath
       }: { name: string; totalStrings?: number; lastFilePath?: string }
     ) => {
-      const db = getDb()
-      const repo = new ModRepository(db)
-      repo.upsert(name, { totalStrings, lastFilePath })
+      repos.mod.upsert(name, { totalStrings, lastFilePath })
       return { success: true }
     }
   )

@@ -3,6 +3,7 @@ import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import icon from '../../resources/icon.png?asset'
 import { closeDb, getDb } from './database/connection'
+import { createRepositoryRegistry } from './database/repositories/registry'
 import { registerConfigHandlers } from './ipc/config.ipc'
 import { registerDictionaryHandlers } from './ipc/dictionary.ipc'
 import { registerFsHandlers } from './ipc/fs.ipc'
@@ -57,7 +58,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.icosa.bg3-mod-translator')
-  getDb()
+  const repos = createRepositoryRegistry(getDb())
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
@@ -65,9 +66,9 @@ app.whenReady().then(() => {
 
   registerWindowHandlers(getWindow)
   registerTranslationHandlers(getWindow)
-  registerDictionaryHandlers()
-  registerLanguageHandlers()
-  registerModHandlers()
+  registerDictionaryHandlers(repos)
+  registerLanguageHandlers(repos)
+  registerModHandlers(repos)
   registerConfigHandlers()
   registerFsHandlers()
   registerXmlHandlers()

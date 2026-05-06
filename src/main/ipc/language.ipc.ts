@@ -1,11 +1,8 @@
 import { ipcMain } from 'electron'
-import { getDb } from '../database/connection'
-import { LanguageRepository } from '../database/repositories/language.repo'
+import type { RepositoryRegistry } from '../database/repositories/registry'
 
-export function registerLanguageHandlers(): void {
+export function registerLanguageHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle('language:getAll', () => {
-    const db = getDb()
-    const repo = new LanguageRepository(db)
-    return repo.getAll()
+    return repos.language.getAll()
   })
 }

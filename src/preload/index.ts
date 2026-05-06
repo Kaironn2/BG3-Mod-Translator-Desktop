@@ -1,8 +1,7 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import type { IpcRendererEvent } from 'electron'
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-
-type UnsubscribeFn = () => void
+import type { AppApi, UnsubscribeFn } from './api-types'
 
 function on<T>(channel: string, cb: (data: T) => void): UnsubscribeFn {
   const handler = (_: IpcRendererEvent, data: T): void => cb(data)
@@ -10,7 +9,7 @@ function on<T>(channel: string, cb: (data: T) => void): UnsubscribeFn {
   return () => ipcRenderer.removeListener(channel, handler)
 }
 
-const api = {
+const api: AppApi = {
   translation: {
     start: (payload: {
       provider: 'openai' | 'deepl' | 'manual'
