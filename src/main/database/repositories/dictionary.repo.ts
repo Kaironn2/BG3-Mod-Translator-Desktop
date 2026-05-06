@@ -135,6 +135,22 @@ export class DictionaryRepository {
       .all() as DictionaryEntry[]
   }
 
+  countByMod(modName: string, sourceLang: string, targetLang: string): number {
+    const [l1, l2] = normalizeLangs(sourceLang, targetLang)
+    const result = this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(dictionary)
+      .where(
+        and(
+          eq(dictionary.language1, l1),
+          eq(dictionary.language2, l2),
+          eq(dictionary.modName, modName)
+        )
+      )
+      .get() as { count: number } | undefined
+    return result?.count ?? 0
+  }
+
   delete(id: number): void {
     this.db.delete(dictionary).where(eq(dictionary.id, id)).run()
   }

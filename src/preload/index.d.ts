@@ -2,6 +2,7 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   DictionaryEntry,
   Language,
+  ModInfo,
   SimilarEntry,
   TranslationDoneEvent,
   TranslationErrorEvent,
@@ -76,8 +77,13 @@ interface ModApi {
     inputFolder: string
     outputPath: string
   }): Promise<{ success: boolean; pakPath: string }>
-  getAll(): Promise<string[]>
-  upsert(params: { name: string }): Promise<{ success: boolean }>
+  getAll(params?: { lang1?: string; lang2?: string }): Promise<ModInfo[]>
+  upsert(params: {
+    name: string
+    totalStrings?: number
+    lastFilePath?: string
+  }): Promise<{ success: boolean }>
+  storeFile(params: { modName: string; filePath: string }): Promise<{ storedPath: string }>
 }
 
 interface XmlApi {

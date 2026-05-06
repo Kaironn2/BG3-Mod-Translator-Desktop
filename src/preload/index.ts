@@ -109,10 +109,27 @@ const api = {
       outputPath: string
     }): Promise<{ success: boolean; pakPath: string }> => ipcRenderer.invoke('mod:pack', params),
 
-    getAll: (): Promise<string[]> => ipcRenderer.invoke('mod:getAll'),
+    getAll: (params?: {
+      lang1?: string
+      lang2?: string
+    }): Promise<{
+      name: string
+      totalStrings: number
+      translatedStrings: number
+      lastFilePath: string | null
+      updatedAt: string | null
+    }[]> => ipcRenderer.invoke('mod:getAll', params),
 
-    upsert: (params: { name: string }): Promise<{ success: boolean }> =>
-      ipcRenderer.invoke('mod:upsert', params)
+    upsert: (params: {
+      name: string
+      totalStrings?: number
+      lastFilePath?: string
+    }): Promise<{ success: boolean }> => ipcRenderer.invoke('mod:upsert', params),
+
+    storeFile: (params: {
+      modName: string
+      filePath: string
+    }): Promise<{ storedPath: string }> => ipcRenderer.invoke('mod:storeFile', params)
   },
 
   xml: {

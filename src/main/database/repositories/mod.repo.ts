@@ -1,8 +1,13 @@
 import { eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { mod, type Mod } from '../schema'
+import { type Mod, mod } from '../schema'
 
 type AppDb = ReturnType<typeof drizzle>
+
+export interface ModUpsertOptions {
+  totalStrings?: number
+  lastFilePath?: string
+}
 
 export class ModRepository {
   constructor(private db: AppDb) {}
@@ -21,13 +26,18 @@ export class ModRepository {
     ).map((r) => r.name)
   }
 
-  upsert(name: string): void {
+  upsert(name: string, options: ModUpsertOptions = {}): void {
+    const { totalStrings, lastFilePath } = options
     this.db
       .insert(mod)
-      .values({ name })
+      .values({ name, ...options })
       .onConflictDoUpdate({
         target: mod.name,
-        set: { updatedAt: sql`(datetime('now'))` }
+        set: {
+          ...(totalStrings !== undefined && { totalStrings }),
+          ...(lastFilePath !== undefined && { lastFilePath }),
+          updatedAt: sql`(datetime('now'))`
+        }
       })
       .run()
   }

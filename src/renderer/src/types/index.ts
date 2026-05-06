@@ -66,6 +66,14 @@ export interface Language {
   updatedAt: string | null
 }
 
+export interface ModInfo {
+  name: string
+  totalStrings: number
+  translatedStrings: number
+  lastFilePath: string | null
+  updatedAt: string | null
+}
+
 export interface FileFilter {
   name: string
   extensions: string[]
