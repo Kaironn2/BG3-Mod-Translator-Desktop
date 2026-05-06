@@ -108,7 +108,7 @@ export function TranslationGrid({
     )
   }
 
-  const saveEntry = (entry: XmlEntry, value: string) => {
+  const updateEntryTarget = (entry: XmlEntry, value: string) => {
     if (value !== entry.target) {
       onEntryChange(entry.uid, value)
       if (entry.matchType === 'none') onEntryManualEdit(entry.uid)
@@ -116,12 +116,12 @@ export function TranslationGrid({
   }
 
   const handleEntryBlur = (entry: XmlEntry, value: string) => {
-    // Skip if Enter already saved this entry (blur fires right after Enter navigates away)
+    // Skip if Enter already persisted this entry (blur fires right after Enter navigates away)
     if (savedByEnterRef.current.has(entry.uid)) {
       savedByEnterRef.current.delete(entry.uid)
       return
     }
-    saveEntry(entry, value)
+    updateEntryTarget(entry, value)
   }
 
   const handleEnterKey = (
@@ -132,7 +132,7 @@ export function TranslationGrid({
     e.preventDefault()
 
     const value = e.currentTarget.value
-    saveEntry(entry, value)
+    updateEntryTarget(entry, value)
     savedByEnterRef.current.add(entry.uid)
 
     // Persist to database only if value is non-empty
@@ -156,7 +156,12 @@ export function TranslationGrid({
     count: number
     dot?: string
   }[] = [
-    { mode: 'untranslated', label: 'Nao traduzidas', count: counts.untranslated, dot: 'bg-slate-500' },
+    {
+      mode: 'untranslated',
+      label: 'Nao traduzidas',
+      count: counts.untranslated,
+      dot: 'bg-slate-500'
+    },
     { mode: 'translated', label: 'Traduzidas', count: counts.translated, dot: 'bg-amber-400' },
     { mode: 'dictionary', label: 'Com dicionario', count: counts.dictionary, dot: 'bg-blue-500' },
     { mode: 'tags', label: 'Com tags XML', count: counts.tags, dot: 'bg-amber-500' }
@@ -187,10 +192,10 @@ export function TranslationGrid({
           type="button"
           onClick={() => setFilter('all')}
           className={cn(
-            'flex h-8 items-center gap-2 rounded-md border px-3 text-xs font-semibold transition-colors',
+            'flex h-8 cursor-pointer items-center gap-2 rounded-md border px-3 text-xs font-semibold transition-colors focus:outline-none focus-visible:border-[#2a2f37] focus-visible:bg-[#181b1f] focus-visible:text-neutral-100',
             filter === 'all'
               ? 'border-[#2a2f37] bg-[#181b1f] text-neutral-100'
-              : 'border-transparent text-neutral-400 hover:text-neutral-200'
+              : 'border-transparent text-neutral-400 hover:border-[#2a2f37] hover:bg-[#181b1f] hover:text-neutral-200'
           )}
         >
           Todas
@@ -207,8 +212,10 @@ export function TranslationGrid({
               type="button"
               onClick={() => setFilter(item.mode)}
               className={cn(
-                'flex h-8 items-center gap-2 rounded-md border border-transparent px-1 text-xs font-semibold transition-colors',
-                active ? 'text-neutral-100' : 'text-neutral-400 hover:text-neutral-200'
+                'flex h-8 cursor-pointer items-center gap-2 rounded-md border px-2 text-xs font-semibold transition-colors focus:outline-none focus-visible:border-[#2a2f37] focus-visible:bg-[#181b1f] focus-visible:text-neutral-100',
+                active
+                  ? 'border-[#2a2f37] bg-[#181b1f] text-neutral-100'
+                  : 'border-transparent text-neutral-400 hover:border-[#2a2f37] hover:bg-[#181b1f] hover:text-neutral-200'
               )}
             >
               <span className={cn('inline-block h-1.5 w-1.5 rounded-full shrink-0', item.dot)} />
@@ -332,7 +339,8 @@ export function TranslationGrid({
                       if (el) textareaRefs.current.set(entry.uid, el)
                       else textareaRefs.current.delete(entry.uid)
                     }}
-                    defaultValue={entry.target}
+                    value={entry.target}
+                    onChange={(e) => updateEntryTarget(entry, e.target.value)}
                     onFocus={() => setFocusedUid(entry.uid)}
                     onBlur={(e) => handleEntryBlur(entry, e.target.value)}
                     onKeyDown={(e) => handleEnterKey(e, entry)}
@@ -554,7 +562,8 @@ export function TranslationGrid({
                         if (el) textareaRefs.current.set(entry.uid, el)
                         else textareaRefs.current.delete(entry.uid)
                       }}
-                      defaultValue={entry.target}
+                      value={entry.target}
+                      onChange={(e) => updateEntryTarget(entry, e.target.value)}
                       onFocus={() => setFocusedUid(entry.uid)}
                       onBlur={(e) => handleEntryBlur(entry, e.target.value)}
                       onKeyDown={(e) => handleEnterKey(e, entry)}
