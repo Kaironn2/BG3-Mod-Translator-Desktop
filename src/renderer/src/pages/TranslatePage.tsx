@@ -689,16 +689,16 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
 
 
   const handleEntryManualEdit = useCallback(
-    (uid: string) => {
-      session.markManual(uid)
+    (rowId: string) => {
+      session.markManual(rowId)
     },
     [session]
   )
 
   const handleEntrySave = useCallback(
-    async (uid: string, target: string) => {
+    async (rowId: string, target: string) => {
       if (!target.trim()) return
-      const entry = session.entries.find((e) => e.uid === uid)
+      const entry = session.entries.find((e) => e.rowId === rowId)
       if (!entry) return
       try {
         await window.api.dictionary.upsert({
@@ -707,7 +707,7 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
           textLanguage1: entry.source,
           textLanguage2: target,
           modName: session.modName || null,
-          uid: uid || null
+          uid: entry.uid || null
         })
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Erro ao salvar entrada')
@@ -719,8 +719,8 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
   const handleBatchTranslate = useCallback(
     async (provider: 'openai' | 'deepl') => {
       const selectedEntries = session.entries
-        .filter((e) => session.selectedUids.has(e.uid))
-        .map((e) => ({ uid: e.uid, source: e.source }))
+        .filter((e) => session.selectedUids.has(e.rowId))
+        .map((e) => ({ uid: e.rowId, source: e.source }))
 
       setIsBatchTranslating(true)
 

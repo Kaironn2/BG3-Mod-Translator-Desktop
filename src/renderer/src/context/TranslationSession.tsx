@@ -1,11 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useReducer } from 'react'
 import type { XmlEntry } from '@/types'
 
+export interface TranslationSessionEntry extends XmlEntry {
+  rowId: string
+}
+
 type Phase = 'idle' | 'loading' | 'loaded'
 
 interface State {
   phase: Phase
-  entries: XmlEntry[]
+  entries: TranslationSessionEntry[]
   selectedUids: Set<string>
   modName: string
   sourceLang: string
@@ -15,11 +19,11 @@ interface State {
 
 type Action =
   | { type: 'SET_PHASE'; phase: Phase }
-  | { type: 'SET_ENTRIES'; entries: XmlEntry[] }
-  | { type: 'UPDATE_ENTRY'; uid: string; target: string }
-  | { type: 'MARK_MANUAL'; uid: string }
-  | { type: 'SELECT_ENTRY'; uid: string; selected: boolean }
-  | { type: 'SELECT_ENTRIES'; uids: string[]; selected: boolean }
+  | { type: 'SET_ENTRIES'; entries: TranslationSessionEntry[] }
+  | { type: 'UPDATE_ENTRY'; rowId: string; target: string }
+  | { type: 'MARK_MANUAL'; rowId: string }
+  | { type: 'SELECT_ENTRY'; rowId: string; selected: boolean }
+  | { type: 'SELECT_ENTRIES'; rowIds: string[]; selected: boolean }
   | { type: 'CLEAR_SELECTION' }
   | { type: 'SET_MOD_NAME'; name: string }
   | { type: 'SET_SOURCE_LANG'; lang: string }
@@ -37,27 +41,27 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         entries: state.entries.map((e) =>
-          e.uid === action.uid ? { ...e, target: action.target } : e
+          e.rowId === action.rowId ? { ...e, target: action.target } : e
         )
       }
     case 'MARK_MANUAL':
       return {
         ...state,
         entries: state.entries.map((e) =>
-          e.uid === action.uid ? { ...e, matchType: 'manual' } : e
+          e.rowId === action.rowId ? { ...e, matchType: 'manual' } : e
         )
       }
     case 'SELECT_ENTRY': {
       const selectedUids = new Set(state.selectedUids)
-      if (action.selected) selectedUids.add(action.uid)
-      else selectedUids.delete(action.uid)
+      if (action.selected) selectedUids.add(action.rowId)
+      else selectedUids.delete(action.rowId)
       return { ...state, selectedUids }
     }
     case 'SELECT_ENTRIES': {
       const selectedUids = new Set(state.selectedUids)
-      for (const uid of action.uids) {
-        if (action.selected) selectedUids.add(uid)
-        else selectedUids.delete(uid)
+      for (const rowId of action.rowIds) {
+        if (action.selected) selectedUids.add(rowId)
+        else selectedUids.delete(rowId)
       }
       return { ...state, selectedUids }
     }
@@ -91,10 +95,10 @@ interface TranslationSessionContext extends State {
     targetLang: string,
     modName: string
   ) => Promise<void>
-  updateEntry: (uid: string, target: string) => void
-  markManual: (uid: string) => void
-  selectEntry: (uid: string, selected: boolean) => void
-  selectEntries: (uids: string[], selected: boolean) => void
+  updateEntry: (rowId: string, target: string) => void
+  markManual: (rowId: string) => void
+  selectEntry: (rowId: string, selected: boolean) => void
+  selectEntries: (rowIds: string[], selected: boolean) => void
   clearSelection: () => void
   setModName: (name: string) => void
   setSourceLang: (lang: string) => void
@@ -145,25 +149,28 @@ export function TranslationSessionProvider({
           lastFilePath: storedPath
         })
       }
-      dispatch({ type: 'SET_ENTRIES', entries })
+      dispatch({
+        type: 'SET_ENTRIES',
+        entries: entries.map((entry, index) => ({ ...entry, rowId: `row-${index}` }))
+      })
     },
     []
   )
 
-  const updateEntry = useCallback((uid: string, target: string) => {
-    dispatch({ type: 'UPDATE_ENTRY', uid, target })
+  const updateEntry = useCallback((rowId: string, target: string) => {
+    dispatch({ type: 'UPDATE_ENTRY', rowId, target })
   }, [])
 
-  const markManual = useCallback((uid: string) => {
-    dispatch({ type: 'MARK_MANUAL', uid })
+  const markManual = useCallback((rowId: string) => {
+    dispatch({ type: 'MARK_MANUAL', rowId })
   }, [])
 
-  const selectEntry = useCallback((uid: string, selected: boolean) => {
-    dispatch({ type: 'SELECT_ENTRY', uid, selected })
+  const selectEntry = useCallback((rowId: string, selected: boolean) => {
+    dispatch({ type: 'SELECT_ENTRY', rowId, selected })
   }, [])
 
-  const selectEntries = useCallback((uids: string[], selected: boolean) => {
-    dispatch({ type: 'SELECT_ENTRIES', uids, selected })
+  const selectEntries = useCallback((rowIds: string[], selected: boolean) => {
+    dispatch({ type: 'SELECT_ENTRIES', rowIds, selected })
   }, [])
 
   const clearSelection = useCallback(() => {
