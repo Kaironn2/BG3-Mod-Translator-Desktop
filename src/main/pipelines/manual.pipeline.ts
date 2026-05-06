@@ -9,7 +9,7 @@ export class ManualPipeline extends BasePipeline {
     _text: string,
     _sourceLang: string,
     _targetLang: string,
-    context: SimilarEntry[]
+    context: SimilarEntry[] = []
   ): Promise<string> {
     // Return the top similarity match if score is good enough, otherwise blank.
     const best = context[0]

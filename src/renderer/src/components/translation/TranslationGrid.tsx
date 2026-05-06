@@ -1,7 +1,10 @@
 import { AlertTriangle, BookOpen, Check, Search, Sparkles, X } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
+import { useTranslationSession } from '@/context/TranslationSession'
+import { CAT, type TranslationCategory } from '@/lib/categories'
 import { cn } from '@/lib/utils'
 import type { XmlEntry } from '@/types'
+import { renderSource } from '@/utils/renderSource'
 
 type FilterMode = 'all' | 'dictionary' | 'tool' | 'manual'
 
@@ -10,81 +13,14 @@ interface TranslationGridProps {
   onEntryChange: (uid: string, target: string) => void
   onEntryManualEdit: (uid: string) => void
   onEntrySave: (uid: string, target: string) => void
-  selectedUids: Set<string>
-  onSelectionChange: (uid: string, selected: boolean) => void
-  onSelectAll: (uids: string[], selected: boolean) => void
   viewMode: 'stacked' | 'side'
 }
 
-function getCategory(entry: XmlEntry): 'dictionary' | 'tool' | 'manual' | 'none' {
+function getCategory(entry: XmlEntry): TranslationCategory {
   if (entry.matchType === 'uid' || entry.matchType === 'text') return 'dictionary'
   if (entry.matchType === 'manual') return 'manual'
   if (entry.target.trim()) return 'tool'
   return 'none'
-}
-
-const CAT = {
-  dictionary: {
-    text: 'text-blue-400',
-    badge: 'bg-blue-950/60 text-blue-400',
-    chipActive: 'bg-blue-900/50 border-blue-500/50 text-blue-300',
-    chipIdle: 'border-transparent text-blue-500/70 hover:text-blue-400 hover:border-blue-700/50',
-    label: 'Dicionário',
-  },
-  tool: {
-    text: 'text-emerald-400',
-    badge: 'bg-emerald-950/60 text-emerald-400',
-    chipActive: 'bg-emerald-900/50 border-emerald-500/50 text-emerald-300',
-    chipIdle:
-      'border-transparent text-emerald-500/70 hover:text-emerald-400 hover:border-emerald-700/50',
-    label: 'Ferramentas',
-  },
-  manual: {
-    text: 'text-yellow-400',
-    badge: 'bg-yellow-950/60 text-yellow-400',
-    chipActive: 'bg-yellow-900/50 border-yellow-500/50 text-yellow-300',
-    chipIdle:
-      'border-transparent text-yellow-500/70 hover:text-yellow-400 hover:border-yellow-700/50',
-    label: 'Manual',
-  },
-  none: {
-    text: 'text-neutral-600',
-    badge: '',
-    chipActive: '',
-    chipIdle: '',
-    label: '',
-  },
-}
-
-// Highlights <xml tags> and {placeholders} in source text
-function renderSource(text: string): React.ReactNode {
-  const parts: React.ReactNode[] = []
-  let lastIndex = 0
-  const re = /(<[^>]+>|\{[^}]+\})/g
-  let match: RegExpExecArray | null
-  while ((match = re.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(<span key={`t${lastIndex}`}>{text.slice(lastIndex, match.index)}</span>)
-    }
-    const isTag = match[0].startsWith('<')
-    parts.push(
-      <span
-        key={`m${match.index}`}
-        className={
-          isTag
-            ? 'bg-purple-500/14 text-purple-300 px-1 py-px rounded-sm text-[0.92em]'
-            : 'bg-amber-500/14 text-amber-400 px-1 py-px rounded-sm text-[0.92em]'
-        }
-      >
-        {match[0]}
-      </span>
-    )
-    lastIndex = match.index + match[0].length
-  }
-  if (lastIndex < text.length) {
-    parts.push(<span key={`t${lastIndex}`}>{text.slice(lastIndex)}</span>)
-  }
-  return parts.length > 0 ? parts : text
 }
 
 function KbdHint({ children }: { children: React.ReactNode }) {
@@ -116,11 +52,9 @@ export function TranslationGrid({
   onEntryChange,
   onEntryManualEdit,
   onEntrySave,
-  selectedUids,
-  onSelectionChange,
-  onSelectAll,
-  viewMode,
+  viewMode
 }: TranslationGridProps): React.JSX.Element {
+  const { selectedUids, selectEntry, selectEntries } = useTranslationSession()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterMode>('all')
   const [focusedUid, setFocusedUid] = useState<string | null>(null)
@@ -154,7 +88,7 @@ export function TranslationGrid({
     filteredEntries.length > 0 && filteredEntries.every((e) => selectedUids.has(e.uid))
 
   const handleSelectAll = (checked: boolean) => {
-    onSelectAll(
+    selectEntries(
       filteredEntries.map((e) => e.uid),
       checked
     )
@@ -315,7 +249,7 @@ export function TranslationGrid({
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    onChange={(e) => onSelectionChange(entry.uid, e.target.checked)}
+                    onChange={(e) => selectEntry(entry.uid, e.target.checked)}
                     onClick={(e) => e.stopPropagation()}
                     className="accent-amber-500 cursor-pointer"
                   />
@@ -459,7 +393,7 @@ export function TranslationGrid({
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      onChange={(e) => onSelectionChange(entry.uid, e.target.checked)}
+                      onChange={(e) => selectEntry(entry.uid, e.target.checked)}
                       onClick={(e) => e.stopPropagation()}
                       className="accent-amber-500 cursor-pointer"
                     />

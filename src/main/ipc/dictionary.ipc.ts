@@ -2,33 +2,26 @@ import { ipcMain } from 'electron'
 import { and, eq, like, or } from 'drizzle-orm'
 import fs from 'fs'
 import path from 'path'
-import { getDb } from '../database/connection'
 import { dictionary } from '../database/schema'
-import { DictionaryRepository } from '../database/repositories/dictionary.repo'
-import { ModRepository } from '../database/repositories/mod.repo'
+import type { RepositoryRegistry } from '../database/repositories/registry'
 import { findSimilar } from '../services/similarity.service'
+import { csvCell, parseCsv } from '../utils/csv'
+import { normalizeLangs } from '../utils/languages'
 
-function normalizeLangs(a: string, b: string): [string, string] {
-  return a > b ? [b, a] : [a, b]
-}
-
-export function registerDictionaryHandlers(): void {
+export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle(
     'dictionary:getAll',
     (_event, { lang1, lang2 }: { lang1: string; lang2: string }) => {
-      const db = getDb()
-      const repo = new DictionaryRepository(db)
-      return repo.getAll(lang1, lang2)
+      return repos.dictionary.getAll(lang1, lang2)
     }
   )
 
   ipcMain.handle(
     'dictionary:search',
     (_event, { text, lang1, lang2 }: { text: string; lang1: string; lang2: string }) => {
-      const db = getDb()
       const [l1, l2] = normalizeLangs(lang1, lang2)
       const pattern = `%${text}%`
-      return db
+      return repos.db
         .select()
         .from(dictionary)
         .where(
@@ -55,9 +48,7 @@ export function registerDictionaryHandlers(): void {
         uid?: string | null
       }
     ) => {
-      const db = getDb()
-      const repo = new DictionaryRepository(db)
-      repo.upsert({
+      repos.dictionary.upsert({
         sourceLang: entry.language1,
         targetLang: entry.language2,
         sourceText: entry.textLanguage1,
@@ -70,9 +61,7 @@ export function registerDictionaryHandlers(): void {
   )
 
   ipcMain.handle('dictionary:delete', (_event, { id }: { id: number }) => {
-    const db = getDb()
-    const repo = new DictionaryRepository(db)
-    repo.delete(id)
+    repos.dictionary.delete(id)
     return { success: true }
   })
 
@@ -82,9 +71,7 @@ export function registerDictionaryHandlers(): void {
       _event,
       { text, lang1, lang2, limit }: { text: string; lang1: string; lang2: string; limit?: number }
     ) => {
-      const db = getDb()
-      const repo = new DictionaryRepository(db)
-      const corpus = repo.getAllForSimilarity(lang1, lang2)
+      const corpus = repos.dictionary.getAllForSimilarity(lang1, lang2)
       return findSimilar(text, corpus, limit ?? 5)
     }
   )
@@ -93,15 +80,12 @@ export function registerDictionaryHandlers(): void {
     'dictionary:import',
     (_event, { filePath, format }: { filePath: string; format: 'csv' | 'xlsx' }) => {
       if (format === 'xlsx') throw new Error('XLSX import not yet supported')
-      const db = getDb()
-      const repo = new DictionaryRepository(db)
-      const modRepo = new ModRepository(db)
       const rows = parseCsv(fs.readFileSync(filePath, 'utf-8'))
       let count = 0
       for (const row of rows) {
         if (!row.language1 || !row.language2 || !row.text_language1 || !row.text_language2) continue
-        if (row.mod_name) modRepo.upsert(row.mod_name)
-        repo.upsert({
+        if (row.mod_name) repos.mod.upsert(row.mod_name)
+        repos.dictionary.upsert({
           sourceLang: row.language1,
           targetLang: row.language2,
           sourceText: row.text_language1,
@@ -127,9 +111,7 @@ export function registerDictionaryHandlers(): void {
       }: { lang1: string; lang2: string; format: 'csv' | 'xlsx'; outputPath: string }
     ) => {
       if (format === 'xlsx') throw new Error('XLSX export not yet supported')
-      const db = getDb()
-      const repo = new DictionaryRepository(db)
-      const entries = repo.getAll(lang1, lang2)
+      const entries = repos.dictionary.getAll(lang1, lang2)
       const header = 'id,language1,language2,text_language1,text_language2,mod_name,uid'
       const lines = entries.map((e) =>
         [
@@ -147,45 +129,4 @@ export function registerDictionaryHandlers(): void {
       return { success: true }
     }
   )
-}
-
-function csvCell(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`
-  }
-  return value
-}
-
-function parseCsv(content: string): Record<string, string>[] {
-  const lines = content.split('\n').filter(Boolean)
-  if (lines.length < 2) return []
-  const headers = lines[0].split(',').map((h) => h.trim())
-  return lines.slice(1).map((line) => {
-    const values = splitCsvLine(line)
-    return Object.fromEntries(headers.map((h, i) => [h, values[i]?.trim() ?? '']))
-  })
-}
-
-function splitCsvLine(line: string): string[] {
-  const result: string[] = []
-  let current = ''
-  let inQuotes = false
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i]
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"'
-        i++
-      } else {
-        inQuotes = !inQuotes
-      }
-    } else if (ch === ',' && !inQuotes) {
-      result.push(current)
-      current = ''
-    } else {
-      current += ch
-    }
-  }
-  result.push(current)
-  return result
 }

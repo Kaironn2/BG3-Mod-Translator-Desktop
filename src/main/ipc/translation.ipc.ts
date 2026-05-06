@@ -9,6 +9,7 @@ import { ManualPipeline } from '../pipelines/manual.pipeline'
 import { OpenAIPipeline } from '../pipelines/openai.pipeline'
 import { translateBatch as translateDeepLBatch, translateText as translateDeepL } from '../services/deepl.service'
 import { translateText as translateOpenAI } from '../services/openai.service'
+import { getActiveWindow } from '../utils/window'
 
 export type TranslationProvider = 'openai' | 'deepl' | 'manual'
 
@@ -45,8 +46,8 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
       })
       .catch((err: Error) => {
         activeJobs.delete(jobId)
-        const win = getWindow()
-        if (win && !win.isDestroyed()) {
+        const win = getActiveWindow(getWindow)
+        if (win) {
           win.webContents.send('translation:error', {
             jobId,
             message: err.message ?? String(err)
@@ -99,8 +100,8 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
       const { entries, provider, sourceLang, targetLang } = payload
       const apiKey = readApiKey(provider)
       if (!apiKey) {
-        const win = getWindow()
-        if (win && !win.isDestroyed()) {
+        const win = getActiveWindow(getWindow)
+        if (win) {
           win.webContents.send('translation:batchProgress', {
             uid: '',
             target: null,
@@ -115,8 +116,8 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
         const texts = entries.map((e) => e.source)
         try {
           const translated = await translateDeepLBatch(texts, sourceLang, targetLang, apiKey)
-          const win = getWindow()
-          if (win && !win.isDestroyed()) {
+          const win = getActiveWindow(getWindow)
+          if (win) {
             for (let i = 0; i < entries.length; i++) {
               win.webContents.send('translation:batchProgress', {
                 uid: entries[i].uid,
@@ -125,8 +126,8 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
             }
           }
         } catch (err) {
-          const win = getWindow()
-          if (win && !win.isDestroyed()) {
+          const win = getActiveWindow(getWindow)
+          if (win) {
             win.webContents.send('translation:batchProgress', {
               uid: '',
               target: null,
@@ -139,16 +140,16 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
         await runConcurrent(entries, 10, async (entry) => {
           try {
             const translated = await translateOpenAI(entry.source, sourceLang, targetLang, apiKey)
-            const win = getWindow()
-            if (win && !win.isDestroyed()) {
+            const win = getActiveWindow(getWindow)
+            if (win) {
               win.webContents.send('translation:batchProgress', {
                 uid: entry.uid,
                 target: translated
               })
             }
           } catch (err) {
-            const win = getWindow()
-            if (win && !win.isDestroyed()) {
+            const win = getActiveWindow(getWindow)
+            if (win) {
               win.webContents.send('translation:batchProgress', {
                 uid: entry.uid,
                 target: null,

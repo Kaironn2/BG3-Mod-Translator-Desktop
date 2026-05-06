@@ -1,34 +1,47 @@
-# bg3-mod-translator
+# Icosa - BG3 Mod Translator
 
-An Electron application with React and TypeScript
+Desktop application for translating Baldur's Gate 3 mods. Built with Electron, React 19 and TypeScript on the electron-vite scaffold.
 
-## Recommended IDE Setup
+For full architectural context, IPC surface, hot spots and conventions, see [CLAUDE.md](CLAUDE.md). For the active refactoring plan, see [REFACTORING.md](REFACTORING.md).
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+## Recommended IDE setup
 
-## Project Setup
+- [VSCode](https://code.visualstudio.com/) with the [Biome](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) extension. Biome replaces ESLint and Prettier in this project, so do not install or enable them.
 
-### Install
+## Runtime requirements
 
-```bash
-$ pnpm install
-```
+- Node.js 20+
+- pnpm
+- **.NET 8.0 runtime** on the host machine - required by the bundled `Divine.exe` (LSLib) used to pack and unpack `.pak` files.
 
-### Development
-
-```bash
-$ pnpm dev
-```
-
-### Build
+## Setup
 
 ```bash
-# For windows
-$ pnpm build:win
-
-# For macOS
-$ pnpm build:mac
-
-# For Linux
-$ pnpm build:linux
+pnpm install
 ```
+
+## Development
+
+```bash
+pnpm dev               # Start Electron + Vite HMR
+pnpm typecheck         # Run both node and web typechecks
+pnpm lint              # Biome lint
+pnpm format            # Biome auto-format
+pnpm db:studio         # Open Drizzle Studio (DB GUI)
+```
+
+After changing the Drizzle schema, generate a new migration:
+
+```bash
+pnpm drizzle-kit generate
+```
+
+## Build
+
+```bash
+pnpm build:win         # Windows installer
+pnpm build:mac         # macOS bundle
+pnpm build:linux       # Linux package
+```
+
+`pnpm build` runs typecheck and produces an unpacked build without an installer.

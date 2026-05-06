@@ -1,6 +1,5 @@
 import fs from 'fs'
 import path from 'path'
-import os from 'os'
 import { BrowserWindow } from 'electron'
 import { getDb } from '../database/connection'
 import { DictionaryRepository } from '../database/repositories/dictionary.repo'
@@ -16,6 +15,9 @@ import {
 import { createMeta, readAttributeValue } from '../services/lsx-parser.service'
 import { findSimilar, type SimilarEntry } from '../services/similarity.service'
 import type { SimilarityRow } from '../database/repositories/dictionary.repo'
+import { findPakFiles } from '../utils/findPakFiles'
+import { cleanupTempDir, createTempDir } from '../utils/tempDir'
+import { getActiveWindow } from '../utils/window'
 
 export interface PipelineOptions {
   filePath: string
@@ -46,7 +48,7 @@ export abstract class BasePipeline {
     text: string,
     sourceLang: string,
     targetLang: string,
-    context: SimilarEntry[]
+    context?: SimilarEntry[]
   ): Promise<string>
 
   async run(ctx: PipelineContext): Promise<string> {
@@ -55,8 +57,8 @@ export abstract class BasePipeline {
     this.dictRepo = new DictionaryRepository(db)
     this.modRepo = new ModRepository(db)
 
-    const tmpDir = path.join(os.tmpdir(), `icosa_${ctx.jobId}`)
-    const outDir = path.join(os.tmpdir(), `icosa_${ctx.jobId}_out`)
+    const tmpDir = createTempDir(`icosa_${ctx.jobId}`)
+    const outDir = createTempDir(`icosa_${ctx.jobId}_out`)
 
     try {
       // XML files are translated directly without pack/unpack
@@ -129,8 +131,8 @@ export abstract class BasePipeline {
       this.emitDone(finalZip)
       return finalZip
     } finally {
-      fs.rm(tmpDir, { recursive: true, force: true }, () => {})
-      fs.rm(outDir, { recursive: true, force: true }, () => {})
+      cleanupTempDir(tmpDir)
+      cleanupTempDir(outDir)
     }
   }
 
@@ -285,8 +287,8 @@ export abstract class BasePipeline {
   }
 
   private emitProgress(current: number, total: number, source: string, target: string): void {
-    const win = this.ctx.getWindow()
-    if (win && !win.isDestroyed()) {
+    const win = getActiveWindow(this.ctx.getWindow)
+    if (win) {
       win.webContents.send('translation:progress', {
         jobId: this.ctx.jobId,
         current,
@@ -298,24 +300,14 @@ export abstract class BasePipeline {
   }
 
   private emitDone(outputPath: string): void {
-    const win = this.ctx.getWindow()
-    if (win && !win.isDestroyed()) {
+    const win = getActiveWindow(this.ctx.getWindow)
+    if (win) {
       win.webContents.send('translation:done', { jobId: this.ctx.jobId, outputPath })
     }
   }
 }
 
 // --- module-level helpers (no state, no side effects) ---
-
-function findPakFiles(dir: string): string[] {
-  const results: string[] = []
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name)
-    if (entry.isDirectory()) results.push(...findPakFiles(full))
-    else if (entry.name.endsWith('.pak')) results.push(full)
-  }
-  return results
-}
 
 function findMetaLsx(dir: string): string | null {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

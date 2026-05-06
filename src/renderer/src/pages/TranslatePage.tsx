@@ -1,174 +1,30 @@
-import { Loader2 } from 'lucide-react'
+import { ArrowRight, Check, ChevronDown, ChevronRight, Columns2, Download, File, Focus, Loader2, Redo2, Rows2, Save, Search, Undo2, Upload, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { BatchActionBar } from '@/components/translation/BatchActionBar'
 import { TranslationGrid } from '@/components/translation/TranslationGrid'
 import { useTranslationSession } from '@/context/TranslationSession'
+import { useClickOutside } from '@/hooks/useClickOutside'
 import { cn } from '@/lib/utils'
 import type { Language, ModInfo } from '@/types'
 
-// ----- Inline SVG icons -----
+// ----- Icons -----
 
-function SvgIcon({
-  children,
-  size = 14,
-  className
-}: {
-  children: React.ReactNode
-  size?: number
-  className?: string
-}) {
-  return (
-    <svg
-      aria-hidden="true"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      {children}
-    </svg>
-  )
-}
-
-function IconUndo({ size = 14 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M9 14l-4-4 4-4" />
-      <path d="M5 10h9a5 5 0 015 5v1" />
-    </SvgIcon>
-  )
-}
-function IconRedo({ size = 14 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M15 14l4-4-4-4" />
-      <path d="M19 10h-9a5 5 0 00-5 5v1" />
-    </SvgIcon>
-  )
-}
-function IconFocusMode({ size = 14 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" />
-      <circle cx="12" cy="12" r="3" />
-    </SvgIcon>
-  )
-}
-function IconFile({ size = 14 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z" />
-      <path d="M14 3v6h6" />
-    </SvgIcon>
-  )
-}
-function IconSave({ size = 14 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-      <path d="M17 21v-8H7v8M7 3v5h8" />
-    </SvgIcon>
-  )
-}
-function IconExport({ size = 14 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5-5 5 5M12 5v12" />
-    </SvgIcon>
-  )
-}
-function IconChevR({ size = 12 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M9 6l6 6-6 6" />
-    </SvgIcon>
-  )
-}
-function IconArrow({ size = 20 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </SvgIcon>
-  )
-}
-function IconCheck({ size = 11 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M20 6L9 17l-5-5" />
-    </SvgIcon>
-  )
-}
-function IconChevDown({ size = 12 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M6 9l6 6 6-6" />
-    </SvgIcon>
-  )
-}
-function IconSearch({ size = 12 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <circle cx="11" cy="11" r="8" />
-      <path d="M21 21l-4.35-4.35" />
-    </SvgIcon>
-  )
-}
-function IconUpload({ size = 22 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-      <polyline points="17 8 12 3 7 8" />
-      <line x1="12" y1="3" x2="12" y2="15" />
-    </SvgIcon>
-  )
-}
-function IconX({ size = 14 }: { size?: number }) {
-  return (
-    <SvgIcon size={size}>
-      <path d="M18 6L6 18M6 6l12 12" />
-    </SvgIcon>
-  )
-}
-
-function IconSplitLayout() {
-  return (
-    <svg
-      aria-hidden="true"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
-      <rect x="3" y="4" width="8" height="16" rx="1" />
-      <rect x="13" y="4" width="8" height="16" rx="1" />
-    </svg>
-  )
-}
-function IconStackLayout() {
-  return (
-    <svg
-      aria-hidden="true"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-    >
-      <rect x="3" y="4" width="18" height="7" rx="1" />
-      <rect x="3" y="13" width="18" height="7" rx="1" />
-    </svg>
-  )
-}
-
+const IconUndo = Undo2
+const IconRedo = Redo2
+const IconFocusMode = Focus
+const IconFile = File
+const IconSave = Save
+const IconExport = Download
+const IconChevR = ChevronRight
+const IconArrow = ArrowRight
+const IconCheck = Check
+const IconChevDown = ChevronDown
+const IconSearch = Search
+const IconUpload = Upload
+const IconX = X
+const IconSplitLayout = Columns2
+const IconStackLayout = Rows2
 // ----- Button helpers -----
 
 const btnBase =
@@ -235,17 +91,14 @@ function LangPicker({
       l.code.toLowerCase().includes(query.toLowerCase())
   )
 
-  useEffect(() => {
-    if (!open) return
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-        setQuery('')
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
+  useClickOutside(
+    ref,
+    () => {
+      setOpen(false)
+      setQuery('')
+    },
+    open
+  )
 
   return (
     <div ref={ref} className="relative">
@@ -815,7 +668,6 @@ interface LoadedPhaseProps {
 }
 
 function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
-  const [selectedUids, setSelectedUids] = useState<Set<string>>(new Set())
   const [isBatchTranslating, setIsBatchTranslating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [viewMode, setViewMode] = useState<'side' | 'stacked'>('side')
@@ -834,29 +686,6 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
     ? (session.inputPath.split(/[\\/]/).pop() ?? session.modName)
     : session.modName || 'arquivo.xml'
 
-  const handleSelectionChange = useCallback((uid: string, selected: boolean) => {
-    setSelectedUids((prev) => {
-      const next = new Set(prev)
-      if (selected) next.add(uid)
-      else next.delete(uid)
-      return next
-    })
-  }, [])
-
-  const handleSelectAll = useCallback((uids: string[], selected: boolean) => {
-    setSelectedUids((prev) => {
-      const next = new Set(prev)
-      if (selected)
-        uids.forEach((uid) => {
-          next.add(uid)
-        })
-      else
-        uids.forEach((uid) => {
-          next.delete(uid)
-        })
-      return next
-    })
-  }, [])
 
   const handleEntryManualEdit = useCallback(
     (uid: string) => {
@@ -889,7 +718,7 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
   const handleBatchTranslate = useCallback(
     async (provider: 'openai' | 'deepl') => {
       const selectedEntries = session.entries
-        .filter((e) => selectedUids.has(e.uid))
+        .filter((e) => session.selectedUids.has(e.uid))
         .map((e) => ({ uid: e.uid, source: e.source }))
 
       setIsBatchTranslating(true)
@@ -917,10 +746,10 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
         batchUnsubRef.current?.()
         batchUnsubRef.current = null
         setIsBatchTranslating(false)
-        setSelectedUids(new Set())
+        session.clearSelection()
       }
     },
-    [session, selectedUids]
+    [session]
   )
 
   const handleSave = async () => {
@@ -1116,18 +945,15 @@ function LoadedPhase({ session }: LoadedPhaseProps): React.JSX.Element {
           onEntryChange={session.updateEntry}
           onEntryManualEdit={handleEntryManualEdit}
           onEntrySave={handleEntrySave}
-          selectedUids={selectedUids}
-          onSelectionChange={handleSelectionChange}
-          onSelectAll={handleSelectAll}
           viewMode={viewMode}
         />
       </div>
 
       <BatchActionBar
-        selectedCount={selectedUids.size}
+        selectedCount={session.selectedUids.size}
         onTranslateDeepL={() => handleBatchTranslate('deepl')}
         onTranslateGPT={() => handleBatchTranslate('openai')}
-        onClearSelection={() => setSelectedUids(new Set())}
+        onClearSelection={session.clearSelection}
         isTranslating={isBatchTranslating}
       />
     </div>
