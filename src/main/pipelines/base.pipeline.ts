@@ -59,6 +59,11 @@ export abstract class BasePipeline {
     const outDir = path.join(os.tmpdir(), `icosa_${ctx.jobId}_out`)
 
     try {
+      // XML files are translated directly without pack/unpack
+      if (path.extname(ctx.filePath).toLowerCase() === '.xml') {
+        return await this.runXml(ctx, outDir)
+      }
+
       // 1 — resolve .pak path (may need to unzip first)
       const pakPath = await this.resolvePak(ctx.filePath, tmpDir)
 
@@ -127,6 +132,33 @@ export abstract class BasePipeline {
       fs.rm(tmpDir, { recursive: true, force: true }, () => {})
       fs.rm(outDir, { recursive: true, force: true }, () => {})
     }
+  }
+
+  private async runXml(ctx: PipelineContext, outDir: string): Promise<string> {
+    this.corpus = this.dictRepo.getAllForSimilarity(ctx.sourceLang, ctx.targetLang)
+    this.modRepo.upsert(ctx.modName)
+
+    const entries = parseLocalizationXml(ctx.filePath)
+    const total = entries.length
+    const translated: LocalizationEntry[] = []
+
+    for (let i = 0; i < entries.length; i++) {
+      this.checkCancelled()
+      const entry = entries[i]
+      const targetText = await this.resolveTranslation(entry)
+      translated.push({ ...entry, text: targetText })
+      this.emitProgress(i + 1, total, entry.text, targetText)
+    }
+
+    const baseName = path.basename(ctx.filePath, '.xml')
+    const outPath = path.join(outDir, `${baseName}_${ctx.targetLang}.xml`)
+    writeLocalizationXml(translated, outPath)
+
+    const finalPath = path.join(path.dirname(ctx.filePath), path.basename(outPath))
+    fs.copyFileSync(outPath, finalPath)
+
+    this.emitDone(finalPath)
+    return finalPath
   }
 
   // --- private helpers ---
