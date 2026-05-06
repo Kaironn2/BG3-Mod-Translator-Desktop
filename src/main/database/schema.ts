@@ -16,6 +16,8 @@ export const language = sqliteTable('language', {
 export const mod = sqliteTable('mod', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').unique().notNull(),
+  totalStrings: integer('total_strings').default(0),
+  lastFilePath: text('last_file_path'),
   ...timestamps
 })
 

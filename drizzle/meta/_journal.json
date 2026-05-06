@@ -8,6 +8,20 @@
       "when": 1777870018920,
       "tag": "0000_lucky_calypso",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1777939200000,
+      "tag": "0001_add_total_strings",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1777942800000,
+      "tag": "0002_add_last_file_path",
+      "breakpoints": true
     }
   ]
 }
