@@ -1,0 +1,124 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { app, ipcMain } from 'electron'
+import { getDb } from '../database/connection'
+import { DictionaryRepository } from '../database/repositories/dictionary.repo'
+import { ModRepository } from '../database/repositories/mod.repo'
+import { packMod, unpackMod } from '../services/lslib.service'
+import { findLocalizationXmls } from '../services/xml-parser.service'
+import { extract } from '../services/zip.service'
+
+interface ExtractPayload {
+  inputPath: string
+  outputPath: string
+  sourceLang?: string
+}
+
+interface PackPayload {
+  inputFolder: string
+  outputPath: string
+}
+
+export interface ModInfo {
+  name: string
+  totalStrings: number
+  translatedStrings: number
+  lastFilePath: string | null
+  updatedAt: string | null
+}
+
+function sanitizeModName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)
+}
+
+export function registerModHandlers(): void {
+  ipcMain.handle('mod:extract', async (_event, payload: ExtractPayload) => {
+    const { inputPath, outputPath, sourceLang = 'English' } = payload
+
+    const ext = path.extname(inputPath).toLowerCase()
+
+    let pakPath = inputPath
+
+    if (ext === '.zip' || ext === '.rar') {
+      const tmpDir = `${outputPath}_tmp_archive`
+      extract(inputPath, tmpDir)
+      const paks = findPakFiles(tmpDir)
+      if (paks.length === 0) throw new Error('No .pak file found inside archive')
+      pakPath = paks[0]
+    }
+
+    await unpackMod(pakPath, outputPath)
+    const xmlFiles = findLocalizationXmls(outputPath, sourceLang)
+
+    return { success: true, xmlFiles }
+  })
+
+  ipcMain.handle('mod:pack', async (_event, payload: PackPayload) => {
+    const { inputFolder, outputPath } = payload
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true })
+    await packMod(inputFolder, outputPath)
+    return { success: true, pakPath: outputPath }
+  })
+
+  ipcMain.handle('mod:getAll', (_event, params?: { lang1?: string; lang2?: string }) => {
+    const db = getDb()
+    const modRepo = new ModRepository(db)
+    const dictRepo = new DictionaryRepository(db)
+    const mods = modRepo.getAll()
+    const { lang1, lang2 } = params ?? {}
+    return mods.map(
+      (m): ModInfo => ({
+        name: m.name,
+        totalStrings: m.totalStrings ?? 0,
+        translatedStrings: lang1 && lang2 ? dictRepo.countByMod(m.name, lang1, lang2) : 0,
+        lastFilePath: m.lastFilePath ?? null,
+        updatedAt: m.updatedAt ?? null
+      })
+    )
+  })
+
+  ipcMain.handle(
+    'mod:upsert',
+    (
+      _event,
+      {
+        name,
+        totalStrings,
+        lastFilePath
+      }: { name: string; totalStrings?: number; lastFilePath?: string }
+    ) => {
+      const db = getDb()
+      const repo = new ModRepository(db)
+      repo.upsert(name, { totalStrings, lastFilePath })
+      return { success: true }
+    }
+  )
+
+  ipcMain.handle(
+    'mod:storeFile',
+    async (_event, { modName, filePath }: { modName: string; filePath: string }) => {
+      const modDir = path.join(app.getPath('userData'), 'icosa', 'mods', sanitizeModName(modName))
+      fs.mkdirSync(modDir, { recursive: true })
+
+      const fileName = path.basename(filePath)
+      const destPath = path.join(modDir, fileName)
+
+      // Avoid copying a file onto itself
+      if (path.resolve(filePath) !== path.resolve(destPath)) {
+        fs.copyFileSync(filePath, destPath)
+      }
+
+      return { storedPath: destPath }
+    }
+  )
+}
+
+function findPakFiles(dir: string): string[] {
+  const results: string[] = []
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) results.push(...findPakFiles(full))
+    else if (entry.name.endsWith('.pak')) results.push(full)
+  }
+  return results
+}
