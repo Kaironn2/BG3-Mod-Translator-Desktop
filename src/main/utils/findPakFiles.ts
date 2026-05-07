@@ -8,5 +8,5 @@ export function findPakFiles(dir: string): string[] {
     if (entry.isDirectory()) results.push(...findPakFiles(full))
     else if (entry.name.endsWith('.pak')) results.push(full)
   }
-  return results
+  return results.sort((a, b) => a.localeCompare(b))
 }

@@ -81,6 +81,41 @@ export interface ModInfo {
   updatedAt: string | null
 }
 
+export interface ModMeta {
+  metaFilePath: string
+  name: string
+  folder: string
+  author: string
+  description: string
+  uuid: string
+  versionMajor: number
+  versionMinor: number
+  versionRevision: number
+  versionBuild: number
+  version64: string
+}
+
+export interface TranslationXmlCandidate {
+  id: string
+  absolutePath: string
+  relativePath: string
+  stringCount: number
+  sizeKb: number
+  valid: boolean
+  status: 'valid' | 'invalid'
+}
+
+export interface PreparedTranslationInput {
+  importId: string
+  requiresSelection: boolean
+  candidates: TranslationXmlCandidate[]
+}
+
+export interface CompleteTranslationImportResult {
+  xmlPath: string
+  meta: ModMeta
+}
+
 export type ConfigKey =
   | 'openai_key'
   | 'deepl_key'
@@ -161,6 +196,24 @@ export interface ModApi {
     lastFilePath?: string
   }): Promise<{ success: boolean }>
   storeFile(params: { modName: string; filePath: string }): Promise<{ storedPath: string }>
+  prepareTranslationInput(params: { inputPath: string }): Promise<PreparedTranslationInput>
+  discardTranslationInput(params: { importId: string }): Promise<{ success: boolean }>
+  completeTranslationImport(params: {
+    importId: string
+    candidateId: string
+    modName: string
+    targetLang: string
+  }): Promise<CompleteTranslationImportResult>
+  getMeta(params: { modName: string; targetLang: string }): Promise<ModMeta>
+  upsertMeta(params: { modName: string; meta: ModMeta }): Promise<ModMeta>
+  exportTranslatedPackage(params: {
+    outputPath: string
+    format: 'pak' | 'zip'
+    modName: string
+    entries: XmlEntry[]
+    meta: ModMeta
+    bg3LanguageFolder: string
+  }): Promise<{ outputPath: string }>
 }
 
 export interface XmlApi {

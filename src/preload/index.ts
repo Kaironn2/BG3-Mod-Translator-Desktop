@@ -111,13 +111,15 @@ const api: AppApi = {
     getAll: (params?: {
       lang1?: string
       lang2?: string
-    }): Promise<{
-      name: string
-      totalStrings: number
-      translatedStrings: number
-      lastFilePath: string | null
-      updatedAt: string | null
-    }[]> => ipcRenderer.invoke('mod:getAll', params),
+    }): Promise<
+      {
+        name: string
+        totalStrings: number
+        translatedStrings: number
+        lastFilePath: string | null
+        updatedAt: string | null
+      }[]
+    > => ipcRenderer.invoke('mod:getAll', params),
 
     upsert: (params: {
       name: string
@@ -125,10 +127,62 @@ const api: AppApi = {
       lastFilePath?: string
     }): Promise<{ success: boolean }> => ipcRenderer.invoke('mod:upsert', params),
 
-    storeFile: (params: {
+    storeFile: (params: { modName: string; filePath: string }): Promise<{ storedPath: string }> =>
+      ipcRenderer.invoke('mod:storeFile', params),
+
+    prepareTranslationInput: (params: { inputPath: string }) =>
+      ipcRenderer.invoke('mod:prepareTranslationInput', params),
+
+    discardTranslationInput: (params: { importId: string }): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('mod:discardTranslationInput', params),
+
+    completeTranslationImport: (params: {
+      importId: string
+      candidateId: string
       modName: string
-      filePath: string
-    }): Promise<{ storedPath: string }> => ipcRenderer.invoke('mod:storeFile', params)
+      targetLang: string
+    }) => ipcRenderer.invoke('mod:completeTranslationImport', params),
+
+    getMeta: (params: { modName: string; targetLang: string }) =>
+      ipcRenderer.invoke('mod:getMeta', params),
+
+    upsertMeta: (params: {
+      modName: string
+      meta: {
+        metaFilePath: string
+        name: string
+        folder: string
+        author: string
+        description: string
+        uuid: string
+        versionMajor: number
+        versionMinor: number
+        versionRevision: number
+        versionBuild: number
+        version64: string
+      }
+    }) => ipcRenderer.invoke('mod:upsertMeta', params),
+
+    exportTranslatedPackage: (params: {
+      outputPath: string
+      format: 'pak' | 'zip'
+      modName: string
+      entries: { uid: string; version: string; source: string; target: string; matchType: string }[]
+      meta: {
+        metaFilePath: string
+        name: string
+        folder: string
+        author: string
+        description: string
+        uuid: string
+        versionMajor: number
+        versionMinor: number
+        versionRevision: number
+        versionBuild: number
+        version64: string
+      }
+      bg3LanguageFolder: string
+    }): Promise<{ outputPath: string }> => ipcRenderer.invoke('mod:exportTranslatedPackage', params)
   },
 
   xml: {
