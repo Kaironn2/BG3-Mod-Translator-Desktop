@@ -4,6 +4,7 @@ interface BatchActionBarProps {
   selectedCount: number
   onTranslateDeepL: () => void
   onTranslateGPT: () => void
+  onCancelTranslation: () => void
   onClearSelection: () => void
   isTranslating: boolean
 }
@@ -12,22 +13,33 @@ export function BatchActionBar({
   selectedCount,
   onTranslateDeepL,
   onTranslateGPT,
+  onCancelTranslation,
   onClearSelection,
   isTranslating
 }: BatchActionBarProps): React.JSX.Element | null {
-  if (selectedCount === 0) return null
+  if (selectedCount === 0 && !isTranslating) return null
 
   return (
     <div className="flex items-center gap-3 border-t border-neutral-700 bg-neutral-900 px-4 py-3 shrink-0">
       <span className="text-sm text-neutral-400 shrink-0">
-        {selectedCount} {selectedCount === 1 ? 'entrada selecionada' : 'entradas selecionadas'}
+        {selectedCount}{' '}
+        {selectedCount === 1 ? 'entrada selecionada' : 'entradas selecionadas'}
       </span>
 
       {isTranslating ? (
-        <div className="flex items-center gap-2 text-sm text-neutral-400">
-          <Loader2 size={14} className="animate-spin" />
-          Traduzindo...
-        </div>
+        <>
+          <div className="flex items-center gap-2 text-sm text-neutral-400">
+            <Loader2 size={14} className="animate-spin" />
+            Traduzindo
+          </div>
+          <button
+            type="button"
+            onClick={onCancelTranslation}
+            className="rounded-md border border-red-500/60 px-3 py-1.5 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/10"
+          >
+            Parar
+          </button>
+        </>
       ) : (
         <>
           <button

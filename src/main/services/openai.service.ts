@@ -43,7 +43,8 @@ export async function translateText(
   targetLang: string,
   apiKey: string,
   context: SimilarEntry[] = [],
-  model = 'gpt-4o-mini'
+  model = 'gpt-4o-mini',
+  signal?: AbortSignal
 ): Promise<string> {
   const response = await fetch(OPENAI_API_URL, {
     method: 'POST',
@@ -51,6 +52,7 @@ export async function translateText(
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     },
+    signal,
     body: JSON.stringify({
       model,
       temperature: 0.3,

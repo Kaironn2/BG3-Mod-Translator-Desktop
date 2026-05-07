@@ -8,10 +8,12 @@ import { registerConfigHandlers } from './ipc/config.ipc'
 import { registerDictionaryHandlers } from './ipc/dictionary.ipc'
 import { registerFsHandlers } from './ipc/fs.ipc'
 import { registerLanguageHandlers } from './ipc/language.ipc'
+import { registerLogHandlers } from './ipc/log.ipc'
 import { registerModHandlers } from './ipc/mod.ipc'
 import { registerTranslationHandlers } from './ipc/translation.ipc'
 import { registerWindowHandlers, setupWindowEvents } from './ipc/window.ipc'
 import { registerXmlHandlers } from './ipc/xml.ipc'
+import { logError } from './services/log.service'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -68,6 +70,7 @@ app.whenReady().then(() => {
   registerTranslationHandlers(getWindow)
   registerDictionaryHandlers(repos)
   registerLanguageHandlers(repos)
+  registerLogHandlers()
   registerModHandlers(repos)
   registerConfigHandlers()
   registerFsHandlers()
@@ -78,6 +81,14 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+process.on('uncaughtException', (err) => {
+  logError('main.uncaughtException', err)
+})
+
+process.on('unhandledRejection', (reason) => {
+  logError('main.unhandledRejection', reason)
 })
 
 app.on('window-all-closed', () => {
