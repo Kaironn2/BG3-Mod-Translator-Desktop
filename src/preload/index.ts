@@ -72,11 +72,39 @@ const api: AppApi = {
   },
 
   dictionary: {
+    list: (filters: {
+      text?: string
+      modName?: string
+      sourceLang?: string
+      targetLang?: string
+    }) => ipcRenderer.invoke('dictionary:list', filters),
+
     getAll: (params: { lang1: string; lang2: string }) =>
       ipcRenderer.invoke('dictionary:getAll', params),
 
     search: (params: { text: string; lang1: string; lang2: string }) =>
       ipcRenderer.invoke('dictionary:search', params),
+
+    create: (entry: {
+      language1: string
+      language2: string
+      textLanguage1: string
+      textLanguage2: string
+      modName?: string | null
+      uid?: string | null
+    }): Promise<{ success: boolean }> => ipcRenderer.invoke('dictionary:create', entry),
+
+    update: (params: {
+      id: number
+      entry: {
+        language1: string
+        language2: string
+        textLanguage1: string
+        textLanguage2: string
+        modName?: string | null
+        uid?: string | null
+      }
+    }): Promise<{ success: boolean }> => ipcRenderer.invoke('dictionary:update', params),
 
     upsert: (entry: {
       language1: string
@@ -90,12 +118,21 @@ const api: AppApi = {
     delete: (params: { id: number }): Promise<{ success: boolean }> =>
       ipcRenderer.invoke('dictionary:delete', params),
 
+    previewImport: (params: {
+      filePath: string
+      format: 'csv' | 'xlsx'
+    }) => ipcRenderer.invoke('dictionary:previewImport', params),
+
     import: (params: { filePath: string; format: 'csv' | 'xlsx' }): Promise<{ count: number }> =>
       ipcRenderer.invoke('dictionary:import', params),
 
     export: (params: {
-      lang1: string
-      lang2: string
+      filters: {
+        text?: string
+        modName?: string
+        sourceLang?: string
+        targetLang?: string
+      }
       format: 'csv' | 'xlsx'
       outputPath: string
     }): Promise<{ success: boolean }> => ipcRenderer.invoke('dictionary:export', params),
@@ -203,13 +240,14 @@ const api: AppApi = {
       inputPath: string
       sourceLang: string
       targetLang: string
+      modName?: string
     }): Promise<
       {
         uid: string
         version: string
         source: string
         target: string
-        matchType: 'none' | 'uid' | 'text' | 'manual'
+        matchType: 'none' | 'mod-text' | 'text' | 'manual'
       }[]
     > => ipcRenderer.invoke('xml:load', params),
 

@@ -2,7 +2,10 @@ import fs from 'fs'
 import path from 'path'
 import { BrowserWindow } from 'electron'
 import { getDb } from '../database/connection'
-import { DictionaryRepository } from '../database/repositories/dictionary.repo'
+import {
+  DictionaryRepository,
+  getDictionaryTargetText
+} from '../database/repositories/dictionary.repo'
 import { ModRepository } from '../database/repositories/mod.repo'
 import { unpackMod, packMod } from '../services/lslib.service'
 import { extract, createZip } from '../services/zip.service'
@@ -187,26 +190,21 @@ export abstract class BasePipeline {
   private async resolveTranslation(entry: LocalizationEntry): Promise<string> {
     const { sourceLang, targetLang, modName } = this.ctx
 
-    // 1. exact match by UID
-    if (entry.contentuid) {
-      const cached = this.dictRepo.findByUid(entry.contentuid, sourceLang, targetLang)
-      if (cached) {
-        return this.targetText(cached, sourceLang, targetLang)
-      }
+    const match = this.dictRepo.resolveMatch({
+      modName,
+      sourceLang,
+      targetLang,
+      sourceText: entry.text
+    })
+    if (match) {
+      return getDictionaryTargetText(match.entry, sourceLang, targetLang)
     }
-
-    // 2. exact match by text (mod-specific first, then global)
-    const byMod = this.dictRepo.findByModAndText(modName, sourceLang, targetLang, entry.text)
-    if (byMod) return this.targetText(byMod, sourceLang, targetLang)
-
-    const byText = this.dictRepo.findByText(sourceLang, targetLang, entry.text)
-    if (byText) return this.targetText(byText, sourceLang, targetLang)
 
     // 3. not in cache → translate via subclass
     const context = findSimilar(entry.text, this.corpus, 5)
     const translated = await this.translate(entry.text, sourceLang, targetLang, context)
 
-    // 4. save to dictionary
+    // 2. save to dictionary
     this.dictRepo.upsert({
       sourceLang,
       targetLang,
@@ -220,17 +218,6 @@ export abstract class BasePipeline {
     this.corpus.push({ source: entry.text, target: translated })
 
     return translated
-  }
-
-  private targetText(
-    entry: { textLanguage1: string; textLanguage2: string; language1: string },
-    sourceLang: string,
-    _targetLang: string
-  ): string {
-    // language1 < language2 invariant: decide which column is the target
-    const sourceIsL1 =
-      entry.language1 === [sourceLang, _targetLang].sort()[0] && sourceLang < _targetLang
-    return sourceIsL1 ? entry.textLanguage2 : entry.textLanguage1
   }
 
   private copyNonLocalizationFiles(srcDir: string, dstDir: string, sourceLang: string): void {

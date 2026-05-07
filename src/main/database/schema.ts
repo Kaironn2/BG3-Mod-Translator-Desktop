@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 
 const timestamps = {
@@ -42,26 +42,21 @@ export const modMeta = sqliteTable('mod_meta', {
 })
 
 // Invariant: language1 < language2 (alphabetically sorted) - prevents mirrored duplicates.
-// uid nullable: when present, uniqueness is enforced per (language1, language2, uid).
-// When uid is NULL, SQLite treats each NULL as distinct, allowing multiple entries per lang pair.
-export const dictionary = sqliteTable(
-  'dictionary',
-  {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    language1: text('language1')
-      .notNull()
-      .references(() => language.code),
-    language2: text('language2')
-      .notNull()
-      .references(() => language.code),
-    textLanguage1: text('text_language1').notNull(),
-    textLanguage2: text('text_language2').notNull(),
-    modName: text('mod_name').references(() => mod.name),
-    uid: text('uid'),
-    ...timestamps
-  },
-  (t) => [uniqueIndex('idx_dict_lang_uid').on(t.language1, t.language2, t.uid)]
-)
+// UID is metadata only. Matching and persistence are based on mod + source text, then source text.
+export const dictionary = sqliteTable('dictionary', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  language1: text('language1')
+    .notNull()
+    .references(() => language.code),
+  language2: text('language2')
+    .notNull()
+    .references(() => language.code),
+  textLanguage1: text('text_language1').notNull(),
+  textLanguage2: text('text_language2').notNull(),
+  modName: text('mod_name').references(() => mod.name),
+  uid: text('uid'),
+  ...timestamps
+})
 
 export const config = sqliteTable('config', {
   key: text('key').primaryKey(),

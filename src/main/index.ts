@@ -74,7 +74,7 @@ app.whenReady().then(() => {
   registerModHandlers(repos)
   registerConfigHandlers()
   registerFsHandlers()
-  registerXmlHandlers()
+  registerXmlHandlers(repos)
 
   createWindow()
 

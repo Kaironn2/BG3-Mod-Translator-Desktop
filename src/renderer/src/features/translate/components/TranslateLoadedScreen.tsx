@@ -23,7 +23,7 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
 
   const translatedCount = session.entries.filter((entry) => entry.target.trim() !== '').length
   const dictCount = session.entries.filter(
-    (entry) => entry.matchType === 'uid' || entry.matchType === 'text'
+    (entry) => entry.matchType === 'mod-text' || entry.matchType === 'text'
   ).length
   const total = session.entries.length
   const untranslatedCount = total - translatedCount

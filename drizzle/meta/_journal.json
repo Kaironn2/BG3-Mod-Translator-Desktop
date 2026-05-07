@@ -29,6 +29,13 @@
       "when": 1778115600000,
       "tag": "0003_add_mod_meta",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1778187600000,
+      "tag": "0004_drop_dictionary_uid_index",
+      "breakpoints": true
     }
   ]
 }
