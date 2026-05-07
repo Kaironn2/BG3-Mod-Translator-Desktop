@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { cn } from '@/lib/utils'
+import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import type { Language } from '@/types'
 
 interface LanguageSelectProps {
@@ -22,20 +22,21 @@ export function LanguageSelect({
   }, [])
 
   return (
-    <div className={cn('flex flex-col gap-1', className)}>
-      {label && <label className="text-xs text-neutral-400">{label}</label>}
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:border-neutral-500 focus:outline-none"
-      >
-        <option value="">Select language</option>
-        {languages.map((lang) => (
-          <option key={lang.code} value={lang.code}>
-            {lang.name}
-          </option>
-        ))}
-      </select>
-    </div>
+    <ThemedSelect
+      value={value}
+      onChange={onChange}
+      label={label}
+      className={className}
+      placeholder="Select language"
+      searchable
+      searchPlaceholder="Search language..."
+      emptyLabel="No language found."
+      options={languages.map((language) => ({
+        value: language.code,
+        label: language.name,
+        badge: language.code.toUpperCase(),
+        searchText: `${language.name} ${language.code}`
+      }))}
+    />
   )
 }

@@ -49,6 +49,13 @@ export function useTranslateSetup(session: TranslationSession) {
     }
   }, [sourceLang, targetLang])
 
+  useEffect(() => {
+    if (mods.length === 0) {
+      setIsNewMod(true)
+      setSelectedMod(null)
+    }
+  }, [mods])
+
   const handleSourceChange = (lang: string) => {
     setSourceLangLocal(lang)
     session.setSourceLang(lang)

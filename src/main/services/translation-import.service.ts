@@ -18,6 +18,7 @@ import {
   sanitizeMetaFolder,
   writeMeta
 } from './lsx-parser.service'
+import { encodeEntities } from './xml-entities.service'
 import { parseLocalizationXml, writeLocalizationXml } from './xml-parser.service'
 import { createZip, extract } from './zip.service'
 
@@ -239,7 +240,7 @@ export async function exportTranslatedPackage(
     const locEntries = payload.entries.map((entry) => ({
       contentuid: entry.uid,
       version: entry.version,
-      text: entry.target || entry.source
+      text: encodeEntities(entry.target || entry.source)
     }))
     writeLocalizationXml(locEntries, exportXmlPath)
     writeMeta({

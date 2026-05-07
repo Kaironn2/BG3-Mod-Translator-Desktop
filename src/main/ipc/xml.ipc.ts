@@ -5,10 +5,12 @@ import { DictionaryRepository } from '../database/repositories/dictionary.repo'
 import type { DictionaryEntry } from '../database/schema'
 import { unpackMod } from '../services/lslib.service'
 import {
+  type LocalizationEntry,
   findLocalizationXmls,
   parseLocalizationXml,
   writeLocalizationXml
 } from '../services/xml-parser.service'
+import { decodeEntities, encodeEntities } from '../services/xml-entities.service'
 import { extract } from '../services/zip.service'
 import { findPakFiles } from '../utils/findPakFiles'
 import { cleanupTempDir, createTempDir } from '../utils/tempDir'
@@ -34,6 +36,14 @@ interface ExportPayload {
 
 function extractTargetText(row: DictionaryEntry, sourceLang: string, targetLang: string): string {
   return sourceLang < targetLang ? (row.textLanguage2 ?? '') : (row.textLanguage1 ?? '')
+}
+
+function toUiEntry(entry: LocalizationEntry): Pick<XmlEntry, 'uid' | 'version' | 'source'> {
+  return {
+    uid: entry.contentuid,
+    version: entry.version,
+    source: decodeEntities(entry.text)
+  }
 }
 
 async function loadXml(payload: LoadPayload): Promise<XmlEntry[]> {
@@ -74,14 +84,13 @@ async function loadXml(payload: LoadPayload): Promise<XmlEntry[]> {
     const repo = new DictionaryRepository(db)
 
     return locEntries.map((entry) => {
+      const uiEntry = toUiEntry(entry)
       if (entry.contentuid) {
         const byUid = repo.findByUid(entry.contentuid, sourceLang, targetLang)
         if (byUid) {
           return {
-            uid: entry.contentuid,
-            version: entry.version,
-            source: entry.text,
-            target: extractTargetText(byUid, sourceLang, targetLang),
+            ...uiEntry,
+            target: decodeEntities(extractTargetText(byUid, sourceLang, targetLang)),
             matchType: 'uid' as const
           }
         }
@@ -90,18 +99,14 @@ async function loadXml(payload: LoadPayload): Promise<XmlEntry[]> {
       const byText = repo.findByText(sourceLang, targetLang, entry.text)
       if (byText) {
         return {
-          uid: entry.contentuid,
-          version: entry.version,
-          source: entry.text,
-          target: extractTargetText(byText, sourceLang, targetLang),
+          ...uiEntry,
+          target: decodeEntities(extractTargetText(byText, sourceLang, targetLang)),
           matchType: 'text' as const
         }
       }
 
       return {
-        uid: entry.contentuid,
-        version: entry.version,
-        source: entry.text,
+        ...uiEntry,
         target: '',
         matchType: 'none' as const
       }
@@ -118,7 +123,7 @@ function exportXml(payload: ExportPayload): void {
   const locEntries = entries.map((e) => ({
     contentuid: e.uid,
     version: e.version,
-    text: e.target || e.source
+    text: encodeEntities(e.target || e.source)
   }))
   writeLocalizationXml(locEntries, outputPath)
 }

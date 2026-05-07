@@ -10,6 +10,8 @@ import type { TranslationSession } from '../types'
 export function useBatchTranslation(session: TranslationSession) {
   const [isBatchTranslating, setIsBatchTranslating] = useState(false)
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
+  const [batchCompleted, setBatchCompleted] = useState(0)
+  const [batchTotal, setBatchTotal] = useState(0)
   const batchCleanupRef = useRef<(() => void) | null>(null)
   const activeJobIdRef = useRef<string | null>(null)
   const pendingUidsRef = useRef<Set<string>>(new Set())
@@ -37,6 +39,8 @@ export function useBatchTranslation(session: TranslationSession) {
       activeJobIdRef.current = null
       pendingUidsRef.current = new Set()
       setActiveJobId(null)
+      setBatchCompleted(0)
+      setBatchTotal(0)
       setIsBatchTranslating(false)
     },
     [clearListeners]
@@ -60,11 +64,21 @@ export function useBatchTranslation(session: TranslationSession) {
       }
 
       pendingUidsRef.current = new Set(selectedEntries.map((entry) => entry.uid))
+      setBatchCompleted(0)
+      setBatchTotal(selectedEntries.length)
       setIsBatchTranslating(true)
       clearListeners()
 
-      const handleBatchProgress = ({ jobId, uid, target }: TranslationBatchProgressEvent) => {
+      const handleBatchProgress = ({
+        jobId,
+        uid,
+        target,
+        completed,
+        total
+      }: TranslationBatchProgressEvent) => {
         if (jobId !== activeJobIdRef.current) return
+        setBatchCompleted(completed)
+        setBatchTotal(total)
         if (target === null) return
         pendingUidsRef.current.delete(uid)
         updateEntry(uid, target)
@@ -131,6 +145,8 @@ export function useBatchTranslation(session: TranslationSession) {
         clearListeners()
         activeJobIdRef.current = null
         setActiveJobId(null)
+        setBatchCompleted(0)
+        setBatchTotal(0)
         setIsBatchTranslating(false)
         toast.error(message)
         void window.api.log.write({
@@ -160,5 +176,12 @@ export function useBatchTranslation(session: TranslationSession) {
     await window.api.translation.cancel(activeJobId)
   }, [activeJobId])
 
-  return { isBatchTranslating, batchTranslate, cancelBatch, activeJobId }
+  return {
+    isBatchTranslating,
+    batchCompleted,
+    batchTotal,
+    batchTranslate,
+    cancelBatch,
+    activeJobId
+  }
 }

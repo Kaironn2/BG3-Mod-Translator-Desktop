@@ -27,6 +27,8 @@ interface EditorHeaderProps {
   untranslatedCount: number
   total: number
   pct: number
+  batchCompleted: number
+  batchTotal: number
   exportFormat: ExportFormat
   onViewModeChange: (mode: 'side' | 'stacked') => void
   onFocusModeChange: (value: boolean) => void
@@ -46,6 +48,8 @@ export function EditorHeader({
   untranslatedCount,
   total,
   pct,
+  batchCompleted,
+  batchTotal,
   exportFormat,
   onViewModeChange,
   onFocusModeChange,
@@ -56,13 +60,15 @@ export function EditorHeader({
   return (
     <div className="bg-[#0f1114] border-b border-[#1f2329] px-7 pt-5 pb-4 shrink-0">
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex items-center gap-2 text-sm text-neutral-500 min-w-0">
-          <input
-            value={session.modName}
-            onChange={(event) => session.setModName(event.target.value)}
-            placeholder="Nome do mod"
-            className="bg-transparent text-neutral-300 font-medium text-sm focus:outline-none placeholder:text-neutral-600 min-w-0 max-w-50"
-          />
+        <button type="button" className={btnBase} onClick={session.resetSession}>
+          <ArrowLeft />
+          Voltar
+        </button>
+
+        <div className="flex items-center gap-1.5 text-sm text-neutral-500 min-w-0">
+          <span className="max-w-50 truncate font-medium text-sm text-neutral-300">
+            {session.modName}
+          </span>
           <span className="text-neutral-700 shrink-0">
             <ChevronRight />
           </span>
@@ -120,11 +126,6 @@ export function EditorHeader({
             </span>
           </button>
 
-          <button type="button" className={btnBase} onClick={session.resetSession}>
-            <ArrowLeft />
-            Voltar
-          </button>
-
           <button
             type="button"
             className={cn(btnBase, isSaving && 'opacity-60 cursor-not-allowed')}
@@ -169,7 +170,13 @@ export function EditorHeader({
           </div>
         </div>
 
-        <TranslationStats translatedCount={translatedCount} total={total} pct={pct} />
+        <TranslationStats
+          translatedCount={translatedCount}
+          total={total}
+          pct={pct}
+          batchCompleted={batchCompleted}
+          batchTotal={batchTotal}
+        />
       </div>
     </div>
   )

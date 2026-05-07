@@ -13,6 +13,7 @@ import {
 } from '../services/deepl.service'
 import { logError } from '../services/log.service'
 import { translateText as translateOpenAI } from '../services/openai.service'
+import { decodeEntities } from '../services/xml-entities.service'
 import { getActiveWindow } from '../utils/window'
 
 export type TranslationProvider = 'openai' | 'deepl' | 'manual'
@@ -119,8 +120,10 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
       try {
         const { provider, text, sourceLang, targetLang } = payload
         const apiKey = requireStoredApiKey(provider)
-        if (provider === 'deepl') return translateDeepL(text, sourceLang, targetLang, apiKey)
-        return translateOpenAI(text, sourceLang, targetLang, apiKey)
+        if (provider === 'deepl') {
+          return decodeEntities(await translateDeepL(text, sourceLang, targetLang, apiKey))
+        }
+        return decodeEntities(await translateOpenAI(text, sourceLang, targetLang, apiKey))
       } catch (err) {
         logError('translation.single', err, {
           provider: payload.provider,
@@ -292,7 +295,7 @@ async function runDeepLBatchJob(ctx: BatchJobContext, summary: BatchSummary): Pr
     )
 
     let roundSuccesses = 0
-    const nextPending: BatchPayload['entries'] = []
+    const nextPending: Array<{ entry: BatchPayload['entries'][number]; error?: string }> = []
 
     for (const result of results) {
       const entry = pendingEntries[result.index]
@@ -304,12 +307,14 @@ async function runDeepLBatchJob(ctx: BatchJobContext, summary: BatchSummary): Pr
         emitBatchProgress(ctx.getWindow, {
           jobId: ctx.jobId,
           uid: entry.uid,
-          target: result.translated
+          completed: summary.translated + summary.failed,
+          total: summary.total,
+          target: decodeEntities(result.translated)
         })
         continue
       }
 
-      nextPending.push(entry)
+      nextPending.push({ entry, error: result.error })
     }
 
     if (nextPending.length === 0) {
@@ -318,11 +323,21 @@ async function runDeepLBatchJob(ctx: BatchJobContext, summary: BatchSummary): Pr
     }
 
     if (roundSuccesses === 0) {
-      summary.failed = nextPending.length
+      for (const pending of nextPending) {
+        summary.failed++
+        emitBatchProgress(ctx.getWindow, {
+          jobId: ctx.jobId,
+          uid: pending.entry.uid,
+          completed: summary.translated + summary.failed,
+          total: summary.total,
+          target: null,
+          error: pending.error
+        })
+      }
       return
     }
 
-    pendingEntries = nextPending
+    pendingEntries = nextPending.map((pending) => pending.entry)
   }
 }
 
@@ -347,12 +362,22 @@ async function runOpenAIBatchJob(ctx: BatchJobContext, summary: BatchSummary): P
         emitBatchProgress(ctx.getWindow, {
           jobId: ctx.jobId,
           uid: entry.uid,
-          target: translated
+          completed: summary.translated + summary.failed,
+          total: summary.total,
+          target: decodeEntities(translated)
         })
       } catch (err) {
         if (isAbortError(err) || ctx.signal.aborted) throw err
 
         summary.failed++
+        emitBatchProgress(ctx.getWindow, {
+          jobId: ctx.jobId,
+          uid: entry.uid,
+          completed: summary.translated + summary.failed,
+          total: summary.total,
+          target: null,
+          error: err instanceof Error ? err.message : String(err)
+        })
         logError('translation.batch.openai.entry', err, {
           uid: entry.uid,
           sourceLang: ctx.sourceLang,
@@ -366,7 +391,14 @@ async function runOpenAIBatchJob(ctx: BatchJobContext, summary: BatchSummary): P
 
 function emitBatchProgress(
   getWindow: () => BrowserWindow | null,
-  payload: { jobId: string; uid: string; target: string | null; error?: string }
+  payload: {
+    jobId: string
+    uid: string
+    completed: number
+    total: number
+    target: string | null
+    error?: string
+  }
 ): void {
   const win = getActiveWindow(getWindow)
   if (win) {
