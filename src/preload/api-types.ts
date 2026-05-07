@@ -33,15 +33,23 @@ export interface TranslationErrorEvent {
 }
 
 export interface TranslationBatchProgressEvent {
+  jobId: string
   uid: string
   target: string | null
   error?: string
 }
 
-export interface TranslationBatchSummary {
+export interface TranslationBatchDoneEvent {
+  jobId: string
   total: number
   translated: number
   failed: number
+  cancelled: boolean
+}
+
+export interface TranslationBatchErrorEvent {
+  jobId: string
+  message: string
 }
 
 export interface LogPayload {
@@ -165,8 +173,10 @@ export interface TranslationApi {
     provider: 'openai' | 'deepl'
     sourceLang: string
     targetLang: string
-  }): Promise<TranslationBatchSummary>
+  }): Promise<{ jobId: string }>
   onBatchProgress(cb: (data: TranslationBatchProgressEvent) => void): UnsubscribeFn
+  onBatchDone(cb: (data: TranslationBatchDoneEvent) => void): UnsubscribeFn
+  onBatchError(cb: (data: TranslationBatchErrorEvent) => void): UnsubscribeFn
 }
 
 export interface DictionaryApi {

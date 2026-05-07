@@ -1,7 +1,13 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import type { IpcRendererEvent } from 'electron'
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { AppApi, UnsubscribeFn } from './api-types'
+import type {
+  AppApi,
+  TranslationBatchDoneEvent,
+  TranslationBatchErrorEvent,
+  TranslationBatchProgressEvent,
+  UnsubscribeFn
+} from './api-types'
 
 function on<T>(channel: string, cb: (data: T) => void): UnsubscribeFn {
   const handler = (_: IpcRendererEvent, data: T): void => cb(data)
@@ -51,12 +57,18 @@ const api: AppApi = {
       provider: 'openai' | 'deepl'
       sourceLang: string
       targetLang: string
-    }): Promise<{ total: number; translated: number; failed: number }> =>
+    }): Promise<{ jobId: string }> =>
       ipcRenderer.invoke('translation:batch', payload),
 
     onBatchProgress: (
-      cb: (data: { uid: string; target: string | null; error?: string }) => void
-    ): UnsubscribeFn => on('translation:batchProgress', cb)
+      cb: (data: TranslationBatchProgressEvent) => void
+    ): UnsubscribeFn => on('translation:batchProgress', cb),
+
+    onBatchDone: (cb: (data: TranslationBatchDoneEvent) => void): UnsubscribeFn =>
+      on('translation:batchDone', cb),
+
+    onBatchError: (cb: (data: TranslationBatchErrorEvent) => void): UnsubscribeFn =>
+      on('translation:batchError', cb)
   },
 
   dictionary: {

@@ -78,6 +78,7 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
         selectedCount={session.selectedUids.size}
         onTranslateDeepL={() => batch.batchTranslate('deepl')}
         onTranslateGPT={() => batch.batchTranslate('openai')}
+        onCancelTranslation={batch.cancelBatch}
         onClearSelection={session.clearSelection}
         isTranslating={batch.isBatchTranslating}
       />
