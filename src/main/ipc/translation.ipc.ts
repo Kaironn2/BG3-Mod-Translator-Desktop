@@ -7,7 +7,11 @@ import type { BasePipeline, PipelineOptions } from '../pipelines/base.pipeline'
 import { DeepLPipeline } from '../pipelines/deepl.pipeline'
 import { ManualPipeline } from '../pipelines/manual.pipeline'
 import { OpenAIPipeline } from '../pipelines/openai.pipeline'
-import { translateBatch as translateDeepLBatch, translateText as translateDeepL } from '../services/deepl.service'
+import {
+  translateBatchDetailed as translateDeepLBatch,
+  translateText as translateDeepL
+} from '../services/deepl.service'
+import { logError } from '../services/log.service'
 import { translateText as translateOpenAI } from '../services/openai.service'
 import { getActiveWindow } from '../utils/window'
 
@@ -19,11 +23,28 @@ export interface TranslationStartPayload extends PipelineOptions {
   model?: string
 }
 
+interface BatchSummary {
+  total: number
+  translated: number
+  failed: number
+}
+
 // Active jobs keyed by jobId - AbortController allows cancellation
 const activeJobs = new Map<string, AbortController>()
 
 export function registerTranslationHandlers(getWindow: () => BrowserWindow | null): void {
   ipcMain.handle('translation:start', async (_event, payload: TranslationStartPayload) => {
+    try {
+      requirePayloadApiKey(payload)
+    } catch (err) {
+      logError('translation.start.validation', err, {
+        provider: payload.provider,
+        sourceLang: payload.sourceLang,
+        targetLang: payload.targetLang,
+        modName: payload.modName
+      })
+      throw err
+    }
     const jobId = randomUUID()
     const controller = new AbortController()
     activeJobs.set(jobId, controller)
@@ -46,6 +67,13 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
       })
       .catch((err: Error) => {
         activeJobs.delete(jobId)
+        logError('translation.start.pipeline', err, {
+          jobId,
+          provider: payload.provider,
+          sourceLang: payload.sourceLang,
+          targetLang: payload.targetLang,
+          modName: payload.modName
+        })
         const win = getActiveWindow(getWindow)
         if (win) {
           win.webContents.send('translation:error', {
@@ -74,15 +102,19 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
         targetLang: string
       }
     ): Promise<string> => {
-      const { provider, text, sourceLang, targetLang } = payload
-      const apiKey = readApiKey(provider)
-      if (!provider) throw new Error(`Unknown provider`)
-      if (!apiKey)
-        throw new Error(
-          `${provider === 'deepl' ? 'DeepL' : 'OpenAI'} API key not configured. Go to Settings.`
-        )
-      if (provider === 'deepl') return translateDeepL(text, sourceLang, targetLang, apiKey)
-      return translateOpenAI(text, sourceLang, targetLang, apiKey)
+      try {
+        const { provider, text, sourceLang, targetLang } = payload
+        const apiKey = requireStoredApiKey(provider)
+        if (provider === 'deepl') return translateDeepL(text, sourceLang, targetLang, apiKey)
+        return translateOpenAI(text, sourceLang, targetLang, apiKey)
+      } catch (err) {
+        logError('translation.single', err, {
+          provider: payload.provider,
+          sourceLang: payload.sourceLang,
+          targetLang: payload.targetLang
+        })
+        throw err
+      }
     }
   )
 
@@ -96,43 +128,42 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
         sourceLang: string
         targetLang: string
       }
-    ): Promise<void> => {
+    ): Promise<BatchSummary> => {
       const { entries, provider, sourceLang, targetLang } = payload
-      const apiKey = readApiKey(provider)
-      if (!apiKey) {
-        const win = getActiveWindow(getWindow)
-        if (win) {
-          win.webContents.send('translation:batchProgress', {
-            uid: '',
-            target: null,
-            error: `${provider === 'deepl' ? 'DeepL' : 'OpenAI'} API key not configured. Go to Settings.`
-          })
-        }
-        return
+      const summary: BatchSummary = { total: entries.length, translated: 0, failed: 0 }
+      let apiKey: string
+      try {
+        apiKey = requireStoredApiKey(provider)
+      } catch (err) {
+        logError('translation.batch.validation', err, { provider, sourceLang, targetLang })
+        throw err
       }
 
       if (provider === 'deepl') {
-        // DeepL: send all texts in bulk (50 per HTTP request), preserving order
         const texts = entries.map((e) => e.source)
-        try {
-          const translated = await translateDeepLBatch(texts, sourceLang, targetLang, apiKey)
-          const win = getActiveWindow(getWindow)
-          if (win) {
-            for (let i = 0; i < entries.length; i++) {
+        const results = await translateDeepLBatch(texts, sourceLang, targetLang, apiKey)
+        const win = getActiveWindow(getWindow)
+        for (const result of results) {
+          const entry = entries[result.index]
+          if (!entry) continue
+          if (result.translated != null) {
+            summary.translated++
+            if (win) {
               win.webContents.send('translation:batchProgress', {
-                uid: entries[i].uid,
-                target: translated[i] ?? ''
+                uid: entry.uid,
+                target: result.translated
               })
             }
-          }
-        } catch (err) {
-          const win = getActiveWindow(getWindow)
-          if (win) {
-            win.webContents.send('translation:batchProgress', {
-              uid: '',
-              target: null,
-              error: err instanceof Error ? err.message : String(err)
-            })
+          } else {
+            summary.failed++
+            const error = result.error ?? 'DeepL translation failed'
+            if (win) {
+              win.webContents.send('translation:batchProgress', {
+                uid: entry.uid,
+                target: null,
+                error
+              })
+            }
           }
         }
       } else {
@@ -140,6 +171,7 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
         await runConcurrent(entries, 10, async (entry) => {
           try {
             const translated = await translateOpenAI(entry.source, sourceLang, targetLang, apiKey)
+            summary.translated++
             const win = getActiveWindow(getWindow)
             if (win) {
               win.webContents.send('translation:batchProgress', {
@@ -148,6 +180,12 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
               })
             }
           } catch (err) {
+            summary.failed++
+            logError('translation.batch.openai.entry', err, {
+              uid: entry.uid,
+              sourceLang,
+              targetLang
+            })
             const win = getActiveWindow(getWindow)
             if (win) {
               win.webContents.send('translation:batchProgress', {
@@ -159,6 +197,8 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
           }
         })
       }
+
+      return summary
     }
   )
 }
@@ -169,7 +209,25 @@ function readApiKey(provider: 'openai' | 'deepl'): string | null {
   const row = db.select().from(config).where(eq(config.key, key)).get() as
     | { key: string; value: string | null }
     | undefined
-  return row?.value ?? null
+  const value = row?.value?.trim() ?? ''
+  return value.length > 0 ? value : null
+}
+
+function requireStoredApiKey(provider: 'openai' | 'deepl'): string {
+  const apiKey = readApiKey(provider)
+  if (!apiKey) throw new Error(`${providerLabel(provider)} API key not configured. Go to Settings.`)
+  return apiKey
+}
+
+function requirePayloadApiKey(payload: TranslationStartPayload): void {
+  if (payload.provider === 'manual') return
+  if (!payload.apiKey?.trim()) {
+    throw new Error(`${providerLabel(payload.provider)} API key is required`)
+  }
+}
+
+function providerLabel(provider: 'openai' | 'deepl'): string {
+  return provider === 'deepl' ? 'DeepL' : 'OpenAI'
 }
 
 function buildPipeline(payload: TranslationStartPayload): BasePipeline {

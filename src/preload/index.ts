@@ -51,7 +51,8 @@ const api: AppApi = {
       provider: 'openai' | 'deepl'
       sourceLang: string
       targetLang: string
-    }): Promise<void> => ipcRenderer.invoke('translation:batch', payload),
+    }): Promise<{ total: number; translated: number; failed: number }> =>
+      ipcRenderer.invoke('translation:batch', payload),
 
     onBatchProgress: (
       cb: (data: { uid: string; target: string | null; error?: string }) => void
@@ -240,6 +241,19 @@ const api: AppApi = {
 
     // Replaces the deprecated file.path property (removed in Electron 32+)
     getPathForFile: (file: File): string => webUtils.getPathForFile(file)
+  },
+
+  log: {
+    getPath: (): Promise<string> => ipcRenderer.invoke('log:getPath'),
+    open: (): Promise<{ success: boolean }> => ipcRenderer.invoke('log:open'),
+    clear: (): Promise<{ success: boolean }> => ipcRenderer.invoke('log:clear'),
+    write: (payload: {
+      level?: 'error' | 'warn' | 'info'
+      scope: string
+      message: string
+      stack?: string
+      meta?: unknown
+    }): Promise<{ success: boolean }> => ipcRenderer.invoke('log:write', payload)
   }
 }
 

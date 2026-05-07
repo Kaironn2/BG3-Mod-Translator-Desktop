@@ -38,6 +38,20 @@ export interface TranslationBatchProgressEvent {
   error?: string
 }
 
+export interface TranslationBatchSummary {
+  total: number
+  translated: number
+  failed: number
+}
+
+export interface LogPayload {
+  level?: 'error' | 'warn' | 'info'
+  scope: string
+  message: string
+  stack?: string
+  meta?: unknown
+}
+
 export interface DictionaryEntry {
   id: number
   language1: string
@@ -151,7 +165,7 @@ export interface TranslationApi {
     provider: 'openai' | 'deepl'
     sourceLang: string
     targetLang: string
-  }): Promise<void>
+  }): Promise<TranslationBatchSummary>
   onBatchProgress(cb: (data: TranslationBatchProgressEvent) => void): UnsubscribeFn
 }
 
@@ -245,6 +259,13 @@ export interface FsApi {
   getPathForFile(file: File): string
 }
 
+export interface LogApi {
+  getPath(): Promise<string>
+  open(): Promise<{ success: boolean }>
+  clear(): Promise<{ success: boolean }>
+  write(payload: LogPayload): Promise<{ success: boolean }>
+}
+
 export interface AppApi {
   translation: TranslationApi
   dictionary: DictionaryApi
@@ -252,6 +273,7 @@ export interface AppApi {
   mod: ModApi
   config: ConfigApi
   fs: FsApi
+  log: LogApi
   xml: XmlApi
   window: WindowApi
 }
