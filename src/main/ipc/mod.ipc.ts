@@ -3,6 +3,15 @@ import path from 'node:path'
 import { app, ipcMain } from 'electron'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { packMod, unpackMod } from '../services/lslib.service'
+import type { MetaInfo } from '../services/lsx-parser.service'
+import {
+  completeTranslationImport as completeImport,
+  discardTranslationInput,
+  exportTranslatedPackage,
+  getMetaForMod,
+  prepareTranslationInput,
+  upsertMetaForMod
+} from '../services/translation-import.service'
 import { findLocalizationXmls } from '../services/xml-parser.service'
 import { extract } from '../services/zip.service'
 import { findPakFiles } from '../utils/findPakFiles'
@@ -58,6 +67,51 @@ export function registerModHandlers(repos: RepositoryRegistry): void {
     await packMod(inputFolder, outputPath)
     return { success: true, pakPath: outputPath }
   })
+
+  ipcMain.handle(
+    'mod:prepareTranslationInput',
+    async (_event, { inputPath }: { inputPath: string }) => {
+      return prepareTranslationInput(inputPath)
+    }
+  )
+
+  ipcMain.handle('mod:discardTranslationInput', (_event, { importId }: { importId: string }) => {
+    discardTranslationInput(importId)
+    return { success: true }
+  })
+
+  ipcMain.handle(
+    'mod:completeTranslationImport',
+    (
+      _event,
+      params: { importId: string; candidateId: string; modName: string; targetLang: string }
+    ) => {
+      return completeImport(repos, params)
+    }
+  )
+
+  ipcMain.handle('mod:getMeta', (_event, params: { modName: string; targetLang: string }) =>
+    getMetaForMod(repos, params)
+  )
+
+  ipcMain.handle('mod:upsertMeta', (_event, params: { modName: string; meta: MetaInfo }) =>
+    upsertMetaForMod(repos, params.modName, params.meta)
+  )
+
+  ipcMain.handle(
+    'mod:exportTranslatedPackage',
+    async (
+      _event,
+      params: {
+        outputPath: string
+        format: 'pak' | 'zip'
+        modName: string
+        entries: { uid: string; version: string; source: string; target: string }[]
+        meta: MetaInfo
+        bg3LanguageFolder: string
+      }
+    ) => exportTranslatedPackage(repos, params)
+  )
 
   ipcMain.handle('mod:getAll', (_event, params?: { lang1?: string; lang2?: string }) => {
     const mods = repos.mod.getAll()

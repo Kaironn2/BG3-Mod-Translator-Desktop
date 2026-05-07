@@ -93,7 +93,8 @@ interface TranslationSessionContext extends State {
     inputPath: string,
     sourceLang: string,
     targetLang: string,
-    modName: string
+    modName: string,
+    options?: { storedPath?: string }
   ) => Promise<void>
   updateEntry: (rowId: string, target: string) => void
   markManual: (rowId: string) => void
@@ -134,14 +135,20 @@ export function TranslationSessionProvider({
   }, [])
 
   const loadSession = useCallback(
-    async (inputPath: string, sourceLang: string, targetLang: string, modName: string) => {
+    async (
+      inputPath: string,
+      sourceLang: string,
+      targetLang: string,
+      modName: string,
+      options?: { storedPath?: string }
+    ) => {
       dispatch({ type: 'SET_PHASE', phase: 'loading' })
       dispatch({ type: 'SET_INPUT_PATH', path: inputPath })
       dispatch({ type: 'SET_MOD_NAME', name: modName })
-      const [{ storedPath }, entries] = await Promise.all([
-        window.api.mod.storeFile({ modName, filePath: inputPath }),
-        window.api.xml.load({ inputPath, sourceLang, targetLang })
-      ])
+      const storedPath =
+        options?.storedPath ??
+        (await window.api.mod.storeFile({ modName, filePath: inputPath })).storedPath
+      const entries = await window.api.xml.load({ inputPath: storedPath, sourceLang, targetLang })
       if (modName) {
         await window.api.mod.upsert({
           name: modName,

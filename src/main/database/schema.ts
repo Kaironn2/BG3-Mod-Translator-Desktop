@@ -21,6 +21,26 @@ export const mod = sqliteTable('mod', {
   ...timestamps
 })
 
+export const modMeta = sqliteTable('mod_meta', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  modId: integer('mod_id')
+    .notNull()
+    .unique()
+    .references(() => mod.id, { onDelete: 'cascade' }),
+  metaFilePath: text('meta_file_path').notNull(),
+  name: text('name').notNull(),
+  folder: text('folder').notNull(),
+  author: text('author').notNull(),
+  description: text('description').notNull(),
+  uuid: text('uuid').notNull(),
+  versionMajor: integer('version_major').notNull(),
+  versionMinor: integer('version_minor').notNull(),
+  versionRevision: integer('version_revision').notNull(),
+  versionBuild: integer('version_build').notNull(),
+  version64: text('version64').notNull(),
+  ...timestamps
+})
+
 // Invariant: language1 < language2 (alphabetically sorted) - prevents mirrored duplicates.
 // uid nullable: when present, uniqueness is enforced per (language1, language2, uid).
 // When uid is NULL, SQLite treats each NULL as distinct, allowing multiple entries per lang pair.
@@ -50,5 +70,7 @@ export const config = sqliteTable('config', {
 
 export type Language = typeof language.$inferSelect
 export type Mod = typeof mod.$inferSelect
+export type ModMeta = typeof modMeta.$inferSelect
+export type NewModMeta = typeof modMeta.$inferInsert
 export type DictionaryEntry = typeof dictionary.$inferSelect
 export type NewDictionaryEntry = typeof dictionary.$inferInsert
