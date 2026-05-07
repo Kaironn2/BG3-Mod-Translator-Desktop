@@ -1,9 +1,10 @@
 import { AlertTriangle, BookOpen, Check, Search, Sparkles, X } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   type TranslationSessionEntry,
   useTranslationSession
 } from '@/context/TranslationSession'
+import { HighlightedTextarea } from '@/components/shared/HighlightedTextarea'
 import { cn } from '@/lib/utils'
 import { renderSource } from '@/utils/renderSource'
 
@@ -31,21 +32,20 @@ function hasXmlTags(entry: TranslationSessionEntry): boolean {
 
 function KbdHint({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center justify-center h-4.5 min-w-4.5 px-1 rounded bg-[#181b1f] border border-[#2a2f37] border-b-2 font-mono text-[10px] text-neutral-400">
+    <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded border border-[#2a2f37] border-b-2 bg-[#181b1f] px-1 font-mono text-[10px] text-neutral-400">
       {children}
     </span>
   )
 }
 
-// ── Tag pill (EN / PT-BR labels in cards) ─────────────────────────────────
 function LangTag({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center h-5 px-2 rounded font-mono text-[10px] font-bold tracking-[0.06em]',
+        'inline-flex h-5 items-center rounded px-2 font-mono text-[10px] font-bold tracking-[0.06em]',
         accent
           ? 'bg-amber-500/14 text-amber-400'
-          : 'bg-[#131518] border border-[#1f2329] text-neutral-400'
+          : 'border border-[#1f2329] bg-[#131518] text-neutral-400'
       )}
     >
       {children}
@@ -63,10 +63,8 @@ export function TranslationGrid({
   const { selectedUids, selectEntry, selectEntries } = useTranslationSession()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterMode>('all')
-
-  // Maps uid → textarea DOM element so Enter can jump to the next row
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const textareaRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map())
-  // Tracks which entries were saved via Enter to skip the subsequent onBlur save
   const savedByEnterRef = useRef<Set<string>>(new Set())
 
   const counts = useMemo(() => {
@@ -86,25 +84,53 @@ export function TranslationGrid({
   }, [entries])
 
   const filteredEntries = useMemo(() => {
-    return entries.filter((e) => {
-      if (filter === 'untranslated' && e.target.trim()) return false
-      if (filter === 'translated' && !e.target.trim()) return false
-      if (filter === 'dictionary' && getCategory(e) !== 'dictionary') return false
-      if (filter === 'tags' && !hasXmlTags(e)) return false
+    return entries.filter((entry) => {
+      if (filter === 'untranslated' && entry.target.trim()) return false
+      if (filter === 'translated' && !entry.target.trim()) return false
+      if (filter === 'dictionary' && getCategory(entry) !== 'dictionary') return false
+      if (filter === 'tags' && !hasXmlTags(entry)) return false
       if (search) {
-        const q = search.toLowerCase()
-        return e.source.toLowerCase().includes(q) || e.target.toLowerCase().includes(q)
+        const query = search.toLowerCase()
+        return (
+          entry.source.toLowerCase().includes(query) || entry.target.toLowerCase().includes(query)
+        )
       }
       return true
     })
   }, [entries, filter, search])
 
+  const selectedStats = useMemo(() => {
+    let selectedStrings = 0
+    let selectedCharacters = 0
+
+    for (const entry of entries) {
+      if (!selectedUids.has(entry.rowId)) continue
+      selectedStrings += 1
+      selectedCharacters += entry.source.length
+    }
+
+    return { selectedStrings, selectedCharacters }
+  }, [entries, selectedUids])
+
   const allFiltered =
-    filteredEntries.length > 0 && filteredEntries.every((e) => selectedUids.has(e.rowId))
+    filteredEntries.length > 0 && filteredEntries.every((entry) => selectedUids.has(entry.rowId))
+
+  useEffect(() => {
+    const handleFindShortcut = (event: KeyboardEvent) => {
+      if (!event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) return
+      if (event.key.toLowerCase() !== 'f') return
+      event.preventDefault()
+      searchInputRef.current?.focus()
+      searchInputRef.current?.select()
+    }
+
+    window.addEventListener('keydown', handleFindShortcut)
+    return () => window.removeEventListener('keydown', handleFindShortcut)
+  }, [])
 
   const handleSelectAll = (checked: boolean) => {
     selectEntries(
-      filteredEntries.map((e) => e.rowId),
+      filteredEntries.map((entry) => entry.rowId),
       checked
     )
   }
@@ -121,7 +147,6 @@ export function TranslationGrid({
   }
 
   const handleEntryBlur = (entry: TranslationSessionEntry, value: string) => {
-    // Skip if Enter already persisted this entry (blur fires right after Enter navigates away)
     if (savedByEnterRef.current.has(entry.rowId)) {
       savedByEnterRef.current.delete(entry.rowId)
       return
@@ -130,37 +155,34 @@ export function TranslationGrid({
   }
 
   const handleEnterKey = (
-    e: React.KeyboardEvent<HTMLTextAreaElement>,
+    event: React.KeyboardEvent<HTMLTextAreaElement>,
     entry: TranslationSessionEntry
   ) => {
-    if (e.key !== 'Enter' || e.shiftKey) return
-    e.preventDefault()
+    if (event.key !== 'Enter' || event.shiftKey) return
+    event.preventDefault()
 
-    const value = e.currentTarget.value
+    const value = event.currentTarget.value
     updateEntryTarget(entry, value)
     savedByEnterRef.current.add(entry.rowId)
 
-    // Persist to database only if value is non-empty
     if (value.trim()) onEntrySave(entry.rowId, value)
 
-    const nextIdx = filteredEntries.findIndex((fe) => fe.rowId === entry.rowId) + 1
-    const nextEntry = filteredEntries[nextIdx]
-    if (nextEntry) {
-      const nextTextarea = textareaRefs.current.get(nextEntry.rowId)
-      if (nextTextarea) {
-        nextTextarea.focus()
-        nextTextarea.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-      }
-    }
+    const nextIndex = filteredEntries.findIndex((item) => item.rowId === entry.rowId) + 1
+    const nextEntry = filteredEntries[nextIndex]
+    if (!nextEntry) return
+
+    const nextTextarea = textareaRefs.current.get(nextEntry.rowId)
+    if (!nextTextarea) return
+    nextTextarea.focus()
+    nextTextarea.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }
 
-  // ── IDE Pro search + filter bar ──────────────────────────────────────────
-  const filterItems: {
+  const filterItems: Array<{
     mode: FilterMode
     label: string
     count: number
     dot?: string
-  }[] = [
+  }> = [
     {
       mode: 'untranslated',
       label: 'Nao traduzidas',
@@ -169,30 +191,35 @@ export function TranslationGrid({
     },
     { mode: 'translated', label: 'Traduzidas', count: counts.translated, dot: 'bg-amber-400' },
     { mode: 'dictionary', label: 'Com dicionario', count: counts.dictionary, dot: 'bg-blue-500' },
-    { mode: 'tags', label: 'Com tags XML', count: counts.tags, dot: 'bg-amber-500' }
+    { mode: 'tags', label: 'Com tags XML', count: counts.tags, dot: 'bg-purple-400' }
   ]
 
   const searchBar = (
-    <div className="flex items-center gap-3 border-b border-[#1f2329] bg-[#0c0d0f] px-5 py-1 shrink-0">
-      <div className="flex h-8 w-[292px] min-w-45 items-center gap-2 rounded-md border border-[#1f2329] bg-[#131518] px-3 focus-within:border-neutral-600 transition-colors">
-        <Search size={13} className="text-neutral-500 shrink-0" />
+    <div className="flex shrink-0 items-center gap-3 border-b border-[#1f2329] bg-[#0c0d0f] px-5 py-1">
+      <div className="flex h-8 w-[292px] min-w-45 items-center gap-2 rounded-md border border-[#1f2329] bg-[#131518] px-3 transition-colors focus-within:border-neutral-600">
+        <Search size={13} className="shrink-0 text-neutral-500" />
         <input
+          ref={searchInputRef}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(event) => setSearch(event.target.value)}
           placeholder="Buscar em strings..."
-          className="flex-1 min-w-0 bg-transparent text-xs font-medium text-neutral-300 placeholder:text-neutral-600 focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent text-xs font-medium text-neutral-300 placeholder:text-neutral-600 focus:outline-none"
         />
         {search && (
-          <button type="button" onClick={() => setSearch('')} className="shrink-0">
-            <X size={13} className="text-neutral-500 hover:text-neutral-300 transition-colors" />
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            className="shrink-0 cursor-pointer"
+          >
+            <X size={13} className="text-neutral-500 transition-colors hover:text-neutral-300" />
           </button>
         )}
-        <span className="inline-flex items-center justify-center h-5 min-w-6 rounded border border-[#252a32] bg-[#0f1114] px-1 font-mono text-[10px] text-neutral-500">
-          ⌘F
+        <span className="inline-flex h-5 min-w-6 items-center justify-center rounded border border-[#252a32] bg-[#0f1114] px-1 font-mono text-[10px] text-neutral-500">
+          Ctrl F
         </span>
       </div>
 
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex shrink-0 items-center gap-3">
         <button
           type="button"
           onClick={() => setFilter('all')}
@@ -204,7 +231,7 @@ export function TranslationGrid({
           )}
         >
           Todas
-          <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[11px] text-neutral-500 tabular-nums">
+          <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[11px] tabular-nums text-neutral-500">
             {entries.length}
           </span>
         </button>
@@ -223,9 +250,9 @@ export function TranslationGrid({
                   : 'border-transparent text-neutral-400 hover:border-[#2a2f37] hover:bg-[#181b1f] hover:text-neutral-200'
               )}
             >
-              <span className={cn('inline-block h-1.5 w-1.5 rounded-full shrink-0', item.dot)} />
+              <span className={cn('inline-block h-1.5 w-1.5 shrink-0 rounded-full', item.dot)} />
               {item.label}
-              <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[11px] text-neutral-600 tabular-nums">
+              <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[11px] tabular-nums text-neutral-600">
                 {item.count}
               </span>
             </button>
@@ -233,47 +260,47 @@ export function TranslationGrid({
         })}
       </div>
 
-      <div className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-neutral-400">
-        <span className="font-mono text-neutral-500">⌘</span>
+      <div className="ml-auto flex items-center gap-3 text-xs font-semibold text-neutral-400">
+        <span className="font-mono tabular-nums text-neutral-500">
+          {selectedStats.selectedStrings} strings • {selectedStats.selectedCharacters} characters
+        </span>
+        <span className="font-mono text-neutral-500">Ctrl</span>
         Atalhos
       </div>
     </div>
   )
 
-  // ── Side-by-side view (Direction A — IDE Pro) ────────────────────────────
   if (viewMode === 'side') {
     return (
-      <div className="flex flex-col h-full min-h-0">
+      <div className="flex h-full min-h-0 flex-col">
         {searchBar}
 
-        {/* Column headers — pr-3 compensates for the 12px scrollbar-gutter below */}
         <div
-          className="grid shrink-0 border-b border-[#1f2329] bg-[#0f1114] select-none pr-3"
+          className="grid shrink-0 select-none border-b border-[#1f2329] bg-[#0f1114] pr-3"
           style={{ gridTemplateColumns: '80px 1fr 1fr' }}
         >
-          <div className="flex items-center justify-center px-3 py-2 border-r border-[#1f2329]">
+          <div className="flex items-center justify-center border-r border-[#1f2329] px-3 py-2">
             <input
               type="checkbox"
               checked={allFiltered}
-              onChange={(e) => handleSelectAll(e.target.checked)}
-              className="accent-amber-500 cursor-pointer"
+              onChange={(event) => handleSelectAll(event.target.checked)}
+              className="cursor-pointer accent-amber-500"
             />
           </div>
-          <div className="px-4 py-2 font-semibold text-[10px] uppercase tracking-[0.08em] text-neutral-500">
+          <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
             Origem · EN
           </div>
-          <div className="px-4 py-2 font-semibold text-[10px] uppercase tracking-[0.08em] text-neutral-500 border-l border-[#1f2329]">
-            Tradução · PT-BR
+          <div className="border-l border-[#1f2329] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+            Traducao · PT-BR
           </div>
         </div>
 
-        {/* Single scroll container — scrollbar-gutter:stable always reserves 12px for the scrollbar */}
-        <div className="flex-1 min-h-0 overflow-y-auto icosa-scroll [scrollbar-gutter:stable]">
-          {filteredEntries.map((entry, idx) => {
-            const cat = getCategory(entry)
+        <div className="icosa-scroll flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable]">
+          {filteredEntries.map((entry, index) => {
+            const category = getCategory(entry)
             const isDone = entry.target.trim() !== ''
             const isSelected = selectedUids.has(entry.rowId)
-            const isDict = cat === 'dictionary'
+            const isDictionary = category === 'dictionary'
             const charCount = entry.source.length
 
             return (
@@ -285,88 +312,86 @@ export function TranslationGrid({
                 )}
                 style={{ gridTemplateColumns: '80px 1fr 1fr' }}
               >
-                {/* Gutter */}
                 <div
-                  className="flex flex-col items-center gap-2 py-3 px-3 border-r border-[#1f2329] bg-[#0f1114] cursor-pointer"
+                  className="flex cursor-pointer flex-col items-center gap-2 border-r border-[#1f2329] bg-[#0f1114] px-3 py-3"
                   onClick={() => focusEntry(entry.rowId)}
                 >
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    onChange={(e) => selectEntry(entry.rowId, e.target.checked)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="accent-amber-500 cursor-pointer"
+                    onChange={(event) => selectEntry(entry.rowId, event.target.checked)}
+                    onClick={(event) => event.stopPropagation()}
+                    className="cursor-pointer accent-amber-500"
                   />
-                  <span className="font-mono text-[11px] text-neutral-600 tabular-nums">
-                    {String(idx + 1).padStart(3, '0')}
+                  <span className="font-mono text-[11px] tabular-nums text-neutral-600">
+                    {String(index + 1).padStart(3, '0')}
                   </span>
                   <span
                     className={cn(
-                      'w-1.5 h-1.5 rounded-full mt-auto transition-colors',
+                      'mt-auto h-1.5 w-1.5 rounded-full transition-colors',
                       isDone ? 'bg-amber-500' : 'bg-neutral-700'
                     )}
                   />
                 </div>
 
-                {/* Source */}
                 <div
-                  className="flex flex-col gap-2 py-3 px-4 min-w-0 cursor-pointer"
+                  className="flex min-w-0 cursor-pointer flex-col gap-2 px-4 py-3"
                   onClick={() => focusEntry(entry.rowId)}
                 >
-                  <div className="font-mono text-[13px] text-neutral-200 leading-[1.6] whitespace-pre-wrap wrap-break-word">
-                    {entry.source ? (
-                      renderSource(entry.source)
-                    ) : (
-                      <span className="text-neutral-600 italic">vazio</span>
+                  <div className="font-mono text-[13px] leading-[1.6] text-neutral-200 whitespace-pre-wrap wrap-break-word">
+                    {entry.source ? renderSource(entry.source) : (
+                      <span className="italic text-neutral-600">vazio</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {isDict && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-blue-500/12 text-blue-400">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {isDictionary && (
+                      <span className="inline-flex items-center gap-1 rounded bg-blue-500/12 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-blue-400">
                         <BookOpen size={10} /> D <span className="text-blue-500/70">1</span>
                       </span>
                     )}
-                    <span className="text-[10px] font-mono text-neutral-600">{charCount} c</span>
+                    <span className="font-mono text-[10px] text-neutral-600">
+                      {charCount} characters
+                    </span>
                   </div>
                 </div>
 
-                {/* Target */}
                 <div
-                  className="flex flex-col gap-2 py-3 px-4 border-l border-[#1f2329] min-w-0"
-                  onClick={(e) => e.stopPropagation()}
+                  className="flex min-w-0 flex-col gap-2 border-l border-[#1f2329] px-4 py-3"
+                  onClick={(event) => event.stopPropagation()}
                 >
-                  <textarea
-                    ref={(el) => {
-                      if (el) textareaRefs.current.set(entry.rowId, el)
+                  <HighlightedTextarea
+                    ref={(element) => {
+                      if (element) textareaRefs.current.set(entry.rowId, element)
                       else textareaRefs.current.delete(entry.rowId)
                     }}
-                    key={`${entry.rowId}:${entry.target}`}
-                    defaultValue={entry.target}
-                    onBlur={(e) => handleEntryBlur(entry, e.target.value)}
-                    onKeyDown={(e) => handleEnterKey(e, entry)}
+                    value={entry.target}
+                    onBlur={(event) => handleEntryBlur(entry, event.target.value)}
+                    onChange={() => {}}
+                    onKeyDown={(event) => handleEnterKey(event, entry)}
                     rows={1}
-                    placeholder="Tradução..."
-                    className="w-full resize-none field-sizing-content bg-[#131518] border border-[#1f2329] rounded-md px-2.5 py-2 text-[13px] text-neutral-200 leading-[1.55] placeholder:text-neutral-600 placeholder:italic focus:outline-none focus:border-amber-500/60 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)] transition-[border-color,box-shadow]"
+                    placeholder="Traducao..."
+                    containerClassName="rounded-md"
+                    className="field-sizing-content"
                   />
                   <div
                     className={cn(
-                      'flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                      'pointer-events-none flex items-center gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100'
                     )}
                   >
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                      className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
                     >
                       <Sparkles size={11} /> Sugerir IA
                     </button>
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                      className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
                     >
-                      <BookOpen size={11} /> Aplicar dicionário
+                      <BookOpen size={11} /> Aplicar dicionario
                     </button>
                     <span className="ml-auto flex items-center gap-1 text-[11px] text-neutral-500">
-                      <KbdHint>↵</KbdHint> próximo
+                      <KbdHint>↵</KbdHint> proximo
                       <span className="mx-1 text-neutral-700">·</span>
                       <KbdHint>⇧↵</KbdHint> nova linha
                     </span>
@@ -380,33 +405,30 @@ export function TranslationGrid({
     )
   }
 
-  // ── Stacked view (Direction B — Focus Stack) ─────────────────────────────
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex h-full min-h-0 flex-col">
       {searchBar}
 
-      {/* Thin select-all bar */}
-      <div className="flex items-center gap-2 border-b border-[#1f2329] bg-[#0f1114] px-7 py-2 shrink-0 select-none">
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#1f2329] bg-[#0f1114] px-7 py-2 select-none">
         <input
           type="checkbox"
           checked={allFiltered}
-          onChange={(e) => handleSelectAll(e.target.checked)}
-          className="accent-amber-500 cursor-pointer"
+          onChange={(event) => handleSelectAll(event.target.checked)}
+          className="cursor-pointer accent-amber-500"
         />
-        <span className="text-[11px] text-neutral-500 font-medium tabular-nums">
+        <span className="text-[11px] font-medium tabular-nums text-neutral-500">
           {filteredEntries.length} entradas
         </span>
       </div>
 
-      {/* Card list */}
-      <div className="flex-1 min-h-0 overflow-y-auto icosa-scroll">
-        <div className="px-7 pt-5 pb-20">
-          <div className="flex flex-col gap-3.5 max-w-275 mx-auto">
-            {filteredEntries.map((entry, idx) => {
-              const cat = getCategory(entry)
+      <div className="icosa-scroll flex-1 min-h-0 overflow-y-auto">
+        <div className="px-7 pb-20 pt-5">
+          <div className="mx-auto flex max-w-275 flex-col gap-3.5">
+            {filteredEntries.map((entry, index) => {
+              const category = getCategory(entry)
               const isDone = entry.target.trim() !== ''
               const isSelected = selectedUids.has(entry.rowId)
-              const isDict = cat === 'dictionary'
+              const isDictionary = category === 'dictionary'
               const hasTags = hasXmlTags(entry)
               const wordCount = entry.source.split(/\s+/).filter(Boolean).length
               const charCount = entry.source.length
@@ -416,97 +438,84 @@ export function TranslationGrid({
                 <div
                   key={entry.rowId}
                   className={cn(
-                    'group grid overflow-hidden rounded-xl border cursor-pointer transition-all duration-120',
-                    // base
-                    'bg-[#0f1114] border-[#1f2329]',
-                    // hover
-                    'hover:border-[#2a2f37] hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.18)]',
-                    // focused via textarea focus
+                    'group grid cursor-pointer overflow-hidden rounded-xl border transition-all duration-120',
+                    'border-[#1f2329] bg-[#0f1114]',
+                    'hover:-translate-y-px hover:border-[#2a2f37] hover:shadow-[0_4px_16px_rgba(0,0,0,0.18)]',
                     'focus-within:border-amber-500 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.25),0_8px_24px_rgba(0,0,0,0.24)]',
-                    // selected tint
                     isSelected && 'border-blue-700/40 bg-blue-950/10'
                   )}
                   style={{ gridTemplateColumns: '56px 1fr' }}
                   onClick={() => focusEntry(entry.rowId)}
                 >
-                  {/* Side column — checkbox, vertical number, status circle */}
-                  <div className="flex flex-col items-center gap-3 py-4.5 border-r border-[#1f2329] bg-[#0c0d0f]">
+                  <div className="flex flex-col items-center gap-3 border-r border-[#1f2329] bg-[#0c0d0f] py-4.5">
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      onChange={(e) => selectEntry(entry.rowId, e.target.checked)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="accent-amber-500 cursor-pointer"
+                      onChange={(event) => selectEntry(entry.rowId, event.target.checked)}
+                      onClick={(event) => event.stopPropagation()}
+                      className="cursor-pointer accent-amber-500"
                     />
 
-                    {/* Vertical line number */}
                     <span
-                      className="font-mono text-[11px] text-neutral-600 tracking-widest mt-auto"
+                      className="mt-auto font-mono text-[11px] tracking-widest text-neutral-600"
                       style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
                     >
-                      #{String(idx + 1).padStart(3, '0')}
+                      #{String(index + 1).padStart(3, '0')}
                     </span>
 
-                    {/* Status circle */}
                     <div
                       className={cn(
-                        'w-5.5 h-5.5 rounded-full border flex items-center justify-center transition-colors',
+                        'flex h-5.5 w-5.5 items-center justify-center rounded-full border transition-colors',
                         isDone
-                          ? 'bg-amber-500 border-amber-500 text-white'
-                          : 'bg-[#131518] border-[#1f2329]'
+                          ? 'border-amber-500 bg-amber-500 text-white'
+                          : 'border-[#1f2329] bg-[#131518]'
                       )}
                     >
                       {isDone ? (
                         <Check size={11} strokeWidth={2.5} />
                       ) : (
-                        <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-neutral-600" />
                       )}
                     </div>
                   </div>
 
-                  {/* Card body */}
                   <div
-                    className="flex flex-col gap-3 py-4.5 px-5.5"
-                    onClick={(e) => e.stopPropagation()}
+                    className="flex flex-col gap-3 px-5.5 py-4.5"
+                    onClick={(event) => event.stopPropagation()}
                   >
-                    {/* Header row: EN tag + meta + badges */}
                     <div className="flex items-center gap-2.5">
                       <LangTag>EN</LangTag>
-                      <span className="font-mono text-[10px] text-neutral-600 tracking-[0.02em]">
-                        {charCount} caracteres · {wordCount} palavras
+                      <span className="font-mono text-[10px] tracking-[0.02em] text-neutral-600">
+                        {charCount} characters · {wordCount} palavras
                       </span>
                       <span className="flex-1" />
-                      {isDict && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-blue-500/12 text-blue-400">
+                      {isDictionary && (
+                        <span className="inline-flex items-center gap-1 rounded bg-blue-500/12 px-2 py-0.5 text-[11px] font-medium text-blue-400">
                           <BookOpen size={11} />
                           {entry.matchType === 'uid' ? '1 termo (uid)' : '1 termo'}
                         </span>
                       )}
                       {hasTags && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/12 text-amber-400">
-                          <AlertTriangle size={11} /> contém tags
+                        <span className="inline-flex items-center gap-1 rounded bg-purple-500/14 px-2 py-0.5 text-[11px] font-medium text-purple-300">
+                          <AlertTriangle size={11} /> contem tags
                         </span>
                       )}
                     </div>
 
-                    {/* Source text */}
                     <div className="font-mono text-[14px] leading-[1.65] text-neutral-200 whitespace-pre-wrap wrap-break-word">
-                      {entry.source ? (
-                        renderSource(entry.source)
-                      ) : (
-                        <span className="text-neutral-600 italic">vazio</span>
+                      {entry.source ? renderSource(entry.source) : (
+                        <span className="italic text-neutral-600">vazio</span>
                       )}
                     </div>
 
-                    {/* Dict strip — shown when focused and is a dict match */}
-                    {isDict && (
-                      <div className="hidden items-center gap-2 px-3 py-2 bg-[#0c0d0f] border border-dashed border-[#2a2f37] rounded-lg flex-wrap group-focus-within:flex">
-                        <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-[0.08em]">
-                          Dicionário sugere:
+                    {isDictionary && (
+                      <div className="hidden flex-wrap items-center gap-2 rounded-lg border border-dashed border-[#2a2f37] bg-[#0c0d0f] px-3 py-2 group-focus-within:flex">
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                          Dicionario sugere:
                         </span>
                         <button
                           type="button"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#0f1114] border border-[#1f2329] rounded-full text-[12px] cursor-pointer hover:border-amber-500 hover:bg-amber-500/10 transition-colors"
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#1f2329] bg-[#0f1114] px-2.5 py-0.5 text-[12px] transition-colors hover:border-amber-500 hover:bg-amber-500/10"
                           onClick={() => {
                             onEntryChange(entry.rowId, entry.target)
                           }}
@@ -516,55 +525,53 @@ export function TranslationGrid({
                             {entry.source.length > 24 ? '…' : ''}
                           </span>
                           <span className="text-neutral-600">→</span>
-                          <span className="text-neutral-200 font-medium">
-                            {entry.target || '—'}
-                          </span>
+                          <span className="font-medium text-neutral-200">{entry.target || '—'}</span>
                         </button>
                       </div>
                     )}
 
-                    {/* PT-BR tag row + action bar */}
-                    <div className="flex items-center gap-2.5 pt-1 border-t border-dashed border-[#1f2329] mt-1">
+                    <div className="mt-1 flex items-center gap-2.5 border-t border-dashed border-[#1f2329] pt-1">
                       <LangTag accent>PT-BR</LangTag>
                       <div
                         className={cn(
-                          'flex-1 flex items-center gap-1.5 opacity-0 pointer-events-none transition-opacity duration-150 group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+                          'pointer-events-none flex flex-1 items-center gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100'
                         )}
                       >
                         <button
                           type="button"
-                          className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                          className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
                         >
                           <Sparkles size={11} /> Sugerir IA
                         </button>
                         <button
                           type="button"
-                          className="inline-flex items-center gap-1 h-6 px-2 rounded bg-transparent text-[11px] text-neutral-400 hover:bg-[#1c1f24] hover:text-neutral-200 cursor-pointer transition-colors"
+                          className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
                         >
                           <Check size={11} /> Marcar como traduzida
                         </button>
                         <span className="flex-1" />
                         <span className="flex items-center gap-1 text-[11px] text-neutral-500">
-                          <KbdHint>↵</KbdHint> próximo
+                          <KbdHint>↵</KbdHint> proximo
                           <span className="mx-0.5 text-neutral-700">·</span>
                           <KbdHint>⇧↵</KbdHint> nova linha
                         </span>
                       </div>
                     </div>
 
-                    {/* Translation textarea */}
-                    <textarea
-                      ref={(el) => {
-                        if (el) textareaRefs.current.set(entry.rowId, el)
+                    <HighlightedTextarea
+                      ref={(element) => {
+                        if (element) textareaRefs.current.set(entry.rowId, element)
                         else textareaRefs.current.delete(entry.rowId)
                       }}
-                      key={`${entry.rowId}:${entry.target}`}
-                      defaultValue={entry.target}
-                      onBlur={(e) => handleEntryBlur(entry, e.target.value)}
-                      onKeyDown={(e) => handleEnterKey(e, entry)}
+                      value={entry.target}
+                      onBlur={(event) => handleEntryBlur(entry, event.target.value)}
+                      onChange={() => {}}
+                      onKeyDown={(event) => handleEnterKey(event, entry)}
                       rows={rows}
-                      placeholder={isDone ? '' : 'Comece a digitar a tradução...'}
-                      className="w-full resize-none bg-[#0c0d0f] border border-[#1f2329] rounded-lg px-3.5 py-3 text-[13px] text-neutral-200 leading-[1.6] placeholder:text-neutral-600 placeholder:italic focus:outline-none focus:border-amber-500 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.25)] min-h-11 transition-[border-color,box-shadow]"
+                      placeholder={isDone ? '' : 'Comece a digitar a traducao...'}
+                      containerClassName="min-h-11 rounded-lg border-[#1f2329] bg-[#0c0d0f] focus-within:border-amber-500 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.25)]"
+                      overlayClassName="px-3.5 py-3 text-[13px] leading-[1.6]"
+                      className="min-h-11 px-3.5 py-3 text-[13px] leading-[1.6]"
                     />
                   </div>
                 </div>

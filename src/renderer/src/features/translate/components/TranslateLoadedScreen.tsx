@@ -56,6 +56,8 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
         untranslatedCount={untranslatedCount}
         total={total}
         pct={pct}
+        batchCompleted={batch.batchCompleted}
+        batchTotal={batch.batchTotal}
         exportFormat={exportFlow.exportFormat}
         onViewModeChange={setViewMode}
         onFocusModeChange={setFocusMode}
@@ -76,6 +78,8 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
 
       <BatchActionBar
         selectedCount={session.selectedUids.size}
+        batchCompleted={batch.batchCompleted}
+        batchTotal={batch.batchTotal}
         onTranslateDeepL={() => batch.batchTranslate('deepl')}
         onTranslateGPT={() => batch.batchTranslate('openai')}
         onCancelTranslation={batch.cancelBatch}
@@ -88,7 +92,6 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
           meta={exportFlow.exportMeta}
           languages={languages}
           selectedLanguageFolder={exportFlow.bg3LanguageFolder}
-          targetLang={session.targetLang}
           isExporting={exportFlow.isExporting}
           onCancel={exportFlow.closeExportModal}
           onSubmit={exportFlow.submitPackageExport}

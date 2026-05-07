@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
+import { encodeEntities } from '@/lib/xmlEntities'
 import type { TranslationSession } from '../types'
 
 export function useDictionarySave(session: TranslationSession) {
@@ -15,8 +16,8 @@ export function useDictionarySave(session: TranslationSession) {
         await window.api.dictionary.upsert({
           language1: sourceLang,
           language2: targetLang,
-          textLanguage1: entry.source,
-          textLanguage2: target,
+          textLanguage1: encodeEntities(entry.source),
+          textLanguage2: encodeEntities(target),
           modName: modName || null,
           uid: entry.uid || null
         })
@@ -40,8 +41,8 @@ export function useDictionarySave(session: TranslationSession) {
         await window.api.dictionary.upsert({
           language1: sourceLang,
           language2: targetLang,
-          textLanguage1: entry.source,
-          textLanguage2: entry.target,
+          textLanguage1: encodeEntities(entry.source),
+          textLanguage2: encodeEntities(entry.target),
           modName: modName || null,
           uid: entry.uid || null
         })

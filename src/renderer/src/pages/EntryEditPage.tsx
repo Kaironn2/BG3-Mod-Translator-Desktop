@@ -6,6 +6,8 @@ import {
   type TranslationSessionEntry,
   useTranslationSession
 } from '@/context/TranslationSession'
+import { HighlightedTextarea } from '@/components/shared/HighlightedTextarea'
+import { renderSource } from '@/utils/renderSource'
 
 export function EntryEditPage(): React.JSX.Element {
   const { uid } = useParams<{ uid: string }>()
@@ -61,7 +63,7 @@ function EntryEditor({
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200 transition-colors"
+          className="flex cursor-pointer items-center gap-1.5 text-sm text-neutral-400 transition-colors hover:text-neutral-200"
         >
           <ArrowLeft size={16} />
           Voltar
@@ -76,7 +78,7 @@ function EntryEditor({
             Texto original ({sourceLang})
           </span>
           <div className="flex-1 rounded-md border border-neutral-700 bg-neutral-900/50 p-4 text-sm text-neutral-300 leading-relaxed overflow-y-auto whitespace-pre-wrap">
-            {entry.source || <span className="text-neutral-600 italic">vazio</span>}
+            {entry.source ? renderSource(entry.source) : <span className="text-neutral-600 italic">vazio</span>}
           </div>
         </div>
 
@@ -88,11 +90,13 @@ function EntryEditor({
           >
             Tradução ({targetLang})
           </label>
-          <textarea
+          <HighlightedTextarea
             id="entry-target"
             value={target}
             onChange={(e) => setTarget(e.target.value)}
-            className="flex-1 min-h-0 resize-none rounded-md border border-neutral-700 bg-neutral-900 p-4 text-sm text-neutral-200 leading-relaxed focus:border-neutral-500 focus:outline-none"
+            containerClassName="flex-1 min-h-0 rounded-md border-neutral-700 bg-neutral-900 focus-within:border-neutral-500 focus-within:shadow-none"
+            overlayClassName="p-4 text-sm leading-relaxed"
+            className="flex-1 min-h-0 p-4 text-sm leading-relaxed"
           />
         </div>
       </div>
@@ -103,7 +107,7 @@ function EntryEditor({
           type="button"
           onClick={() => handleTranslate('deepl')}
           disabled={translating !== null}
-          className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+          className="flex cursor-pointer items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {translating === 'deepl' && <Loader2 size={14} className="animate-spin" />}
           Traduzir com DeepL
@@ -112,7 +116,7 @@ function EntryEditor({
           type="button"
           onClick={() => handleTranslate('openai')}
           disabled={translating !== null}
-          className="flex items-center gap-2 rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
+          className="flex cursor-pointer items-center gap-2 rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {translating === 'openai' && <Loader2 size={14} className="animate-spin" />}
           Traduzir com OpenAI
@@ -122,14 +126,14 @@ function EntryEditor({
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="rounded-md bg-neutral-800 px-4 py-2 text-sm text-neutral-300 transition-colors hover:bg-neutral-700"
+            className="cursor-pointer rounded-md bg-neutral-800 px-4 py-2 text-sm text-neutral-300 transition-colors hover:bg-neutral-700"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="rounded-md bg-neutral-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-500"
+            className="cursor-pointer rounded-md bg-neutral-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-500"
           >
             Salvar
           </button>

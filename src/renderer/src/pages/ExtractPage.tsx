@@ -71,7 +71,7 @@ export function ExtractPage(): React.JSX.Element {
           />
           <button
             onClick={pickOutput}
-            className="rounded-md bg-neutral-800 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-700"
+            className="cursor-pointer rounded-md bg-neutral-800 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-700"
           >
             Browse
           </button>
@@ -81,7 +81,7 @@ export function ExtractPage(): React.JSX.Element {
       <button
         onClick={handleExtract}
         disabled={running || !inputPath || !outputPath || !sourceLang}
-        className="w-fit rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        className="w-fit cursor-pointer rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {running ? 'Extracting...' : 'Extract'}
       </button>

@@ -38,6 +38,8 @@ export function ModSelectionCard({
   onModSelect,
   onPageChange
 }: ModSelectionCardProps): React.JSX.Element {
+  const shouldHighlightNewMode = mods.length === 0 && isNewMod
+
   return (
     <>
       <div className="flex items-start gap-3">
@@ -64,10 +66,11 @@ export function ModSelectionCard({
             type="button"
             onClick={onNewMode}
             className={cn(
-              'px-3 h-6 rounded text-xs cursor-pointer transition-all',
+              'px-3 h-6 rounded text-xs cursor-pointer transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40',
               isNewMod
                 ? 'bg-[#1f2329] text-neutral-200'
-                : 'bg-transparent text-neutral-500 hover:text-neutral-300'
+                : 'bg-transparent text-neutral-500 hover:text-neutral-300',
+              shouldHighlightNewMode && 'ring-2 ring-amber-500/40'
             )}
           >
             + Novo
@@ -142,6 +145,7 @@ export function ModSelectionCard({
             placeholder="ex: Order of the Dracolich"
             value={newModName}
             onChange={(event) => onNewModNameChange(event.target.value)}
+            autoFocus={mods.length === 0}
           />
         </div>
       )}

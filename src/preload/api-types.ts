@@ -35,6 +35,8 @@ export interface TranslationErrorEvent {
 export interface TranslationBatchProgressEvent {
   jobId: string
   uid: string
+  completed: number
+  total: number
   target: string | null
   error?: string
 }

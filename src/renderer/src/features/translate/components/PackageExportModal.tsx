@@ -1,5 +1,6 @@
 import { Download, Loader2, Package, X } from 'lucide-react'
 import { useState } from 'react'
+import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import { cn } from '@/lib/utils'
 import type { Language, ModMeta } from '@/types'
 import { languageToBg3Folder } from '../utils/exportNames'
@@ -11,7 +12,6 @@ interface PackageExportModalProps {
   meta: ModMeta
   languages: Language[]
   selectedLanguageFolder: string
-  targetLang: string
   isExporting: boolean
   onCancel: () => void
   onSubmit: (meta: ModMeta, languageFolder: string) => Promise<void>
@@ -21,7 +21,6 @@ export function PackageExportModal({
   meta,
   languages,
   selectedLanguageFolder,
-  targetLang,
   isExporting,
   onCancel,
   onSubmit
@@ -108,30 +107,32 @@ export function PackageExportModal({
             <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
               Pasta de idioma BG3
             </span>
-            <select
+            <ThemedSelect
               value={languageFolder}
-              onChange={(event) => setLanguageFolder(event.target.value)}
+              onChange={setLanguageFolder}
               className={cn(
-                'h-9 px-3 rounded-md border bg-[#0f1114] text-sm text-neutral-200 focus:outline-none',
+                'w-full',
                 languageFolderValid
-                  ? 'border-[#1f2329] focus:border-amber-500'
-                  : 'border-red-500 focus:border-red-400'
+                  ? ''
+                  : '[&_button]:border-red-500 [&_button]:focus:border-red-400'
               )}
-            >
-              {languages.map((language) => (
-                <option key={language.code} value={languageToBg3Folder(language, language.code)}>
-                  {languageToBg3Folder(language, language.code)}
-                </option>
-              ))}
-              {!languages.some(
-                (language) =>
-                  languageToBg3Folder(language, language.code) === selectedLanguageFolder
-              ) && (
-                <option value={selectedLanguageFolder}>
-                  {selectedLanguageFolder || targetLang}
-                </option>
-              )}
-            </select>
+              options={[
+                ...languages.map((language) => ({
+                  value: languageToBg3Folder(language, language.code),
+                  label: languageToBg3Folder(language, language.code),
+                  searchText: `${language.name} ${language.code}`
+                })),
+                ...(!languages.some(
+                  (language) =>
+                    languageToBg3Folder(language, language.code) === selectedLanguageFolder
+                ) && selectedLanguageFolder
+                  ? [{ value: selectedLanguageFolder, label: selectedLanguageFolder }]
+                  : [])
+              ]}
+              searchable
+              searchPlaceholder="Buscar pasta..."
+              emptyLabel="Nenhuma pasta encontrada."
+            />
           </div>
         </div>
 

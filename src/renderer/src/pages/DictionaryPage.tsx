@@ -56,14 +56,14 @@ export function DictionaryPage(): React.JSX.Element {
         <div className="flex gap-2">
           <button
             onClick={handleImport}
-            className="rounded-md bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700"
+            className="cursor-pointer rounded-md bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700"
           >
             Import CSV
           </button>
           <button
             onClick={handleExport}
             disabled={!lang1 || !lang2}
-            className="rounded-md bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 disabled:opacity-50"
+            className="cursor-pointer rounded-md bg-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Export CSV
           </button>

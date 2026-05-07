@@ -2,12 +2,16 @@ interface TranslationStatsProps {
   translatedCount: number
   total: number
   pct: number
+  batchCompleted?: number
+  batchTotal?: number
 }
 
 export function TranslationStats({
   translatedCount,
   total,
-  pct
+  pct,
+  batchCompleted = 0,
+  batchTotal = 0
 }: TranslationStatsProps): React.JSX.Element {
   return (
     <div className="flex flex-col gap-2 min-w-70">
@@ -16,6 +20,11 @@ export function TranslationStats({
           {translatedCount}
         </span>
         <span className="text-base text-neutral-500">/{total}</span>
+        {batchTotal > 0 && (
+          <span className="ml-3 text-[11px] text-neutral-500">
+            batch {batchCompleted}/{batchTotal}
+          </span>
+        )}
       </div>
       <div className="relative h-1.5 bg-[#131518] rounded overflow-hidden">
         <div
