@@ -148,7 +148,29 @@ export type ConfigKey =
   | 'author'
   | 'divine_path'
 
-export type XmlMatchType = 'none' | 'uid' | 'text' | 'manual'
+export type XmlMatchType = 'none' | 'mod-text' | 'text' | 'manual'
+
+export interface DictionaryFilters {
+  text?: string
+  modName?: string
+  sourceLang?: string
+  targetLang?: string
+}
+
+export interface DictionaryImportPreviewRow {
+  sourceLang: string
+  targetLang: string
+  sourceText: string
+  targetText: string
+  modName: string | null
+  uid: string | null
+}
+
+export interface DictionaryImportPreview {
+  headers: string[]
+  totalRows: number
+  rows: DictionaryImportPreviewRow[]
+}
 
 export interface XmlEntry {
   uid: string
@@ -182,14 +204,20 @@ export interface TranslationApi {
 }
 
 export interface DictionaryApi {
+  list(filters: DictionaryFilters): Promise<DictionaryEntry[]>
   getAll(params: { lang1: string; lang2: string }): Promise<DictionaryEntry[]>
   search(params: { text: string; lang1: string; lang2: string }): Promise<DictionaryEntry[]>
+  create(entry: UpsertDictionaryPayload): Promise<{ success: boolean }>
+  update(params: { id: number; entry: UpsertDictionaryPayload }): Promise<{ success: boolean }>
   upsert(entry: UpsertDictionaryPayload): Promise<{ success: boolean }>
   delete(params: { id: number }): Promise<{ success: boolean }>
+  previewImport(params: {
+    filePath: string
+    format: 'csv' | 'xlsx'
+  }): Promise<DictionaryImportPreview>
   import(params: { filePath: string; format: 'csv' | 'xlsx' }): Promise<{ count: number }>
   export(params: {
-    lang1: string
-    lang2: string
+    filters: DictionaryFilters
     format: 'csv' | 'xlsx'
     outputPath: string
   }): Promise<{ success: boolean }>
@@ -243,7 +271,12 @@ export interface ModApi {
 }
 
 export interface XmlApi {
-  load(params: { inputPath: string; sourceLang: string; targetLang: string }): Promise<XmlEntry[]>
+  load(params: {
+    inputPath: string
+    sourceLang: string
+    targetLang: string
+    modName?: string
+  }): Promise<XmlEntry[]>
   export(params: { outputPath: string; entries: XmlEntry[] }): Promise<void>
 }
 

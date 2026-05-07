@@ -148,7 +148,12 @@ export function TranslationSessionProvider({
       const storedPath =
         options?.storedPath ??
         (await window.api.mod.storeFile({ modName, filePath: inputPath })).storedPath
-      const entries = await window.api.xml.load({ inputPath: storedPath, sourceLang, targetLang })
+      const entries = await window.api.xml.load({
+        inputPath: storedPath,
+        sourceLang,
+        targetLang,
+        modName
+      })
       if (modName) {
         await window.api.mod.upsert({
           name: modName,

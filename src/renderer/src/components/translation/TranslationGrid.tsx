@@ -20,7 +20,7 @@ interface TranslationGridProps {
 }
 
 function getCategory(entry: TranslationSessionEntry): TranslationCategory {
-  if (entry.matchType === 'uid' || entry.matchType === 'text') return 'dictionary'
+  if (entry.matchType === 'mod-text' || entry.matchType === 'text') return 'dictionary'
   if (entry.matchType === 'manual') return 'manual'
   if (entry.target.trim()) return 'tool'
   return 'none'
@@ -492,7 +492,7 @@ export function TranslationGrid({
                       {isDictionary && (
                         <span className="inline-flex items-center gap-1 rounded bg-blue-500/12 px-2 py-0.5 text-[11px] font-medium text-blue-400">
                           <BookOpen size={11} />
-                          {entry.matchType === 'uid' ? '1 termo (uid)' : '1 termo'}
+                          {entry.matchType === 'mod-text' ? '1 termo (mod)' : '1 termo'}
                         </span>
                       )}
                       {hasTags && (
