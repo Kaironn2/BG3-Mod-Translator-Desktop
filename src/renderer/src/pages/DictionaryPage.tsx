@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { HighlightedTextarea } from '@/components/shared/HighlightedTextarea'
 import { useDebouncedFilter } from '@/hooks/useDebouncedFilter'
 import { cn } from '@/lib/utils'
 import type {
@@ -52,11 +53,11 @@ interface FilterOption {
 const TABLE_HEADER =
   'text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500 select-none'
 
-const CELL_INPUT =
-  'w-full rounded-md border border-amber-500 bg-[#0c0d0f] px-3 py-2 text-sm text-neutral-100 outline-none shadow-[0_0_0_3px_rgba(245,158,11,0.22)]'
-
 const FIELD_SELECT =
   'rounded-md border border-neutral-700 bg-[#0c0d0f] px-3 py-2 text-sm text-neutral-100 outline-none focus:border-amber-500'
+
+const META_INPUT =
+  'h-8 w-full rounded-md border border-[#252a32] bg-[#0c0d0f] px-2.5 text-[12px] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-amber-500'
 
 const EMPTY_DRAFT: EntryDraft = {
   sourceLang: '',
@@ -82,6 +83,7 @@ export function DictionaryPage(): React.JSX.Element {
   const [creating, setCreating] = useState(false)
   const [newDraft, setNewDraft] = useState<EntryDraft>(EMPTY_DRAFT)
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [importOpen, setImportOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const modAnchorRef = useRef<HTMLButtonElement>(null)
@@ -184,6 +186,9 @@ export function DictionaryPage(): React.JSX.Element {
       latest
     }
   }, [displayEntries, entries.length])
+
+  const allFilteredSelected =
+    displayEntries.length > 0 && displayEntries.every((entry) => selectedIds.has(entry.id))
 
   const hasFilters = Boolean(text || modName || sourceLang || targetLang)
 
@@ -318,6 +323,11 @@ export function DictionaryPage(): React.JSX.Element {
       toast.success('Entrada removida')
       setPendingDeleteId(null)
       if (editingId === id) resetEditing()
+      setSelectedIds((previous) => {
+        const next = new Set(previous)
+        next.delete(id)
+        return next
+      })
       await loadEntries(filters)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao remover entrada')
@@ -341,6 +351,26 @@ export function DictionaryPage(): React.JSX.Element {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao exportar CSV')
     }
+  }
+
+  const toggleSelected = (id: number, checked: boolean) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous)
+      if (checked) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous)
+      for (const entry of displayEntries) {
+        if (checked) next.add(entry.id)
+        else next.delete(entry.id)
+      }
+      return next
+    })
   }
 
   const selectedModLabel = modMenuOptions.find((option) => option.value === modName)?.label
@@ -489,12 +519,19 @@ export function DictionaryPage(): React.JSX.Element {
         <table className="w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-[#131518]">
             <tr className="border-b border-[#1f2329]">
+              <th className={cn(TABLE_HEADER, 'w-12 px-4 py-3 text-center')}>
+                <input
+                  type="checkbox"
+                  checked={allFilteredSelected}
+                  onChange={(event) => toggleSelectAll(event.target.checked)}
+                  className="h-4 w-4 cursor-pointer accent-amber-500"
+                />
+              </th>
               <th className={cn(TABLE_HEADER, 'w-28 px-4 py-3 text-left')}>ID</th>
               <th className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>Texto origem</th>
               <th className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>Texto destino</th>
               <th className={cn(TABLE_HEADER, 'w-48 px-4 py-3 text-left')}>Mod</th>
               <th className={cn(TABLE_HEADER, 'w-36 px-4 py-3 text-left')}>Idiomas</th>
-              <th className={cn(TABLE_HEADER, 'w-40 px-4 py-3 text-left')}>UID</th>
               <th className={cn(TABLE_HEADER, 'w-32 px-4 py-3 text-right')}>Acoes</th>
             </tr>
           </thead>
@@ -527,8 +564,19 @@ export function DictionaryPage(): React.JSX.Element {
               ) : (
                 <tr
                   key={entry.id}
-                  className="border-b border-[#1f2329] transition-colors hover:bg-[#131518]"
+                  className={cn(
+                    'border-b border-[#1f2329] transition-colors hover:bg-[#131518]',
+                    selectedIds.has(entry.id) && 'bg-[#131518]'
+                  )}
                 >
+                  <td className="px-4 py-3 align-top text-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(entry.id)}
+                      onChange={(event) => toggleSelected(entry.id, event.target.checked)}
+                      className="mt-1 h-4 w-4 cursor-pointer accent-amber-500"
+                    />
+                  </td>
                   <td className="px-4 py-3 align-top">
                     <span className="font-mono text-[11px] text-neutral-500">
                       DCT-{String(entry.id).padStart(4, '0')}
@@ -545,21 +593,23 @@ export function DictionaryPage(): React.JSX.Element {
                     </div>
                   </td>
                   <td className="px-4 py-3 align-top">
-                    <span className="inline-flex max-w-full items-center gap-2 rounded-md border border-[#252a32] bg-[#0c0d0f] px-2 py-1 text-xs text-neutral-300">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                      <span className="truncate">{entry.modName || 'Sem mod'}</span>
-                    </span>
+                    <div className="flex flex-col gap-2">
+                      <span className="inline-flex max-w-full items-center gap-2 rounded-md border border-[#252a32] bg-[#0c0d0f] px-2 py-1 text-xs text-neutral-300">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                        <span className="truncate">{entry.modName || 'Sem mod'}</span>
+                      </span>
+                      {entry.uid && (
+                        <span className="truncate font-mono text-[11px] text-neutral-600">
+                          UID {entry.uid}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 align-top">
                     <span className="inline-flex items-center gap-1 font-mono text-[11px] text-neutral-400">
                       <span>{entry.sourceLang}</span>
                       <span className="text-neutral-600">-&gt;</span>
                       <span className="text-amber-400">{entry.targetLang}</span>
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <span className="block max-w-36 truncate font-mono text-[11px] text-neutral-500">
-                      {entry.uid || '—'}
                     </span>
                   </td>
                   <td className="px-4 py-3 align-top">
@@ -865,27 +915,38 @@ function EditableRow({
           : 'bg-[#131518] shadow-[inset_3px_0_0_#f59e0b]'
       )}
     >
+      <td className="px-4 py-3 align-top text-center">
+        <input
+          type="checkbox"
+          disabled
+          className="mt-1 h-4 w-4 cursor-not-allowed accent-amber-500 opacity-60"
+        />
+      </td>
       <td className="px-4 py-3 align-top">
         <span className="font-mono text-[11px] text-neutral-500">
           {id ? `DCT-${String(id).padStart(4, '0')}` : 'nova'}
         </span>
       </td>
       <td className="px-4 py-3 align-top">
-        <textarea
+        <HighlightedTextarea
           autoFocus
           value={draft.sourceText}
           onChange={(event) => onChange({ ...draft, sourceText: event.target.value })}
-          rows={2}
-          className={CELL_INPUT}
+          rows={1}
+          containerClassName="rounded-lg border-[#2a2f37] bg-[#0c0d0f] focus-within:border-amber-500 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.22)]"
+          overlayClassName="px-3 py-2 text-[13px] leading-[1.6]"
+          className="field-sizing-content min-h-0 px-3 py-2 text-[13px] leading-[1.6]"
           placeholder="Texto origem..."
         />
       </td>
       <td className="px-4 py-3 align-top">
-        <textarea
+        <HighlightedTextarea
           value={draft.targetText}
           onChange={(event) => onChange({ ...draft, targetText: event.target.value })}
-          rows={2}
-          className={CELL_INPUT}
+          rows={1}
+          containerClassName="rounded-lg border-[#2a2f37] bg-[#0c0d0f] focus-within:border-amber-500 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.22)]"
+          overlayClassName="px-3 py-2 text-[13px] leading-[1.6]"
+          className="field-sizing-content min-h-0 px-3 py-2 text-[13px] leading-[1.6]"
           placeholder="Texto destino..."
         />
       </td>
@@ -895,8 +956,14 @@ function EditableRow({
             list="dictionary-mod-options"
             value={draft.modName}
             onChange={(event) => onChange({ ...draft, modName: event.target.value })}
-            className={CELL_INPUT}
+            className={META_INPUT}
             placeholder="Nome do mod"
+          />
+          <input
+            value={draft.uid}
+            onChange={(event) => onChange({ ...draft, uid: event.target.value })}
+            className={META_INPUT}
+            placeholder="UID opcional"
           />
           <datalist id="dictionary-mod-options">
             {mods.map((modName) => (
@@ -910,7 +977,7 @@ function EditableRow({
           <select
             value={draft.sourceLang}
             onChange={(event) => onChange({ ...draft, sourceLang: event.target.value })}
-            className={cn(FIELD_SELECT, 'w-24')}
+            className={cn(FIELD_SELECT, 'h-8 w-24 px-2.5 py-0 text-[12px]')}
           >
             <option value="">Origem</option>
             {languages.map((language) => (
@@ -923,7 +990,7 @@ function EditableRow({
           <select
             value={draft.targetLang}
             onChange={(event) => onChange({ ...draft, targetLang: event.target.value })}
-            className={cn(FIELD_SELECT, 'w-24')}
+            className={cn(FIELD_SELECT, 'h-8 w-24 px-2.5 py-0 text-[12px]')}
           >
             <option value="">Destino</option>
             {languages.map((language) => (
@@ -933,14 +1000,6 @@ function EditableRow({
             ))}
           </select>
         </div>
-      </td>
-      <td className="px-4 py-3 align-top">
-        <input
-          value={draft.uid}
-          onChange={(event) => onChange({ ...draft, uid: event.target.value })}
-          className={CELL_INPUT}
-          placeholder="UID opcional"
-        />
       </td>
       <td className="px-4 py-3 align-top">
         <div className="flex justify-end gap-1">
