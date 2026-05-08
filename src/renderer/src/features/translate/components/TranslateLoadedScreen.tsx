@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { BatchActionBar } from '@/components/translation/BatchActionBar'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { TranslationGrid } from '@/components/translation/TranslationGrid'
 import type { Language } from '@/types'
 import { useBatchTranslation } from '../hooks/useBatchTranslation'
@@ -15,6 +16,7 @@ interface TranslateLoadedScreenProps {
 }
 
 export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): React.JSX.Element {
+  const { t } = useAppTranslation('translate')
   const [viewMode, setViewMode] = useState<'side' | 'stacked'>('side')
   const [languages, setLanguages] = useState<Language[]>([])
   const dictionarySave = useDictionarySave(session)
@@ -30,7 +32,7 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
   const pct = total > 0 ? (translatedCount / total) * 100 : 0
   const fileName = session.inputPath
     ? (session.inputPath.split(/[\\/]/).pop() ?? session.modName)
-    : session.modName || 'arquivo.xml'
+    : session.modName || t('loaded.defaultFileName')
 
   useEffect(() => {
     window.api.language.getAll().then(setLanguages)

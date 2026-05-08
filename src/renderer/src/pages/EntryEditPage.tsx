@@ -7,6 +7,8 @@ import {
   useTranslationSession
 } from '@/context/TranslationSession'
 import { HighlightedTextarea } from '@/components/shared/HighlightedTextarea'
+import { getLocalizedErrorMessage } from '@/i18n/errors'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { renderSource } from '@/utils/renderSource'
 
 export function EntryEditPage(): React.JSX.Element {
@@ -28,9 +30,10 @@ function EntryEditor({
   session: ReturnType<typeof useTranslationSession>
 }): React.JSX.Element {
   const navigate = useNavigate()
+  const { t } = useAppTranslation(['translate', 'common'])
   const { sourceLang, targetLang, updateEntry, markManual } = session
 
-  const [target, setTarget] = useState(entry?.target ?? '')
+  const [target, setTarget] = useState(entry.target ?? '')
   const [translating, setTranslating] = useState<'deepl' | 'openai' | null>(null)
 
   const handleTranslate = async (provider: 'deepl' | 'openai') => {
@@ -45,7 +48,7 @@ function EntryEditor({
       setTarget(result)
       updateEntry(entry.rowId, result)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao traduzir')
+      toast.error(getLocalizedErrorMessage(err, t))
     } finally {
       setTranslating(null)
     }
@@ -58,7 +61,7 @@ function EntryEditor({
   }
 
   return (
-    <div className="flex flex-col h-full p-6 gap-6 max-w-4xl mx-auto">
+    <div className="mx-auto flex h-full max-w-4xl flex-col gap-6 p-6">
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -66,34 +69,38 @@ function EntryEditor({
           className="flex cursor-pointer items-center gap-1.5 text-sm text-neutral-400 transition-colors hover:text-neutral-200"
         >
           <ArrowLeft size={16} />
-          Voltar
+          {t('actions.back', { ns: 'common' })}
         </button>
-        <span className="text-xs text-neutral-600 font-mono truncate">{entry.uid}</span>
+        <span className="truncate font-mono text-xs text-neutral-600">{entry.uid}</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
-        {/* Source */}
+      <div className="grid min-h-0 flex-1 grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-neutral-400 uppercase tracking-wide">
-            Texto original ({sourceLang})
+          <span className="text-xs font-medium tracking-wide text-neutral-400 uppercase">
+            {t('entryEdit.originalText', { ns: 'translate', language: sourceLang })}
           </span>
-          <div className="flex-1 rounded-md border border-neutral-700 bg-neutral-900/50 p-4 text-sm text-neutral-300 leading-relaxed overflow-y-auto whitespace-pre-wrap">
-            {entry.source ? renderSource(entry.source) : <span className="text-neutral-600 italic">vazio</span>}
+          <div className="flex-1 overflow-y-auto rounded-md border border-neutral-700 bg-neutral-900/50 p-4 text-sm leading-relaxed text-neutral-300 whitespace-pre-wrap">
+            {entry.source ? (
+              renderSource(entry.source)
+            ) : (
+              <span className="italic text-neutral-600">
+                {t('entryEdit.empty', { ns: 'translate' })}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Target */}
         <div className="flex flex-col gap-2">
           <label
             htmlFor="entry-target"
-            className="text-xs font-medium text-neutral-400 uppercase tracking-wide"
+            className="text-xs font-medium tracking-wide text-neutral-400 uppercase"
           >
-            Tradução ({targetLang})
+            {t('entryEdit.translation', { ns: 'translate', language: targetLang })}
           </label>
           <HighlightedTextarea
             id="entry-target"
             value={target}
-            onChange={(e) => setTarget(e.target.value)}
+            onChange={(event) => setTarget(event.target.value)}
             containerClassName="flex-1 min-h-0 rounded-md border-neutral-700 bg-neutral-900 focus-within:border-neutral-500 focus-within:shadow-none"
             overlayClassName="p-4 text-sm leading-relaxed"
             className="flex-1 min-h-0 p-4 text-sm leading-relaxed"
@@ -101,8 +108,7 @@ function EntryEditor({
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex shrink-0 items-center gap-3">
         <button
           type="button"
           onClick={() => handleTranslate('deepl')}
@@ -110,7 +116,7 @@ function EntryEditor({
           className="flex cursor-pointer items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {translating === 'deepl' && <Loader2 size={14} className="animate-spin" />}
-          Traduzir com DeepL
+          {t('entryEdit.translateWithDeepL', { ns: 'translate' })}
         </button>
         {/* <button
           type="button"
@@ -119,7 +125,7 @@ function EntryEditor({
           className="flex cursor-pointer items-center gap-2 rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {translating === 'openai' && <Loader2 size={14} className="animate-spin" />}
-          Traduzir com OpenAI
+          Translate with OpenAI
         </button> */}
 
         <div className="ml-auto flex gap-2">
@@ -128,14 +134,14 @@ function EntryEditor({
             onClick={() => navigate(-1)}
             className="cursor-pointer rounded-md bg-neutral-800 px-4 py-2 text-sm text-neutral-300 transition-colors hover:bg-neutral-700"
           >
-            Cancelar
+            {t('actions.cancel', { ns: 'common' })}
           </button>
           <button
             type="button"
             onClick={handleSave}
             className="cursor-pointer rounded-md bg-neutral-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-500"
           >
-            Salvar
+            {t('actions.save', { ns: 'common' })}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { Merge } from 'lucide-react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { XmlSelectionModal } from '@/features/translate/components/XmlSelectionModal'
 import type { PreparedTranslationInput } from '@/types'
 import { useMergeSetup } from '../hooks/useMergeSetup'
@@ -8,6 +9,7 @@ import { MergeFileStep } from './MergeFileStep'
 import { MergeNameStep } from './MergeNameStep'
 
 export function MergeToolScreen(): React.JSX.Element {
+  const { t } = useAppTranslation('merge')
   const setup = useMergeSetup()
   const pendingSlot =
     setup.pendingSelection === 'source'
@@ -18,34 +20,34 @@ export function MergeToolScreen(): React.JSX.Element {
 
   return (
     <>
-      <div className="flex flex-col h-full min-h-0">
-        <div className="flex items-center gap-3 px-5 h-10 border-b border-[#1f2329] bg-[#131518] shrink-0">
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="flex h-10 shrink-0 items-center gap-3 border-b border-[#1f2329] bg-[#131518] px-5">
           <span className="flex items-center gap-1.5 font-mono text-[12px] text-neutral-200">
             <Merge size={12} />
-            Nova ferramenta de merge
+            {t('title')}
           </span>
           <span className="flex-1" />
           <span className="flex items-center gap-2 font-mono text-[11px]">
             <span className={setup.step1Done ? 'text-amber-400' : 'text-neutral-600'}>
-              1 Origem
+              1 {t('steps.source')}
             </span>
             <span className="text-neutral-700">-</span>
             <span className={setup.step2Done ? 'text-amber-400' : 'text-neutral-600'}>
-              2 Traduzido
+              2 {t('steps.translated')}
             </span>
             <span className="text-neutral-700">-</span>
             <span className={setup.step3Done ? 'text-amber-400' : 'text-neutral-600'}>
-              3 Mod
+              3 {t('steps.mod')}
             </span>
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto icosa-scroll [scrollbar-gutter:stable] px-6 pt-7 pb-6 min-h-0">
-          <div className="max-w-220 mx-auto flex flex-col gap-3.5">
+        <div className="icosa-scroll min-h-0 flex-1 overflow-y-auto px-6 pt-7 pb-6 [scrollbar-gutter:stable]">
+          <div className="mx-auto flex max-w-220 flex-col gap-3.5">
             <MergeFileStep
               step="01"
-              title="Arquivo de origem"
-              description="Forneca o arquivo com os textos originais que servirao de base."
+              title={t('sourceFile.title')}
+              description={t('sourceFile.description')}
               slot={setup.source}
               slotKey="source"
               languages={setup.languages}
@@ -58,8 +60,8 @@ export function MergeToolScreen(): React.JSX.Element {
 
             <MergeFileStep
               step="02"
-              title="Arquivo traduzido"
-              description="Forneca o arquivo ja traduzido para a fusao."
+              title={t('translatedFile.title')}
+              description={t('translatedFile.description')}
               slot={setup.target}
               slotKey="target"
               languages={setup.languages}

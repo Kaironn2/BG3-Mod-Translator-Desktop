@@ -1,6 +1,7 @@
 import { Download, Loader2, Package, X } from 'lucide-react'
 import { useState } from 'react'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import type { Language, ModMeta } from '@/types'
 import { languageToBg3Folder } from '../utils/exportNames'
@@ -25,6 +26,7 @@ export function PackageExportModal({
   onCancel,
   onSubmit
 }: PackageExportModalProps): React.JSX.Element {
+  const { t } = useAppTranslation(['package', 'common'])
   const [draft, setDraft] = useState(meta)
   const [version, setVersion] = useState(formatVersion(meta))
   const [languageFolder, setLanguageFolder] = useState(selectedLanguageFolder)
@@ -56,9 +58,9 @@ export function PackageExportModal({
         <div className="flex items-center gap-3 px-5 h-12 border-b border-[#1f2329] bg-[#131518]">
           <Package size={15} className="text-amber-400" />
           <div className="flex-1 min-w-0">
-            <h2 className="m-0 text-sm font-semibold text-neutral-200">Exportar pacote</h2>
+            <h2 className="m-0 text-sm font-semibold text-neutral-200">{t('exportModal.title')}</h2>
             <p className="m-0 text-[11px] text-neutral-500">
-              Folder tambem define a estrutura de pastas e o nome do XML.
+              {t('exportModal.description')}
             </p>
           </div>
           <button type="button" className={btnGhostIcon} onClick={onCancel}>
@@ -67,20 +69,16 @@ export function PackageExportModal({
         </div>
 
         <div className="p-5 grid grid-cols-2 gap-3.5">
+          <MetaField label={t('fields.name', { ns: 'common' })} value={draft.name} onChange={(value) => updateDraft('name', value)} />
           <MetaField
-            label="Name"
-            value={draft.name}
-            onChange={(value) => updateDraft('name', value)}
-          />
-          <MetaField
-            label="Folder"
+            label={t('fields.folder', { ns: 'common' })}
             value={draft.folder}
             onChange={(value) => updateDraft('folder', value)}
             invalid={!folderValid}
-            hint={!folderValid ? 'Use apenas letras, numeros, _ ou -' : undefined}
+            hint={!folderValid ? t('exportModal.folderHint') : undefined}
           />
           <MetaField
-            label="Author"
+            label={t('fields.author', { ns: 'common' })}
             value={draft.author}
             onChange={(value) => updateDraft('author', value)}
           />
@@ -91,21 +89,25 @@ export function PackageExportModal({
           />
           <div className="col-span-2">
             <MetaField
-              label="Description"
+              label={t('fields.description', { ns: 'common' })}
               value={draft.description}
               onChange={(value) => updateDraft('description', value)}
             />
           </div>
           <MetaField
-            label="Versao"
+            label={t('fields.version', { ns: 'common' })}
             value={version}
             onChange={handleVersionChange}
             invalid={!version64}
-            hint={version64 ? `Version64 ${version64}` : 'Use o formato 1.2.3.4'}
+            hint={
+              version64
+                ? t('exportModal.version64', { value: version64 })
+                : t('exportModal.versionHint')
+            }
           />
           <div className="flex flex-col gap-1.5">
             <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
-              Pasta de idioma BG3
+              {t('exportModal.bg3LanguageFolder')}
             </span>
             <ThemedSelect
               value={languageFolder}
@@ -130,15 +132,15 @@ export function PackageExportModal({
                   : [])
               ]}
               searchable
-              searchPlaceholder="Buscar pasta..."
-              emptyLabel="Nenhuma pasta encontrada."
+              searchPlaceholder={t('exportModal.searchLanguageFolder')}
+              emptyLabel={t('exportModal.noLanguageFolderFound')}
             />
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-2.5 px-5 py-3 border-t border-[#1f2329] bg-[#131518]">
           <button type="button" className={btnBase} onClick={onCancel}>
-            Cancelar
+            {t('actions.cancel', { ns: 'common' })}
           </button>
           <button
             type="button"
@@ -147,7 +149,7 @@ export function PackageExportModal({
             onClick={handleSubmit}
           >
             {isExporting ? <Loader2 size={13} className="animate-spin" /> : <Download />}
-            Exportar
+            {t('actions.export', { ns: 'common' })}
           </button>
         </div>
       </div>

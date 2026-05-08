@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
+import { getLocalizedErrorMessage } from '@/i18n/errors'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import type { Language, ModMeta } from '@/types'
 import type { ExportFormat, TranslationSession } from '../types'
 import { exportFileBaseName, languageToBg3Folder } from '../utils/exportNames'
@@ -7,6 +9,7 @@ import { exportFileBaseName, languageToBg3Folder } from '../utils/exportNames'
 const EXPORT_FORMAT_ORDER: ExportFormat[] = ['xml', 'pak', 'zip']
 
 export function useTranslationExport(session: TranslationSession, languages: Language[]) {
+  const { t } = useAppTranslation(['toasts', 'common'])
   const [isExporting, setIsExporting] = useState(false)
   const [exportFormat, setExportFormat] = useState<ExportFormat>('xml')
   const [exportMeta, setExportMeta] = useState<ModMeta | null>(null)
@@ -15,18 +18,18 @@ export function useTranslationExport(session: TranslationSession, languages: Lan
 
   const exportXml = useCallback(async () => {
     const outputPath = await window.api.fs.saveDialog({
-      defaultName: `${exportFileBaseName(modName || 'traducao', targetLang)}.xml`,
+      defaultName: `${exportFileBaseName(modName || 'translation', targetLang)}.xml`,
       filters: [{ name: 'XML', extensions: ['xml'] }]
     })
     if (!outputPath) return
 
     try {
       await window.api.xml.export({ outputPath, entries })
-      toast.success('XML exportado com sucesso')
+      toast.success(t('translate.xmlExported', { ns: 'toasts' }))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao exportar XML')
+      toast.error(getLocalizedErrorMessage(err, t))
     }
-  }, [entries, modName, targetLang])
+  }, [entries, modName, t, targetLang])
 
   const openExport = useCallback(async () => {
     if (exportFormat === 'xml') {
@@ -40,9 +43,9 @@ export function useTranslationExport(session: TranslationSession, languages: Lan
       setExportMeta(meta)
       setBg3LanguageFolder(languageToBg3Folder(targetLanguage, targetLang))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao carregar meta.lsx')
+      toast.error(getLocalizedErrorMessage(err, t))
     }
-  }, [exportFormat, exportXml, languages, modName, targetLang])
+  }, [exportFormat, exportXml, languages, modName, t, targetLang])
 
   const submitPackageExport = useCallback(
     async (meta: ModMeta, languageFolder: string) => {
@@ -62,15 +65,20 @@ export function useTranslationExport(session: TranslationSession, languages: Lan
           meta,
           bg3LanguageFolder: languageFolder
         })
-        toast.success(`${exportFormat.toUpperCase()} exportado com sucesso`)
+        toast.success(
+          t('translate.packageExported', {
+            ns: 'toasts',
+            format: exportFormat.toUpperCase()
+          })
+        )
         setExportMeta(null)
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao exportar pacote')
+        toast.error(getLocalizedErrorMessage(err, t))
       } finally {
         setIsExporting(false)
       }
     },
-    [entries, exportFormat, modName]
+    [entries, exportFormat, modName, t]
   )
 
   const cycleExportFormat = useCallback(() => {

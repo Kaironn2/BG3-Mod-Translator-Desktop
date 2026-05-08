@@ -9,6 +9,7 @@ import {
   Save,
   Undo2
 } from 'lucide-react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import type { ExportFormat, TranslationSession } from '../types'
 import { ExportControls } from './ExportControls'
@@ -60,12 +61,14 @@ export function EditorHeader({
   onExportFormatChange,
   onExport
 }: EditorHeaderProps): React.JSX.Element {
+  const { t } = useAppTranslation(['translate', 'common'])
+
   return (
     <div className="bg-[#0f1114] border-b border-[#1f2329] px-7 pt-5 pb-4 shrink-0">
       <div className="flex items-center gap-3 mb-4">
         <button type="button" className={btnBase} onClick={session.resetSession}>
           <ArrowLeft />
-          Voltar
+          {t('editor.back')}
         </button>
 
         <div className="flex items-center gap-1.5 text-sm text-neutral-500 min-w-0">
@@ -82,7 +85,7 @@ export function EditorHeader({
           <div className="flex items-center bg-[#131518] border border-[#1f2329] rounded-md p-0.75 gap-0.5">
             <button
               type="button"
-              title="Lado a lado"
+              title={t('editor.sideBySide')}
               onClick={() => onViewModeChange('side')}
               className={cn(
                 'w-6.5 h-5.5 flex items-center justify-center rounded border-0 cursor-pointer transition-all',
@@ -95,7 +98,7 @@ export function EditorHeader({
             </button>
             <button
               type="button"
-              title="Empilhado"
+              title={t('editor.stacked')}
               onClick={() => onViewModeChange('stacked')}
               className={cn(
                 'w-6.5 h-5.5 flex items-center justify-center rounded border-0 cursor-pointer transition-all',
@@ -108,10 +111,10 @@ export function EditorHeader({
             </button>
           </div>
 
-          <button type="button" className={btnGhostIcon} title="Desfazer" disabled>
+          <button type="button" className={btnGhostIcon} title={t('editor.undo')} disabled>
             <Undo2 />
           </button>
-          <button type="button" className={btnGhostIcon} title="Refazer" disabled>
+          <button type="button" className={btnGhostIcon} title={t('editor.redo')} disabled>
             <Redo2 />
           </button>
 
@@ -122,10 +125,10 @@ export function EditorHeader({
             className={cn(btnBase, isSaving && 'opacity-60 cursor-not-allowed')}
             onClick={onSave}
             disabled={isSaving}
-            title="Salvar no dicionario (Ctrl+S)"
+            title={t('editor.saveDictionary')}
           >
             {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save />}
-            Salvar
+            {t('actions.save', { ns: 'common' })}
             <ShortcutHint>Ctrl S</ShortcutHint>
           </button>
 
@@ -151,15 +154,9 @@ export function EditorHeader({
             </span>
           </h1>
           <div className="flex items-center gap-2.5 text-[13px] text-neutral-400">
-            <span>
-              <strong className="text-neutral-200 font-semibold">{untranslatedCount}</strong>{' '}
-              strings restantes
-            </span>
+            <span>{t('editor.remainingStrings', { count: untranslatedCount })}</span>
             <span className="text-neutral-700">-</span>
-            <span>
-              <strong className="text-neutral-200 font-semibold">{dictCount}</strong> termos no
-              dicionario aplicaveis
-            </span>
+            <span>{t('editor.dictionaryMatches', { count: dictCount })}</span>
           </div>
         </div>
 

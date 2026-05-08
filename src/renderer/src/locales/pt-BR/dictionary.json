@@ -1,0 +1,114 @@
+{
+  "brand": "dictionary",
+  "sync": "Sync {{value}}",
+  "stats": {
+    "entries": "{{count}} entradas",
+    "mods": "{{count}} mods",
+    "modsLabel": "Mods",
+    "showing": "Mostrando",
+    "page": "Página",
+    "languagePairs": "Pares de idiomas",
+    "lastEdit": "Última edição"
+  },
+  "filters": {
+    "searchPlaceholder": "Buscar termo, tradução, mod ou UID...",
+    "allMods": "Todos os mods",
+    "all": "Todos",
+    "mod": "Mod",
+    "sourceLanguage": "Idioma 1",
+    "targetLanguage": "Idioma 2",
+    "pageSize": "Página",
+    "pageSizeOption": "{{count}} / página"
+  },
+  "table": {
+    "id": "ID",
+    "sourceText": "Texto idioma 1",
+    "targetText": "Texto idioma 2",
+    "mod": "Mod",
+    "languages": "Idiomas",
+    "actions": "Ações",
+    "noMod": "Sem mod",
+    "uid": "UID {{uid}}",
+    "noEntries": "Nenhuma entrada encontrada",
+    "noEntriesDescription": "Ajuste os filtros ou crie uma nova entrada no dicionário.",
+    "preparing": "Preparando dicionário..."
+  },
+  "footer": {
+    "file": "dictionary.icosa",
+    "encoding": "UTF-8",
+    "range": "{{start}}-{{end}} de {{total}}"
+  },
+  "selection": {
+    "none": "Nenhuma seleção",
+    "count": "{{count}} selecionadas"
+  },
+  "actions": {
+    "exportCsv": "Exportar CSV",
+    "importCsv": "Importar CSV",
+    "newEntry": "Nova entrada"
+  },
+  "dialogs": {
+    "deleteSelectionTitle": "Excluir seleção?",
+    "deleteSelectionDescription": "{{count}} entradas selecionadas serão removidas do dicionário.",
+    "deleteEntryTitle": "Excluir entrada?",
+    "deleteEntryDescription": "A entrada #{{id}} será removida do dicionário.",
+    "deleteConfirm": "Excluir"
+  },
+  "entryModal": {
+    "createTitle": "Nova entrada",
+    "editTitle": "Editar entrada #{{id}}",
+    "createDescription": "Crie uma nova entrada de dicionário para o par de idiomas atual.",
+    "editDescription": "Atualize textos, idiomas e metadados desta entrada.",
+    "textLanguage1": "Texto idioma 1",
+    "textLanguage2": "Texto idioma 2",
+    "language1": "Idioma 1",
+    "language2": "Idioma 2",
+    "mod": "Mod",
+    "uid": "UID",
+    "textLanguage1Placeholder": "Texto do idioma 1...",
+    "textLanguage2Placeholder": "Texto do idioma 2...",
+    "selectLanguage": "Selecionar idioma",
+    "searchLanguage": "Buscar idioma...",
+    "noLanguageFound": "Nenhum idioma encontrado.",
+    "modPlaceholder": "Nome do mod",
+    "uidPlaceholder": "UID opcional",
+    "discardTitle": "Descartar alterações?",
+    "discardDescription": "Existem alterações pendentes nesta entrada. Se continuar, elas serão perdidas.",
+    "validationRequired": "Preencha idioma 1, idioma 2 e os dois textos."
+  },
+  "importModal": {
+    "title": "Importar dicionário",
+    "description": "Compatível com `language1/...` e `src/tgt/src_lang/tgt_lang`.",
+    "chooseFile": "Escolher arquivo CSV",
+    "chooseFileDescription": "Abra um CSV para visualizar os cabeçalhos detectados antes de importar.",
+    "reading": "Lendo arquivo...",
+    "detectedRows": "{{count}} linhas detectadas",
+    "headers": "Headers: {{headers}}",
+    "preview": "Prévia das primeiras {{count}} linhas",
+    "mod": "Mod",
+    "languages": "Idiomas",
+    "noMod": "Sem mod",
+    "format": "UTF-8 · CSV",
+    "importCount": "Importar {{count}} entradas",
+    "importing": "Importando..."
+  },
+  "replaceModal": {
+    "title": "Replace em lote",
+    "description": "Aplicar buscar e substituir nas {{count}} entradas selecionadas.",
+    "find": "Buscar",
+    "findPlaceholder": "Texto a procurar",
+    "replaceWith": "Substituir por",
+    "replacePlaceholder": "Novo texto",
+    "scope": "Escopo",
+    "scopeSource": "Idioma 1",
+    "scopeTarget": "Idioma 2",
+    "scopeBoth": "Ambos",
+    "matchCase": "Diferenciar maiúsculas",
+    "matchWholeWord": "Palavra inteira",
+    "apply": "Aplicar replace",
+    "applying": "Aplicando...",
+    "discardTitle": "Descartar alterações?",
+    "discardDescription": "Existem parâmetros preenchidos neste replace em lote. Se continuar, eles serão perdidos.",
+    "searchRequired": "Preencha o campo Buscar"
+  }
+}

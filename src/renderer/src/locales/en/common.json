@@ -1,0 +1,78 @@
+{
+  "appName": "ICOSA",
+  "loading": "Loading...",
+  "actions": {
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "close": "Close",
+    "clear": "Clear",
+    "browse": "Browse",
+    "export": "Export",
+    "import": "Import",
+    "open": "Open",
+    "copyPath": "Copy path",
+    "delete": "Delete",
+    "discard": "Discard",
+    "replace": "Replace",
+    "select": "Select",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "run": "Run",
+    "reset": "Reset"
+  },
+  "status": {
+    "connected": "Connected",
+    "selected": "Selected",
+    "noneSelected": "No selection",
+    "empty": "Empty",
+    "now": "just now",
+    "updating": "updating..."
+  },
+  "fields": {
+    "sourceLanguage": "Source language",
+    "targetLanguage": "Target language",
+    "language": "Language",
+    "mod": "Mod",
+    "uid": "UID",
+    "author": "Author",
+    "description": "Description",
+    "name": "Name",
+    "folder": "Folder",
+    "version": "Version",
+    "sourceText": "Source text",
+    "targetText": "Target text",
+    "outputFolder": "Output folder",
+    "inputFolder": "Input folder",
+    "outputFile": "Output file",
+    "search": "Search"
+  },
+  "placeholders": {
+    "select": "Select",
+    "search": "Search...",
+    "searchLanguage": "Search language...",
+    "noLanguageFound": "No language found.",
+    "noOptionFound": "No option found."
+  },
+  "dragDrop": {
+    "defaultLabel": "Drag and drop your file here",
+    "acceptedFormats": "Accepted formats: .{{formats}}"
+  },
+  "window": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
+  },
+  "relativeTime": {
+    "hour_one": "{{count}}h ago",
+    "hour_other": "{{count}}h ago",
+    "day_one": "{{count}} day ago",
+    "day_other": "{{count}} days ago",
+    "week_one": "{{count}} week ago",
+    "week_other": "{{count}} weeks ago",
+    "month_one": "{{count}} month ago",
+    "month_other": "{{count}} months ago"
+  }
+}

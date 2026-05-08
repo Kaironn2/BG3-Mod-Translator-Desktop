@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { getLocalizedErrorMessage } from '@/i18n/errors'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import type { Language, MergeResult, PreparedTranslationInput } from '@/types'
 import type { MergeFileSlot, SlotKey } from '../types'
 
@@ -53,6 +55,7 @@ interface UseMergeSetupResult {
 }
 
 export function useMergeSetup(): UseMergeSetupResult {
+  const { t } = useAppTranslation(['merge', 'toasts', 'common'])
   const [source, setSource] = useState<MergeFileSlot>(() => emptySlot(''))
   const [target, setTarget] = useState<MergeFileSlot>(() => emptySlot(''))
   const [modName, setModName] = useState('')
@@ -62,8 +65,7 @@ export function useMergeSetup(): UseMergeSetupResult {
 
   useEffect(() => {
     window.api.language.getAll().then((items) => {
-      const sourceDefault =
-        items.find((item) => item.code === 'en')?.code ?? items[0]?.code ?? ''
+      const sourceDefault = items.find((item) => item.code === 'en')?.code ?? items[0]?.code ?? ''
       const targetDefault =
         items.find((item) => item.code === 'pt-BR')?.code ?? items[1]?.code ?? items[0]?.code ?? ''
 
@@ -108,7 +110,7 @@ export function useMergeSetup(): UseMergeSetupResult {
         prepared = await window.api.merge.prepareInput({ inputPath: filePath })
       } catch (error) {
         updateSlot(key, () => emptySlot(previous.lang))
-        toast.error(error instanceof Error ? error.message : 'Falha ao preparar arquivo')
+        toast.error(getLocalizedErrorMessage(error, t))
         return
       }
 
@@ -129,7 +131,7 @@ export function useMergeSetup(): UseMergeSetupResult {
 
       if (!autoCandidate) setPendingSelection(key)
     },
-    [getSlot, updateSlot]
+    [getSlot, t, updateSlot]
   )
 
   const browseFile = useCallback(
@@ -148,13 +150,13 @@ export function useMergeSetup(): UseMergeSetupResult {
       const file = event.dataTransfer.files[0]
       if (!file) return
       if (!hasAcceptedExt(file.name)) {
-        toast.error('Formato invalido. Use .xml, .pak ou .zip')
+        toast.error(t('merge.invalidFormat', { ns: 'toasts' }))
         return
       }
       const filePath = window.api.fs.getPathForFile(file)
       await prepare(key, filePath, file.name)
     },
-    [prepare, updateSlot]
+    [prepare, t, updateSlot]
   )
 
   const clearFile = useCallback(
@@ -240,21 +242,25 @@ export function useMergeSetup(): UseMergeSetupResult {
 
       const ignored = result.sourceOnly + result.targetOnly
       toast.success(
-        ignored > 0
-          ? `${result.matched} entradas mescladas (${ignored} ignoradas)`
-          : `${result.matched} entradas mescladas`
+        t(
+          ignored > 0 ? 'merge.mergedWithIgnored' : 'merge.merged',
+          {
+            ns: 'toasts',
+            matched: result.matched,
+            ignored
+          }
+        )
       )
 
-      // ImportIds are discarded on the main side after run; clear local state.
       setSource((prev) => emptySlot(prev.lang))
       setTarget((prev) => emptySlot(prev.lang))
       setModName('')
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Falha ao mesclar arquivos')
+      toast.error(getLocalizedErrorMessage(error, t))
     } finally {
       setIsRunning(false)
     }
-  }, [modName, ready, source, target])
+  }, [modName, ready, source, t, target])
 
   return {
     source,

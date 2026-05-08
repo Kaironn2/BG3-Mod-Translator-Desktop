@@ -1,0 +1,28 @@
+{
+  "title": "Settings",
+  "sections": {
+    "apiKeys": "API keys",
+    "defaults": "Defaults",
+    "language": "Application language",
+    "tools": "Tools",
+    "debugLogs": "Debug logs"
+  },
+  "fields": {
+    "deeplKey": "DeepL API key",
+    "defaultAuthor": "Default author",
+    "defaultSourceLanguage": "Default source language",
+    "defaultTargetLanguage": "Default target language",
+    "appLanguage": "Application language",
+    "divinePath": "Divine.exe path (leave empty for default)"
+  },
+  "placeholders": {
+    "author": "Your name",
+    "sourceLanguage": "en",
+    "targetLanguage": "pt-BR",
+    "divinePath": "C:\\path\\to\\Divine.exe"
+  },
+  "buttons": {
+    "save": "Save",
+    "saved": "Saved"
+  }
+}

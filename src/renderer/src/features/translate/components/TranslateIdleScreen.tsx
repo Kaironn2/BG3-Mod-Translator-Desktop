@@ -1,4 +1,5 @@
 import { ArrowRight, File, Loader2 } from 'lucide-react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import { useTranslateSetup } from '../hooks/useTranslateSetup'
 import { useTranslationImport } from '../hooks/useTranslationImport'
@@ -15,6 +16,7 @@ interface TranslateIdleScreenProps {
 }
 
 export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): React.JSX.Element {
+  const { t } = useAppTranslation(['translate', 'common'])
   const setup = useTranslateSetup(session)
   const importFlow = useTranslationImport({
     session,
@@ -25,46 +27,48 @@ export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): Reac
   const isLoading = session.phase === 'loading' || importFlow.isPreparing
   const loadingLabel =
     importFlow.isPreparing && session.phase !== 'loading'
-      ? 'Preparando arquivo para abrir o editor...'
-      : session.loadingLabel || 'Carregando editor de traducao...'
+      ? t('setup.loadingPreparingFile', { ns: 'translate' })
+      : session.loadingLabel || t('setup.loadingEditor', { ns: 'translate' })
 
   return (
     <>
-      <div className="relative flex flex-col h-full min-h-0">
-        <div className="flex items-center gap-3 px-5 h-10 border-b border-[#1f2329] bg-[#131518] shrink-0">
+      <div className="relative flex h-full min-h-0 flex-col">
+        <div className="flex h-10 shrink-0 items-center gap-3 border-b border-[#1f2329] bg-[#131518] px-5">
           <span className="flex items-center gap-1.5 font-mono text-[12px] text-neutral-200">
             <File size={12} />
-            Novo projeto de traducao
+            {t('newProject', { ns: 'translate' })}
           </span>
           <span className="flex-1" />
           <span className="flex items-center gap-2 font-mono text-[11px]">
             <span className={setup.step1Done ? 'text-amber-400' : 'text-neutral-600'}>
-              1 Idiomas
+              1 {t('setup.steps.languages', { ns: 'translate' })}
             </span>
             <span className="text-neutral-700">-</span>
-            <span className={setup.step2Done ? 'text-amber-400' : 'text-neutral-600'}>2 Mod</span>
+            <span className={setup.step2Done ? 'text-amber-400' : 'text-neutral-600'}>
+              2 {t('setup.steps.mod', { ns: 'translate' })}
+            </span>
             <span className="text-neutral-700">-</span>
             <span className={setup.step3Done ? 'text-amber-400' : 'text-neutral-600'}>
-              3 Arquivo
+              3 {t('setup.steps.file', { ns: 'translate' })}
             </span>
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto icosa-scroll [scrollbar-gutter:stable] px-6 pt-7 pb-6 min-h-0">
-          <div className="max-w-220 mx-auto flex flex-col gap-3.5">
+        <div className="icosa-scroll min-h-0 flex-1 overflow-y-auto px-6 pt-7 pb-6 [scrollbar-gutter:stable]">
+          <div className="mx-auto flex max-w-220 flex-col gap-3.5">
             <SetupStepCard step="01">
               <div>
-                <h3 className="text-[15px] font-semibold text-neutral-200 tracking-tight m-0">
-                  Par de idiomas
+                <h3 className="m-0 text-[15px] font-semibold tracking-tight text-neutral-200">
+                  {t('setup.languagePair.title', { ns: 'translate' })}
                 </h3>
-                <p className="text-xs text-neutral-500 mt-1 m-0">
-                  De onde para onde voce quer traduzir.
+                <p className="mt-1 m-0 text-xs text-neutral-500">
+                  {t('setup.languagePair.description', { ns: 'translate' })}
                 </p>
               </div>
-              <div className="grid grid-cols-[1fr_auto_1fr] gap-3.5 items-end">
+              <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3.5">
                 <div>
-                  <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500 mb-1.5">
-                    Origem
+                  <span className="mb-1.5 block text-[10px] font-semibold tracking-[0.08em] text-neutral-500 uppercase">
+                    {t('setup.languagePair.source', { ns: 'translate' })}
                   </span>
                   <LanguagePicker
                     value={setup.sourceLang}
@@ -76,8 +80,8 @@ export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): Reac
                   <ArrowRight size={18} />
                 </div>
                 <div>
-                  <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500 mb-1.5">
-                    Destino
+                  <span className="mb-1.5 block text-[10px] font-semibold tracking-[0.08em] text-neutral-500 uppercase">
+                    {t('setup.languagePair.target', { ns: 'translate' })}
                   </span>
                   <LanguagePicker
                     value={setup.targetLang}
@@ -126,40 +130,33 @@ export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): Reac
           </div>
         </div>
 
-        <div className="shrink-0 px-6 py-3 border-t border-[#1f2329]">
-          <div className="max-w-220 mx-auto flex items-center gap-2.5 px-4 py-3 bg-[#131518] border border-neutral-700 rounded-xl shadow-xl">
+        <div className="shrink-0 border-t border-[#1f2329] px-6 py-3">
+          <div className="mx-auto flex max-w-220 items-center gap-2.5 rounded-xl border border-neutral-700 bg-[#131518] px-4 py-3 shadow-xl">
             <div className="flex-1 text-xs text-neutral-400">
-              {setup.ready ? (
-                <>
-                  Pronto para iniciar:{' '}
-                  <strong className="text-neutral-200 font-semibold">
-                    {setup.srcLang?.name ?? setup.sourceLang}
-                  </strong>
-                  {' -> '}
-                  <strong className="text-neutral-200 font-semibold">
-                    {setup.tgtLang?.name ?? setup.targetLang}
-                  </strong>
-                </>
-              ) : (
-                'Complete os 3 passos para comecar a traduzir'
-              )}
+              {setup.ready
+                ? t('setup.ready', {
+                    ns: 'translate',
+                    source: setup.srcLang?.name ?? setup.sourceLang,
+                    target: setup.tgtLang?.name ?? setup.targetLang
+                  })
+                : t('setup.idle', { ns: 'translate' })}
             </div>
             <button type="button" className={btnBase} onClick={session.resetSession}>
-              Cancelar
+              {t('actions.cancel', { ns: 'common' })}
             </button>
             <button
               type="button"
               className={cn(
                 btnPrimary,
-                (!setup.ready || isLoading) && 'opacity-40 cursor-not-allowed'
+                (!setup.ready || isLoading) && 'cursor-not-allowed opacity-40'
               )}
               disabled={!setup.ready || isLoading}
               onClick={() => importFlow.openFile(setup.filePath, setup.ready)}
             >
               {isLoading ? <Loader2 size={13} className="animate-spin" /> : null}
-              Abrir editor
+              {t('setup.openEditor', { ns: 'translate' })}
               {!isLoading && (
-                <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 rounded bg-neutral-950/30 border border-neutral-800 font-mono text-[10px] text-neutral-300">
+                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded border border-neutral-800 bg-neutral-950/30 px-1 font-mono text-[10px] text-neutral-300">
                   Enter
                 </span>
               )}
@@ -179,9 +176,9 @@ export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): Reac
                   <div className="h-full w-2/3 animate-pulse rounded-full bg-amber-400/80" />
                 </div>
                 <div className="grid gap-2">
-                  <div className="h-8 rounded-lg bg-[#1a1d22] animate-pulse" />
-                  <div className="h-8 rounded-lg bg-[#1a1d22] animate-pulse" />
-                  <div className="h-8 rounded-lg bg-[#1a1d22] animate-pulse" />
+                  <div className="h-8 animate-pulse rounded-lg bg-[#1a1d22]" />
+                  <div className="h-8 animate-pulse rounded-lg bg-[#1a1d22]" />
+                  <div className="h-8 animate-pulse rounded-lg bg-[#1a1d22]" />
                 </div>
               </div>
             </div>

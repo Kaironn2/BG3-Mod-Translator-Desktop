@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Upload } from 'lucide-react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 
 interface DragDropProps {
@@ -15,6 +16,7 @@ function isAccepted(name: string, accept: string[]): boolean {
 }
 
 export function DragDrop({ accept, onFile, label, className }: DragDropProps): React.JSX.Element {
+  const { t } = useAppTranslation('common')
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,7 +39,7 @@ export function DragDrop({ accept, onFile, label, className }: DragDropProps): R
       if (!file) return
 
       if (!isAccepted(file.name, accept)) {
-        setError(`Accepted formats: .${accept.join(', .')}`)
+        setError(t('dragDrop.acceptedFormats', { formats: accept.join(', .') }))
         return
       }
 
@@ -69,14 +71,16 @@ export function DragDrop({ accept, onFile, label, className }: DragDropProps): R
     >
       <Upload size={32} className="text-neutral-500" />
       <div className="text-center">
-        <p className="text-sm text-neutral-300">{label ?? 'Drag and drop your file here'}</p>
+        <p className="text-sm text-neutral-300">
+          {label ?? t('dragDrop.defaultLabel')}
+        </p>
         <p className="mt-1 text-xs text-neutral-500">.{accept.join(', .')}</p>
       </div>
       <button
         onClick={handleBrowse}
         className="rounded-md bg-neutral-800 px-4 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-neutral-700"
       >
-        Browse file
+        {t('actions.browse')}
       </button>
       {error && <p className="text-xs text-red-400">{error}</p>}
     </div>

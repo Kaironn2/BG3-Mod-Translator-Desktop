@@ -1,0 +1,31 @@
+{
+  "common": {
+    "unknown": "Something went wrong.",
+    "unsupportedFileType": "Unsupported file type. Use .xml, .pak or .zip.",
+    "noPakInArchive": "No .pak file was found inside the selected archive.",
+    "noXmlForLanguage": "No localization XML files were found for the selected language."
+  },
+  "translation": {
+    "apiKeyMissing": "The provider API key is not configured. Go to Settings.",
+    "apiKeyRequired": "The provider API key is required.",
+    "invalidProvider": "Unknown translation provider.",
+    "noValidXml": "No valid XML was found in the selected file.",
+    "invalidFormat": "Invalid input format.",
+    "fileLoadFailed": "Failed to load the selected file.",
+    "saveFailed": "Failed to save translations."
+  },
+  "merge": {
+    "sessionExpired": "The selected import session expired. Select the file again.",
+    "invalidXml": "The selected XML has an invalid format.",
+    "modNameRequired": "Mod name is required.",
+    "languagesMustDiffer": "Source and target languages must be different."
+  },
+  "dictionary": {
+    "xlsxNotSupported": "XLSX import/export is not supported yet."
+  },
+  "package": {
+    "versionFormatInvalid": "Version must use the format 1.2.3.4.",
+    "languageFolderInvalid": "The BG3 language folder contains invalid characters.",
+    "folderInvalid": "Folder must contain only letters, numbers, underscores, or hyphens."
+  }
+}

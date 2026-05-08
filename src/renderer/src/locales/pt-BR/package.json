@@ -1,0 +1,23 @@
+{
+  "title": "Criar pacote",
+  "inputFolder": "Pasta de entrada",
+  "selectInputFolder": "Selecionar pasta para empacotar...",
+  "outputFile": "Arquivo .pak de saída",
+  "saveAsPak": "Salvar como .pak...",
+  "create": "Criar pacote",
+  "creating": "Empacotando...",
+  "logs": {
+    "created": "Pacote criado: {{path}}",
+    "error": "Erro: {{message}}"
+  },
+  "exportModal": {
+    "title": "Exportar pacote",
+    "description": "Folder também define a estrutura de pastas e o nome do XML.",
+    "folderHint": "Use apenas letras, números, _ ou -",
+    "versionHint": "Use o formato 1.2.3.4",
+    "version64": "Version64 {{value}}",
+    "bg3LanguageFolder": "Pasta de idioma do BG3",
+    "searchLanguageFolder": "Buscar pasta...",
+    "noLanguageFolderFound": "Nenhuma pasta encontrada."
+  }
+}

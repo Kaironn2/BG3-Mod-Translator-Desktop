@@ -1,0 +1,28 @@
+{
+  "title": "Configurações",
+  "sections": {
+    "apiKeys": "Chaves de API",
+    "defaults": "Padrões",
+    "language": "Idioma da aplicação",
+    "tools": "Ferramentas",
+    "debugLogs": "Logs de depuração"
+  },
+  "fields": {
+    "deeplKey": "Chave da API DeepL",
+    "defaultAuthor": "Autor padrão",
+    "defaultSourceLanguage": "Idioma de origem padrão",
+    "defaultTargetLanguage": "Idioma de destino padrão",
+    "appLanguage": "Idioma da aplicação",
+    "divinePath": "Caminho do Divine.exe (deixe vazio para o padrão)"
+  },
+  "placeholders": {
+    "author": "Seu nome",
+    "sourceLanguage": "en",
+    "targetLanguage": "pt-BR",
+    "divinePath": "C:\\path\\to\\Divine.exe"
+  },
+  "buttons": {
+    "save": "Salvar",
+    "saved": "Salvo"
+  }
+}

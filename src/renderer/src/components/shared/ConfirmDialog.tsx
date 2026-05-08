@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { ModalShell } from './ModalShell'
 
 interface ConfirmDialogProps {
@@ -17,11 +18,13 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = 'Cancelar',
+  cancelLabel,
   destructive = false,
   onConfirm,
   onClose
 }: ConfirmDialogProps): React.JSX.Element | null {
+  const { t } = useAppTranslation('common')
+
   return (
     <ModalShell
       open={open}
@@ -37,7 +40,7 @@ export function ConfirmDialog({
             onClick={onClose}
             className="inline-flex h-8 cursor-pointer items-center rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800"
           >
-            {cancelLabel}
+            {cancelLabel ?? t('actions.cancel')}
           </button>
           <button
             type="button"

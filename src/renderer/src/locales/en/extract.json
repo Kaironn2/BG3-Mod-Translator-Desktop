@@ -1,0 +1,13 @@
+{
+  "title": "Extract mod",
+  "dropLabel": "Drop your .zip or .pak file here",
+  "outputFolder": "Output folder",
+  "selectOutputFolder": "Select output folder...",
+  "extract": "Extract",
+  "extracting": "Extracting...",
+  "logs": {
+    "success": "Extracted successfully.",
+    "foundXml": "Found {{count}} localization XML(s):",
+    "error": "Error: {{message}}"
+  }
+}

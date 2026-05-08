@@ -1,0 +1,31 @@
+{
+  "common": {
+    "unknown": "Algo deu errado.",
+    "unsupportedFileType": "Tipo de arquivo não suportado. Use .xml, .pak ou .zip.",
+    "noPakInArchive": "Nenhum arquivo .pak foi encontrado dentro do arquivo selecionado.",
+    "noXmlForLanguage": "Nenhum XML de localização foi encontrado para o idioma selecionado."
+  },
+  "translation": {
+    "apiKeyMissing": "A chave de API do provedor não está configurada. Vá em Configurações.",
+    "apiKeyRequired": "A chave de API do provedor é obrigatória.",
+    "invalidProvider": "Provedor de tradução desconhecido.",
+    "noValidXml": "Nenhum XML válido foi encontrado no arquivo selecionado.",
+    "invalidFormat": "Formato de entrada inválido.",
+    "fileLoadFailed": "Falha ao carregar o arquivo selecionado.",
+    "saveFailed": "Falha ao salvar as traduções."
+  },
+  "merge": {
+    "sessionExpired": "A sessão de importação selecionada expirou. Selecione o arquivo novamente.",
+    "invalidXml": "O XML selecionado possui um formato inválido.",
+    "modNameRequired": "O nome do mod é obrigatório.",
+    "languagesMustDiffer": "Os idiomas de origem e destino devem ser diferentes."
+  },
+  "dictionary": {
+    "xlsxNotSupported": "Importação/exportação XLSX ainda não é suportada."
+  },
+  "package": {
+    "versionFormatInvalid": "A versão deve usar o formato 1.2.3.4.",
+    "languageFolderInvalid": "A pasta de idioma do BG3 contém caracteres inválidos.",
+    "folderInvalid": "Folder deve conter apenas letras, números, sublinhados ou hífens."
+  }
+}

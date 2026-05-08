@@ -1,0 +1,37 @@
+{
+  "settings": {
+    "saved": "{{label}} salvo",
+    "logPathCopied": "Caminho do log copiado",
+    "logCleared": "Log limpo"
+  },
+  "extract": {
+    "success": "Extraído - {{count}} XML(s) encontrados"
+  },
+  "package": {
+    "success": "Pacote criado com sucesso"
+  },
+  "dictionary": {
+    "created": "Entrada criada",
+    "updated": "Entrada atualizada",
+    "deleted_one": "Entrada removida",
+    "deleted_other": "{{count}} entradas removidas",
+    "replaceNone": "Nenhuma ocorrência encontrada nas entradas selecionadas",
+    "replaceApplied": "Replace aplicado em {{count}} entradas",
+    "csvExported": "CSV exportado",
+    "imported": "{{count}} entradas importadas"
+  },
+  "translate": {
+    "entrySaved": "Entrada salva no dicionário",
+    "nothingToSave": "Nenhuma tradução para salvar",
+    "savedCount": "{{count}} traduções salvas no dicionário",
+    "xmlExported": "XML exportado com sucesso",
+    "packageExported": "{{format}} exportado com sucesso",
+    "noValidXml": "Nenhum XML válido encontrado",
+    "invalidFormat": "Formato inválido"
+  },
+  "merge": {
+    "invalidFormat": "Formato inválido. Use .xml, .pak ou .zip",
+    "merged": "{{matched}} entradas mescladas",
+    "mergedWithIgnored": "{{matched}} entradas mescladas ({{ignored}} ignoradas)"
+  }
+}

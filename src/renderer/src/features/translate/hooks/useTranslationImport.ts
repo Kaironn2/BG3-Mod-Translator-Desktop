@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { getLocalizedErrorMessage } from '@/i18n/errors'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import type { PreparedTranslationInput } from '@/types'
 import type { TranslationSession } from '../types'
 
@@ -16,6 +18,7 @@ export function useTranslationImport({
   targetLang,
   modName
 }: UseTranslationImportParams) {
+  const { t } = useAppTranslation(['toasts', 'common'])
   const [isPreparing, setIsPreparing] = useState(false)
   const [preparedImport, setPreparedImport] = useState<PreparedTranslationInput | null>(null)
 
@@ -41,20 +44,22 @@ export function useTranslationImport({
       const validCandidates = prepared.candidates.filter((candidate) => candidate.valid)
       if (prepared.requiresSelection) {
         setPreparedImport(prepared)
-        if (validCandidates.length === 0) toast.error('Nenhum XML valido encontrado')
+        if (validCandidates.length === 0) {
+          toast.error(t('translate.noValidXml', { ns: 'toasts' }))
+        }
         return
       }
 
       const candidate = validCandidates[0]
       if (!candidate) {
         await window.api.mod.discardTranslationInput({ importId: prepared.importId })
-        toast.error('Formato invalido')
+        toast.error(t('translate.invalidFormat', { ns: 'toasts' }))
         return
       }
 
       await completeImport(prepared.importId, candidate.id)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao carregar arquivo')
+      toast.error(getLocalizedErrorMessage(err, t))
     } finally {
       setIsPreparing(false)
     }

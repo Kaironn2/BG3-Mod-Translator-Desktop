@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useReducer } from 'react'
+import { i18n } from '@/i18n'
 import type { XmlEntry } from '@/types'
 
 export interface TranslationSessionEntry extends XmlEntry {
@@ -158,7 +159,7 @@ export function TranslationSessionProvider({
       dispatch({
         type: 'SET_PHASE',
         phase: 'loading',
-        loadingLabel: 'Preparando sessao de traducao...'
+        loadingLabel: i18n.t('setup.loadingPreparingSession', { ns: 'translate' })
       })
       dispatch({ type: 'SET_INPUT_PATH', path: inputPath })
       dispatch({ type: 'SET_MOD_NAME', name: modName })
@@ -168,7 +169,7 @@ export function TranslationSessionProvider({
       dispatch({
         type: 'SET_PHASE',
         phase: 'loading',
-        loadingLabel: 'Carregando entradas do XML...'
+        loadingLabel: i18n.t('setup.loadingEntries', { ns: 'translate' })
       })
       const entries = await window.api.xml.load({
         inputPath: storedPath,
@@ -180,7 +181,7 @@ export function TranslationSessionProvider({
         dispatch({
           type: 'SET_PHASE',
           phase: 'loading',
-          loadingLabel: 'Atualizando dados do mod...'
+          loadingLabel: i18n.t('setup.loadingModData', { ns: 'translate' })
         })
         await window.api.mod.upsert({
           name: modName,

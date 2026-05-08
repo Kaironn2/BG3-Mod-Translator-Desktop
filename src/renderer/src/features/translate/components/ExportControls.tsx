@@ -1,4 +1,5 @@
 import { Download } from 'lucide-react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import type { ExportFormat } from '../types'
 import { btnPrimary } from './styles'
@@ -34,6 +35,8 @@ export function ExportControls({
   onFormatChange,
   onExport
 }: ExportControlsProps): React.JSX.Element {
+  const { t } = useAppTranslation(['translate', 'common'])
+
   return (
     <div className="flex items-center gap-1.5">
       <ThemedSelect
@@ -49,9 +52,14 @@ export function ExportControls({
           { value: 'zip', label: 'zip' }
         ]}
       />
-      <button type="button" className={btnPrimary} onClick={onExport} title="Exportar (Ctrl+E)">
+      <button
+        type="button"
+        className={btnPrimary}
+        onClick={onExport}
+        title={`${t('actions.export', { ns: 'common' })} (Ctrl+E)`}
+      >
         <Download />
-        Exportar
+        {t('actions.export', { ns: 'common' })}
         <ShortcutHint subtle>Ctrl E</ShortcutHint>
       </button>
     </div>

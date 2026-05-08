@@ -3,6 +3,7 @@ import './assets/main.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import { initI18n } from './i18n'
 
 window.addEventListener('error', (event) => {
   void window.api.log.write({
@@ -22,8 +23,14 @@ window.addEventListener('unhandledrejection', (event) => {
   })
 })
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-)
+async function bootstrap(): Promise<void> {
+  await initI18n()
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  )
+}
+
+void bootstrap()

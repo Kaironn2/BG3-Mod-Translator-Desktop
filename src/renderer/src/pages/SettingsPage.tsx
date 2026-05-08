@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Copy, FolderOpen, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import { useConfig } from '@/hooks/useConfig'
+import { getLocalizedErrorMessage } from '@/i18n/errors'
+import { i18n } from '@/i18n'
+import { defaultLanguage, languageLabels, supportedLanguages } from '@/i18n/languages'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import type { ConfigKey } from '@/types'
 
 interface SettingFieldProps {
@@ -11,6 +16,9 @@ interface SettingFieldProps {
   onSave: (key: ConfigKey, value: string) => Promise<void>
   type?: string
   placeholder?: string
+  saveLabel: string
+  savedLabel: string
+  successMessage: string
 }
 
 function SettingField({
@@ -19,7 +27,10 @@ function SettingField({
   value,
   onSave,
   type = 'text',
-  placeholder
+  placeholder,
+  saveLabel,
+  savedLabel,
+  successMessage
 }: SettingFieldProps) {
   const [draft, setDraft] = useState(value)
   const [saved, setSaved] = useState(false)
@@ -27,7 +38,7 @@ function SettingField({
   const handleSave = async () => {
     await onSave(configKey, draft)
     setSaved(true)
-    toast.success(`${label} saved`)
+    toast.success(successMessage)
     setTimeout(() => setSaved(false), 1500)
   }
 
@@ -49,7 +60,7 @@ function SettingField({
           onClick={handleSave}
           className="rounded-md bg-neutral-800 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-700"
         >
-          {saved ? 'Saved' : 'Save'}
+          {saved ? savedLabel : saveLabel}
         </button>
       </div>
     </div>
@@ -59,6 +70,7 @@ function SettingField({
 export function SettingsPage(): React.JSX.Element {
   const { config, loading, set } = useConfig()
   const [logPath, setLogPath] = useState('')
+  const { t } = useAppTranslation(['settings', 'common', 'toasts'])
 
   useEffect(() => {
     window.api.log.getPath().then(setLogPath)
@@ -68,38 +80,43 @@ export function SettingsPage(): React.JSX.Element {
     try {
       await window.api.log.open()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao abrir log')
+      toast.error(getLocalizedErrorMessage(err, t))
     }
   }
 
   const handleCopyLogPath = async () => {
     try {
       await navigator.clipboard.writeText(logPath)
-      toast.success('Caminho do log copiado')
+      toast.success(t('settings.logPathCopied', { ns: 'toasts' }))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao copiar caminho')
+      toast.error(getLocalizedErrorMessage(err, t))
     }
   }
 
   const handleClearLog = async () => {
     try {
       await window.api.log.clear()
-      toast.success('Log limpo')
+      toast.success(t('settings.logCleared', { ns: 'toasts' }))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao limpar log')
+      toast.error(getLocalizedErrorMessage(err, t))
     }
   }
 
+  const handleLanguageChange = async (language: string) => {
+    await set('app_language', language)
+    await i18n.changeLanguage(language)
+  }
+
   if (loading) {
-    return <div className="p-6 text-sm text-neutral-500">Loading...</div>
+    return <div className="p-6 text-sm text-neutral-500">{t('loading', { ns: 'common' })}</div>
   }
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <h1 className="text-xl font-semibold text-neutral-100">Settings</h1>
+      <h1 className="text-xl font-semibold text-neutral-100">{t('title')}</h1>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-neutral-300">API Keys</h2>
+        <h2 className="text-sm font-medium text-neutral-300">{t('sections.apiKeys')}</h2>
         {/* <SettingField
           label="OpenAI API Key"
           configKey="openai_key"
@@ -109,53 +126,100 @@ export function SettingsPage(): React.JSX.Element {
           placeholder="sk-..."
         /> */}
         <SettingField
-          label="DeepL API Key"
+          label={t('fields.deeplKey')}
           configKey="deepl_key"
           value={config['deepl_key'] ?? ''}
           onSave={set}
           type="password"
           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:fx"
+          saveLabel={t('buttons.save')}
+          savedLabel={t('buttons.saved')}
+          successMessage={t('settings.saved', {
+            ns: 'toasts',
+            label: t('fields.deeplKey')
+          })}
         />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-neutral-300">Defaults</h2>
+        <h2 className="text-sm font-medium text-neutral-300">{t('sections.language')}</h2>
+        <div className="flex max-w-sm flex-col gap-1">
+          <label className="text-xs text-neutral-400">{t('fields.appLanguage')}</label>
+          <ThemedSelect
+            value={config['app_language'] || defaultLanguage}
+            onChange={(value) => {
+              void handleLanguageChange(value)
+            }}
+            options={supportedLanguages.map((language) => ({
+              value: language,
+              label: languageLabels[language]
+            }))}
+          />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-neutral-300">{t('sections.defaults')}</h2>
         <SettingField
-          label="Default Author"
+          label={t('fields.defaultAuthor')}
           configKey="author"
           value={config['author'] ?? ''}
           onSave={set}
-          placeholder="Your name"
+          placeholder={t('placeholders.author')}
+          saveLabel={t('buttons.save')}
+          savedLabel={t('buttons.saved')}
+          successMessage={t('settings.saved', {
+            ns: 'toasts',
+            label: t('fields.defaultAuthor')
+          })}
         />
         <SettingField
-          label="Default Source Language"
+          label={t('fields.defaultSourceLanguage')}
           configKey="last_source_lang"
           value={config['last_source_lang'] ?? ''}
           onSave={set}
-          placeholder="en"
+          placeholder={t('placeholders.sourceLanguage')}
+          saveLabel={t('buttons.save')}
+          savedLabel={t('buttons.saved')}
+          successMessage={t('settings.saved', {
+            ns: 'toasts',
+            label: t('fields.defaultSourceLanguage')
+          })}
         />
         <SettingField
-          label="Default Target Language"
+          label={t('fields.defaultTargetLanguage')}
           configKey="last_target_lang"
           value={config['last_target_lang'] ?? ''}
           onSave={set}
-          placeholder="pt-BR"
+          placeholder={t('placeholders.targetLanguage')}
+          saveLabel={t('buttons.save')}
+          savedLabel={t('buttons.saved')}
+          successMessage={t('settings.saved', {
+            ns: 'toasts',
+            label: t('fields.defaultTargetLanguage')
+          })}
         />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-neutral-300">Tools</h2>
+        <h2 className="text-sm font-medium text-neutral-300">{t('sections.tools')}</h2>
         <SettingField
-          label="Divine.exe path (leave empty for default)"
+          label={t('fields.divinePath')}
           configKey="divine_path"
           value={config['divine_path'] ?? ''}
           onSave={set}
-          placeholder="C:\path\to\Divine.exe"
+          placeholder={t('placeholders.divinePath')}
+          saveLabel={t('buttons.save')}
+          savedLabel={t('buttons.saved')}
+          successMessage={t('settings.saved', {
+            ns: 'toasts',
+            label: t('fields.divinePath')
+          })}
         />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-neutral-300">Debug logs</h2>
+        <h2 className="text-sm font-medium text-neutral-300">{t('sections.debugLogs')}</h2>
         <div className="rounded-md border border-neutral-800 bg-neutral-900/60 p-3">
           <p className="font-mono text-xs text-neutral-400 break-all">{logPath}</p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -165,7 +229,7 @@ export function SettingsPage(): React.JSX.Element {
               className="inline-flex items-center gap-2 rounded-md bg-neutral-800 px-3 py-2 text-sm text-neutral-300 hover:bg-neutral-700"
             >
               <FolderOpen size={15} />
-              Abrir
+              {t('actions.open', { ns: 'common' })}
             </button>
             <button
               type="button"
@@ -173,7 +237,7 @@ export function SettingsPage(): React.JSX.Element {
               className="inline-flex items-center gap-2 rounded-md bg-neutral-800 px-3 py-2 text-sm text-neutral-300 hover:bg-neutral-700"
             >
               <Copy size={15} />
-              Copiar caminho
+              {t('actions.copyPath', { ns: 'common' })}
             </button>
             <button
               type="button"
@@ -181,7 +245,7 @@ export function SettingsPage(): React.JSX.Element {
               className="inline-flex items-center gap-2 rounded-md border border-red-900/70 bg-red-950/40 px-3 py-2 text-sm text-red-300 hover:bg-red-950"
             >
               <Trash2 size={15} />
-              Limpar
+              {t('actions.clear', { ns: 'common' })}
             </button>
           </div>
         </div>

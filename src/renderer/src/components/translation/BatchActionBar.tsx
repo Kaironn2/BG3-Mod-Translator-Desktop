@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 
 interface BatchActionBarProps {
   selectedCount: number
@@ -21,27 +22,32 @@ export function BatchActionBar({
   onClearSelection,
   isTranslating
 }: BatchActionBarProps): React.JSX.Element | null {
+  const { t } = useAppTranslation(['translate', 'common'])
+
   if (selectedCount === 0 && !isTranslating) return null
 
   return (
     <div className="flex shrink-0 items-center gap-3 border-t border-neutral-700 bg-neutral-900 px-4 py-3">
       <span className="shrink-0 text-sm text-neutral-400">
-        {selectedCount}{' '}
-        {selectedCount === 1 ? 'entrada selecionada' : 'entradas selecionadas'}
+        {t('batchBar.selectedCount', { ns: 'translate', count: selectedCount })}
       </span>
 
       {isTranslating ? (
         <>
           <div className="flex items-center gap-2 text-sm text-neutral-400">
             <Loader2 size={14} className="animate-spin" />
-            Traduzindo {batchCompleted} / {batchTotal || selectedCount}
+            {t('batchBar.translating', {
+              ns: 'translate',
+              completed: batchCompleted,
+              total: batchTotal || selectedCount
+            })}
           </div>
           <button
             type="button"
             onClick={onCancelTranslation}
             className="cursor-pointer rounded-md border border-red-500/60 px-3 py-1.5 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/10"
           >
-            Parar
+            {t('batchBar.stop', { ns: 'translate' })}
           </button>
         </>
       ) : (
@@ -51,7 +57,7 @@ export function BatchActionBar({
             onClick={onTranslateDeepL}
             className="cursor-pointer rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
           >
-            Traduzir via DeepL
+            {t('batchBar.translateWithDeepL', { ns: 'translate' })}
           </button>
           {/* <button
             type="button"
@@ -69,7 +75,7 @@ export function BatchActionBar({
         disabled={isTranslating}
         className="ml-auto cursor-pointer text-xs text-neutral-500 transition-colors hover:text-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Limpar selecao
+        {t('batchBar.clearSelection', { ns: 'translate' })}
       </button>
     </div>
   )

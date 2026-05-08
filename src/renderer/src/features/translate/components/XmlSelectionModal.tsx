@@ -1,6 +1,8 @@
 import { Check, Loader2, Package, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { getLocalizedErrorMessage } from '@/i18n/errors'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import type { PreparedTranslationInput } from '@/types'
 import { btnBase, btnGhostIcon, btnPrimary } from './styles'
@@ -17,6 +19,7 @@ export function XmlSelectionModal({
   onCancel,
   onSelect
 }: XmlSelectionModalProps): React.JSX.Element {
+  const { t } = useAppTranslation(['translate', 'common'])
   const [selectedId, setSelectedId] = useState(
     prepared.candidates.find((candidate) => candidate.valid)?.id ?? ''
   )
@@ -29,7 +32,7 @@ export function XmlSelectionModal({
     try {
       await onSelect(selected.id)
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao selecionar XML')
+      toast.error(getLocalizedErrorMessage(err, t))
     } finally {
       setLoading(false)
     }
@@ -41,9 +44,11 @@ export function XmlSelectionModal({
         <div className="flex items-center gap-3 px-5 h-12 border-b border-[#1f2329] bg-[#131518] shrink-0">
           <Package size={15} className="text-amber-400" />
           <div className="flex-1 min-w-0">
-            <h2 className="m-0 text-sm font-semibold text-neutral-200">Selecionar XML</h2>
+            <h2 className="m-0 text-sm font-semibold text-neutral-200">
+              {t('xmlSelection.title', { ns: 'translate' })}
+            </h2>
             <p className="m-0 text-[11px] text-neutral-500">
-              Arquivos sem tags content aparecem como Formato invalido.
+              {t('xmlSelection.description', { ns: 'translate' })}
             </p>
           </div>
           <button type="button" className={btnGhostIcon} onClick={onCancel}>
@@ -67,7 +72,7 @@ export function XmlSelectionModal({
 
         <div className="flex items-center justify-end gap-2.5 px-5 py-3 border-t border-[#1f2329] bg-[#131518]">
           <button type="button" className={btnBase} onClick={onCancel}>
-            Cancelar
+            {t('actions.cancel', { ns: 'common' })}
           </button>
           <button
             type="button"
@@ -79,7 +84,7 @@ export function XmlSelectionModal({
             onClick={handleSelect}
           >
             {loading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-            Usar XML
+            {t('xmlSelection.useXml', { ns: 'translate' })}
           </button>
         </div>
       </div>
