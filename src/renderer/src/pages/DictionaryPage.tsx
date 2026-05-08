@@ -1,18 +1,4 @@
-import {
-  BookOpen,
-  Box,
-  Check,
-  ChevronDown,
-  Download,
-  FilterX,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  Upload,
-  Wifi,
-  X
-} from 'lucide-react'
+import { BookOpen, Box, Download, FilterX, Pencil, Plus, Search, Trash2, Upload, Wifi, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { DictionaryEntryModal } from '@/components/dictionary/DictionaryEntryModal'
@@ -21,17 +7,16 @@ import { DictionaryReplaceModal } from '@/components/dictionary/DictionaryReplac
 import { applyTextReplace } from '@/components/dictionary/replace'
 import {
   EMPTY_ENTRY_DRAFT,
-  type ReplaceDraft,
   type DisplayEntry,
-  type EntryDraft
+  type EntryDraft,
+  type ReplaceDraft
 } from '@/components/dictionary/types'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { ThemedSelect, type ThemedSelectOption } from '@/components/shared/ThemedSelect'
 import { useDebouncedFilter } from '@/hooks/useDebouncedFilter'
 import { cn } from '@/lib/utils'
 import type { DictionaryEntry, DictionaryFilters, Language } from '@/types'
 import { formatRelativeDate } from '../features/translate/utils/relativeDate'
-
-type FilterMenuKey = 'mod' | 'source' | 'target' | null
 
 interface PendingDeleteState {
   ids: number[]
@@ -42,7 +27,6 @@ interface PendingDeleteState {
 interface FilterOption {
   value: string
   label: string
-  sub?: string
   count?: number
 }
 
@@ -58,7 +42,6 @@ export function DictionaryPage(): React.JSX.Element {
   const [modName, setModName] = useState('')
   const [sourceLang, setSourceLang] = useState('')
   const [targetLang, setTargetLang] = useState('')
-  const [openMenu, setOpenMenu] = useState<FilterMenuKey>(null)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [importOpen, setImportOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
@@ -67,9 +50,6 @@ export function DictionaryPage(): React.JSX.Element {
   const [editingEntry, setEditingEntry] = useState<DisplayEntry | null>(null)
   const [pendingDelete, setPendingDelete] = useState<PendingDeleteState | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const modAnchorRef = useRef<HTMLButtonElement>(null)
-  const sourceAnchorRef = useRef<HTMLButtonElement>(null)
-  const targetAnchorRef = useRef<HTMLButtonElement>(null)
   const debouncedText = useDebouncedFilter(text)
 
   const filters = useMemo<DictionaryFilters>(
@@ -144,13 +124,52 @@ export function DictionaryPage(): React.JSX.Element {
   )
 
   const sourceOptions = useMemo(
-    () => buildLanguageOptions(displayEntries, languageNames, 'source'),
-    [displayEntries, languageNames]
+    () => buildLanguageOptions(displayEntries, 'source'),
+    [displayEntries]
   )
 
   const targetOptions = useMemo(
-    () => buildLanguageOptions(displayEntries, languageNames, 'target'),
-    [displayEntries, languageNames]
+    () => buildLanguageOptions(displayEntries, 'target'),
+    [displayEntries]
+  )
+
+  const modSelectOptions = useMemo<ThemedSelectOption[]>(
+    () => [
+      { value: '', label: 'Todos os mods', badge: `${displayEntries.length}` },
+      ...modOptions.map((option) => ({
+        value: option.value,
+        label: option.label,
+        badge: `${option.count ?? 0}`,
+        searchText: option.label
+      }))
+    ],
+    [displayEntries.length, modOptions]
+  )
+
+  const sourceSelectOptions = useMemo<ThemedSelectOption[]>(
+    () => [
+      { value: '', label: 'Todos', badge: `${displayEntries.length}` },
+      ...languages.map((language) => ({
+        value: language.code,
+        label: language.code.toUpperCase(),
+        badge: `${sourceOptions.get(language.code) ?? 0}`,
+        searchText: `${languageNames.get(language.code) ?? language.code} ${language.code}`
+      }))
+    ],
+    [displayEntries.length, languageNames, languages, sourceOptions]
+  )
+
+  const targetSelectOptions = useMemo<ThemedSelectOption[]>(
+    () => [
+      { value: '', label: 'Todos', badge: `${displayEntries.length}` },
+      ...languages.map((language) => ({
+        value: language.code,
+        label: language.code.toUpperCase(),
+        badge: `${targetOptions.get(language.code) ?? 0}`,
+        searchText: `${languageNames.get(language.code) ?? language.code} ${language.code}`
+      }))
+    ],
+    [displayEntries.length, languageNames, languages, targetOptions]
   )
 
   const stats = useMemo(() => {
@@ -170,46 +189,8 @@ export function DictionaryPage(): React.JSX.Element {
 
   const allFilteredSelected =
     displayEntries.length > 0 && displayEntries.every((entry) => selectedIds.has(entry.id))
-
   const hasFilters = Boolean(text || modName || sourceLang || targetLang)
-
-  const languageOptionList = useMemo(
-    () =>
-      languages.map((language) => ({
-        value: language.code,
-        label: language.code.toUpperCase(),
-        sub: language.name
-      })),
-    [languages]
-  )
-
-  const modMenuOptions = useMemo(
-    () =>
-      modOptions.map((option) => ({
-        value: option.value,
-        label: option.label,
-        count: option.count
-      })),
-    [modOptions]
-  )
-
-  const sourceMenuOptions = useMemo(
-    () =>
-      languageOptionList.map((language) => ({
-        ...language,
-        count: sourceOptions.find((option) => option.value === language.value)?.count ?? 0
-      })),
-    [languageOptionList, sourceOptions]
-  )
-
-  const targetMenuOptions = useMemo(
-    () =>
-      languageOptionList.map((language) => ({
-        ...language,
-        count: targetOptions.find((option) => option.value === language.value)?.count ?? 0
-      })),
-    [languageOptionList, targetOptions]
-  )
+  const selectedCount = selectedIds.size
 
   const startCreate = () => {
     setCreateSeed({
@@ -221,10 +202,6 @@ export function DictionaryPage(): React.JSX.Element {
       uid: ''
     })
     setCreateOpen(true)
-  }
-
-  const startEdit = (entry: DisplayEntry) => {
-    setEditingEntry(entry)
   }
 
   const handleCreate = async (draft: EntryDraft): Promise<boolean> => {
@@ -271,50 +248,6 @@ export function DictionaryPage(): React.JSX.Element {
       return false
     }
   }
-
-  const handleExport = async () => {
-    const outputPath = await window.api.fs.saveDialog({
-      defaultName: buildExportName(filters),
-      filters: [{ name: 'CSV', extensions: ['csv'] }]
-    })
-    if (!outputPath) return
-
-    try {
-      await window.api.dictionary.export({
-        filters,
-        format: 'csv',
-        outputPath
-      })
-      toast.success('CSV exportado')
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao exportar CSV')
-    }
-  }
-
-  const toggleSelected = (id: number, checked: boolean) => {
-    setSelectedIds((previous) => {
-      const next = new Set(previous)
-      if (checked) next.add(id)
-      else next.delete(id)
-      return next
-    })
-  }
-
-  const toggleSelectAll = (checked: boolean) => {
-    setSelectedIds((previous) => {
-      const next = new Set(previous)
-      for (const entry of displayEntries) {
-        if (checked) next.add(entry.id)
-        else next.delete(entry.id)
-      }
-      return next
-    })
-  }
-
-  const selectedModLabel = modMenuOptions.find((option) => option.value === modName)?.label
-  const selectedSourceLabel = sourceLang || 'Todas'
-  const selectedTargetLabel = targetLang || 'Todas'
-  const selectedCount = selectedIds.size
 
   const handleDeleteMany = async (ids: number[]) => {
     try {
@@ -382,6 +315,45 @@ export function DictionaryPage(): React.JSX.Element {
     }
   }
 
+  const handleExport = async () => {
+    const outputPath = await window.api.fs.saveDialog({
+      defaultName: buildExportName(filters),
+      filters: [{ name: 'CSV', extensions: ['csv'] }]
+    })
+    if (!outputPath) return
+
+    try {
+      await window.api.dictionary.export({
+        filters,
+        format: 'csv',
+        outputPath
+      })
+      toast.success('CSV exportado')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao exportar CSV')
+    }
+  }
+
+  const toggleSelected = (id: number, checked: boolean) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous)
+      if (checked) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous)
+      for (const entry of displayEntries) {
+        if (checked) next.add(entry.id)
+        else next.delete(entry.id)
+      }
+      return next
+    })
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#0f1114] text-neutral-100">
       <header className="flex items-center justify-between border-b border-[#1f2329] px-5 py-3">
@@ -446,40 +418,20 @@ export function DictionaryPage(): React.JSX.Element {
               <X size={13} />
             </button>
           )}
-          <span className="inline-flex h-5 min-w-6 items-center justify-center rounded border border-[#252a32] bg-[#0f1114] px-1 font-mono text-[10px] text-neutral-500">
-            Ctrl F
-          </span>
         </div>
 
-        <FilterControl
-          label="Mod"
-          valueLabel={selectedModLabel ?? 'Todos os mods'}
-          value={modName}
-          menu={modMenuOptions}
-          open={openMenu === 'mod'}
-          onOpenChange={(open) => setOpenMenu(open ? 'mod' : null)}
-          onSelect={(value) => setModName(value)}
-          anchorRef={modAnchorRef}
-        />
-        <FilterControl
-          label="Origem"
-          valueLabel={selectedSourceLabel}
+        <FilterSelect label="Mod" value={modName} options={modSelectOptions} onChange={setModName} />
+        <FilterSelect
+          label="Idioma 1"
           value={sourceLang}
-          menu={sourceMenuOptions}
-          open={openMenu === 'source'}
-          onOpenChange={(open) => setOpenMenu(open ? 'source' : null)}
-          onSelect={(value) => setSourceLang(value)}
-          anchorRef={sourceAnchorRef}
+          options={sourceSelectOptions}
+          onChange={setSourceLang}
         />
-        <FilterControl
-          label="Destino"
-          valueLabel={selectedTargetLabel}
+        <FilterSelect
+          label="Idioma 2"
           value={targetLang}
-          menu={targetMenuOptions}
-          open={openMenu === 'target'}
-          onOpenChange={(open) => setOpenMenu(open ? 'target' : null)}
-          onSelect={(value) => setTargetLang(value)}
-          anchorRef={targetAnchorRef}
+          options={targetSelectOptions}
+          onChange={setTargetLang}
         />
 
         {hasFilters && (
@@ -537,7 +489,7 @@ export function DictionaryPage(): React.JSX.Element {
       </div>
 
       <div className="flex items-center gap-6 border-b border-[#1f2329] bg-[#131518] px-4 py-3">
-        <StatBlock label="Mostrando" value={`${stats.filtered}`} detail={`/ ${stats.total}`} />
+        <StatBlock label="Mostrando" value={`${stats.filtered}`} detail={`/ ${stats.total}`} accentValue />
         <StatBlock label="Mods" value={`${stats.modCount}`} />
         <StatBlock label="Pares de idiomas" value={`${stats.pairCount}`} />
         <div className="ml-auto text-right">
@@ -563,8 +515,8 @@ export function DictionaryPage(): React.JSX.Element {
                 />
               </th>
               <th className={cn(TABLE_HEADER, 'w-28 px-4 py-3 text-left')}>ID</th>
-              <th className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>Texto origem</th>
-              <th className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>Texto destino</th>
+              <th className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>Texto idioma 1</th>
+              <th className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>Texto idioma 2</th>
               <th className={cn(TABLE_HEADER, 'w-48 px-4 py-3 text-left')}>Mod</th>
               <th className={cn(TABLE_HEADER, 'w-36 px-4 py-3 text-left')}>Idiomas</th>
               <th className={cn(TABLE_HEADER, 'w-32 px-4 py-3 text-right')}>Acoes</th>
@@ -588,9 +540,7 @@ export function DictionaryPage(): React.JSX.Element {
                   />
                 </td>
                 <td className="px-4 py-3 align-top">
-                  <span className="font-mono text-[11px] text-neutral-500">
-                    DCT-{String(entry.id).padStart(4, '0')}
-                  </span>
+                  <span className="font-mono text-[11px] text-neutral-500">{entry.id}</span>
                 </td>
                 <td className="px-4 py-3 align-top">
                   <div className="whitespace-pre-wrap font-mono text-sm leading-6 text-neutral-100">
@@ -617,16 +567,16 @@ export function DictionaryPage(): React.JSX.Element {
                 </td>
                 <td className="px-4 py-3 align-top">
                   <span className="inline-flex items-center gap-1 font-mono text-[11px] text-neutral-400">
-                    <span>{entry.sourceLang}</span>
+                    <span>{entry.sourceLang.toUpperCase()}</span>
                     <span className="text-neutral-600">-&gt;</span>
-                    <span className="text-amber-400">{entry.targetLang}</span>
+                    <span className="text-amber-400">{entry.targetLang.toUpperCase()}</span>
                   </span>
                 </td>
                 <td className="px-4 py-3 align-top">
                   <div className="flex justify-end gap-1">
                     <button
                       type="button"
-                      onClick={() => startEdit(entry)}
+                      onClick={() => setEditingEntry(entry)}
                       className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-[#252a32] hover:bg-[#131518] hover:text-neutral-200"
                     >
                       <Pencil size={13} />
@@ -742,178 +692,52 @@ export function DictionaryPage(): React.JSX.Element {
   )
 }
 
-function FilterControl({
+function FilterSelect({
   label,
-  valueLabel,
-  value,
-  menu,
-  open,
-  onOpenChange,
-  onSelect,
-  anchorRef
-}: {
-  label: string
-  valueLabel: string
-  value: string
-  menu: FilterOption[]
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSelect: (value: string) => void
-  anchorRef: React.RefObject<HTMLButtonElement | null>
-}) {
-  return (
-    <div className="relative">
-      <button
-        ref={anchorRef}
-        type="button"
-        onClick={() => onOpenChange(!open)}
-        className={cn(
-          'inline-flex h-8 cursor-pointer items-center gap-2 rounded-md border px-3 text-xs transition-colors',
-          open
-            ? 'border-amber-500 bg-[#181b1f] text-neutral-100 shadow-[0_0_0_3px_rgba(245,158,11,0.18)]'
-            : 'border-[#1f2329] bg-[#131518] text-neutral-200 hover:border-[#303641]'
-        )}
-      >
-        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
-          {label}
-        </span>
-        <span className={cn('font-mono', !value && 'text-neutral-400')}>{valueLabel}</span>
-        <ChevronDown size={12} className="text-neutral-500" />
-      </button>
-      <FilterMenu
-        open={open}
-        value={value}
-        options={menu}
-        anchorRef={anchorRef}
-        onClose={() => onOpenChange(false)}
-        onSelect={(nextValue) => {
-          onSelect(nextValue)
-          onOpenChange(false)
-        }}
-      />
-    </div>
-  )
-}
-
-function FilterMenu({
-  open,
   value,
   options,
-  anchorRef,
-  onClose,
-  onSelect
+  onChange
 }: {
-  open: boolean
+  label: string
   value: string
-  options: FilterOption[]
-  anchorRef: React.RefObject<HTMLButtonElement | null>
-  onClose: () => void
-  onSelect: (value: string) => void
-}) {
-  const [query, setQuery] = useState('')
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-
-    const handler = (event: MouseEvent) => {
-      const target = event.target as Node
-      if (menuRef.current?.contains(target)) return
-      if (anchorRef.current?.contains(target)) return
-      onClose()
-    }
-
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [anchorRef, onClose, open])
-
-  useEffect(() => {
-    if (!open) setQuery('')
-  }, [open])
-
-  if (!open) return null
-
-  const filtered = query
-    ? options.filter((option) => {
-        const haystack = `${option.label} ${option.sub ?? ''}`.toLowerCase()
-        return haystack.includes(query.toLowerCase())
-      })
-    : options
-
+  options: ThemedSelectOption[]
+  onChange: (value: string) => void
+}): React.JSX.Element {
   return (
-    <div
-      ref={menuRef}
-      className="absolute left-0 top-[calc(100%+6px)] z-20 min-w-60 rounded-lg border border-[#303641] bg-[#131518] p-1 shadow-[0_12px_32px_rgba(0,0,0,0.35)]"
-    >
-      {options.some((option) => option.sub) && (
-        <div className="mb-1 flex items-center gap-2 border-b border-[#1f2329] px-2 py-2 text-neutral-400">
-          <Search size={12} />
-          <input
-            autoFocus
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filtrar..."
-            className="w-full bg-transparent text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
-          />
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => onSelect('')}
-        className={cn(
-          'flex h-8 w-full cursor-pointer items-center rounded-md px-2 text-left text-xs transition-colors',
-          !value ? 'bg-amber-500/12 text-amber-400' : 'text-neutral-200 hover:bg-[#181b1f]'
-        )}
-      >
-        <span>Todos</span>
-        {!value && <Check size={12} className="ml-auto" />}
-      </button>
-
-      {filtered.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onSelect(option.value)}
-          className={cn(
-            'flex min-h-8 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left text-xs transition-colors',
-            value === option.value
-              ? 'bg-amber-500/12 text-amber-400'
-              : 'text-neutral-200 hover:bg-[#181b1f]'
-          )}
-        >
-          <div className="flex min-w-0 flex-col">
-            <span>{option.label}</span>
-            {option.sub && <span className="text-[11px] text-neutral-500">{option.sub}</span>}
-          </div>
-          <span className="ml-auto flex items-center gap-2">
-            {typeof option.count === 'number' && (
-              <span className="font-mono text-[10px] text-neutral-500">{option.count}</span>
-            )}
-            {value === option.value && <Check size={12} />}
-          </span>
-        </button>
-      ))}
-    </div>
+    <ThemedSelect
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={options}
+      searchable
+      placeholder="Todos"
+      searchPlaceholder="Filtrar..."
+      emptyLabel="Nenhuma opcao encontrada."
+      className="w-36"
+      triggerClassName="h-8 bg-[#131518] px-3 text-xs"
+      menuClassName="border-[#303641]"
+    />
   )
 }
 
 function StatBlock({
   label,
   value,
-  detail
+  detail,
+  accentValue = false
 }: {
   label: string
   value: string
   detail?: string
+  accentValue?: boolean
 }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
         {label}
       </div>
-      <div className="text-lg font-semibold text-neutral-100">
-        <span>{value}</span>
+      <div className="text-lg font-semibold">
+        <span className={accentValue ? 'text-amber-400' : 'text-neutral-100'}>{value}</span>
         {detail && <span className="ml-1 text-sm font-normal text-neutral-500">{detail}</span>}
       </div>
     </div>
@@ -947,21 +771,16 @@ function buildModOptions(entries: DisplayEntry[], knownMods: string[]): FilterOp
 
 function buildLanguageOptions(
   entries: DisplayEntry[],
-  languageNames: Map<string, string>,
   side: 'source' | 'target'
-): FilterOption[] {
+): Map<string, number> {
   const counts = new Map<string, number>()
+
   for (const entry of entries) {
     const code = side === 'source' ? entry.sourceLang : entry.targetLang
     counts.set(code, (counts.get(code) ?? 0) + 1)
   }
 
-  return [...counts.keys()].sort((left, right) => left.localeCompare(right)).map((value) => ({
-    value,
-    label: value.toUpperCase(),
-    sub: languageNames.get(value) ?? value,
-    count: counts.get(value) ?? 0
-  }))
+  return counts
 }
 
 function toDisplayEntry(entry: DictionaryEntry, filters: DictionaryFilters): DisplayEntry {

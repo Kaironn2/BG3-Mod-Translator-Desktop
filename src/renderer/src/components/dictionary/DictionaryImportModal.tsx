@@ -131,10 +131,10 @@ export function DictionaryImportModal({
                 <thead>
                   <tr className="bg-[#131518]">
                     <th className="px-3 py-2 text-left font-semibold uppercase tracking-[0.06em] text-neutral-500">
-                      Origem
+                      Idioma 1
                     </th>
                     <th className="px-3 py-2 text-left font-semibold uppercase tracking-[0.06em] text-neutral-500">
-                      Destino
+                      Idioma 2
                     </th>
                     <th className="px-3 py-2 text-left font-semibold uppercase tracking-[0.06em] text-neutral-500">
                       Mod
@@ -151,7 +151,8 @@ export function DictionaryImportModal({
                       <td className="px-3 py-2 font-mono text-neutral-200">{row.targetText}</td>
                       <td className="px-3 py-2 text-neutral-300">{row.modName || 'Sem mod'}</td>
                       <td className="px-3 py-2 font-mono text-neutral-400">
-                        {row.sourceLang || '-'} -&gt; {row.targetLang || '-'}
+                        {(row.sourceLang || '-').toUpperCase()} -&gt;{' '}
+                        <span className="text-amber-400">{(row.targetLang || '-').toUpperCase()}</span>
                       </td>
                     </tr>
                   ))}
