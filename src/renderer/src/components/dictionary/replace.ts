@@ -1,4 +1,5 @@
 import type { ReplaceDraft } from './types'
+import { protectReplaceRegions, restoreProtectedRegions } from './text'
 
 export function applyTextReplace(text: string, draft: ReplaceDraft): string {
   if (!draft.find) return text
@@ -8,15 +9,12 @@ export function applyTextReplace(text: string, draft: ReplaceDraft): string {
     : escapeRegExp(draft.find)
   const flags = draft.matchCase ? 'g' : 'gi'
   const matcher = new RegExp(pattern, flags)
+  const { protectedText, regions } = protectReplaceRegions(text)
 
-  return text
-    .split(/(<[^>]+>)/g)
-    .map((segment) =>
-      segment.startsWith('<') && segment.endsWith('>')
-        ? segment
-        : segment.replace(matcher, () => draft.replaceWith)
-    )
-    .join('')
+  return restoreProtectedRegions(
+    protectedText.replace(matcher, () => draft.replaceWith),
+    regions
+  )
 }
 
 function escapeRegExp(text: string): string {

@@ -6,6 +6,10 @@ import { DictionaryImportModal } from '@/components/dictionary/DictionaryImportM
 import { DictionaryReplaceModal } from '@/components/dictionary/DictionaryReplaceModal'
 import { applyTextReplace } from '@/components/dictionary/replace'
 import {
+  decodeDictionaryTextForUi,
+  encodeDictionaryTextForPersistence
+} from '@/components/dictionary/text'
+import {
   EMPTY_ENTRY_DRAFT,
   type DisplayEntry,
   type EntryDraft,
@@ -16,6 +20,7 @@ import { ThemedSelect, type ThemedSelectOption } from '@/components/shared/Theme
 import { useDebouncedFilter } from '@/hooks/useDebouncedFilter'
 import { cn } from '@/lib/utils'
 import type { DictionaryEntry, DictionaryFilters, Language } from '@/types'
+import { renderSource } from '@/utils/renderSource'
 import { formatRelativeDate } from '../features/translate/utils/relativeDate'
 
 interface PendingDeleteState {
@@ -209,8 +214,8 @@ export function DictionaryPage(): React.JSX.Element {
       await window.api.dictionary.create({
         language1: draft.sourceLang,
         language2: draft.targetLang,
-        textLanguage1: draft.sourceText,
-        textLanguage2: draft.targetText,
+        textLanguage1: encodeDictionaryTextForPersistence(draft.sourceText),
+        textLanguage2: encodeDictionaryTextForPersistence(draft.targetText),
         modName: draft.modName || null,
         uid: draft.uid || null
       })
@@ -233,8 +238,8 @@ export function DictionaryPage(): React.JSX.Element {
         entry: {
           language1: draft.sourceLang,
           language2: draft.targetLang,
-          textLanguage1: draft.sourceText,
-          textLanguage2: draft.targetText,
+          textLanguage1: encodeDictionaryTextForPersistence(draft.sourceText),
+          textLanguage2: encodeDictionaryTextForPersistence(draft.targetText),
           modName: draft.modName || null,
           uid: draft.uid || null
         }
@@ -287,8 +292,8 @@ export function DictionaryPage(): React.JSX.Element {
           entry: {
             language1: entry.sourceLang,
             language2: entry.targetLang,
-            textLanguage1: nextSource,
-            textLanguage2: nextTarget,
+            textLanguage1: encodeDictionaryTextForPersistence(nextSource),
+            textLanguage2: encodeDictionaryTextForPersistence(nextTarget),
             modName: entry.modName || null,
             uid: entry.uid || null
           }
@@ -554,13 +559,13 @@ export function DictionaryPage(): React.JSX.Element {
                   <span className="font-mono text-[11px] text-neutral-500">{entry.id}</span>
                 </td>
                 <td className="px-4 py-3 align-top">
-                  <div className="whitespace-pre-wrap font-mono text-sm leading-6 text-neutral-100">
-                    {entry.sourceText}
+                  <div className="wrap-break-word whitespace-pre-wrap font-mono text-sm leading-6 text-neutral-100">
+                    {entry.sourceText ? renderSource(entry.sourceText) : null}
                   </div>
                 </td>
                 <td className="px-4 py-3 align-top">
-                  <div className="whitespace-pre-wrap font-mono text-sm leading-6 text-neutral-200">
-                    {entry.targetText}
+                  <div className="wrap-break-word whitespace-pre-wrap font-mono text-sm leading-6 text-neutral-200">
+                    {entry.targetText ? renderSource(entry.targetText) : null}
                   </div>
                 </td>
                 <td className="px-4 py-3 align-top">
@@ -805,8 +810,8 @@ function toDisplayEntry(entry: DictionaryEntry, filters: DictionaryFilters): Dis
     id: entry.id,
     sourceLang: swap ? entry.language2 : entry.language1,
     targetLang: swap ? entry.language1 : entry.language2,
-    sourceText: swap ? entry.textLanguage2 : entry.textLanguage1,
-    targetText: swap ? entry.textLanguage1 : entry.textLanguage2,
+    sourceText: decodeDictionaryTextForUi(swap ? entry.textLanguage2 : entry.textLanguage1),
+    targetText: decodeDictionaryTextForUi(swap ? entry.textLanguage1 : entry.textLanguage2),
     modName: entry.modName ?? '',
     uid: entry.uid ?? '',
     updatedAt: entry.updatedAt
