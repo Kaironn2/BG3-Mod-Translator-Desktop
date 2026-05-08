@@ -15,6 +15,7 @@ export function useBatchTranslation(session: TranslationSession) {
   const batchCleanupRef = useRef<(() => void) | null>(null)
   const activeJobIdRef = useRef<string | null>(null)
   const pendingUidsRef = useRef<Set<string>>(new Set())
+  const batchErrorsRef = useRef<Map<string, string>>(new Map())
   const { entries, selectedUids, sourceLang, targetLang, updateEntry, clearSelection, selectEntries } =
     session
 
@@ -38,6 +39,7 @@ export function useBatchTranslation(session: TranslationSession) {
       clearListeners()
       activeJobIdRef.current = null
       pendingUidsRef.current = new Set()
+      batchErrorsRef.current = new Map()
       setActiveJobId(null)
       setBatchCompleted(0)
       setBatchTotal(0)
@@ -64,23 +66,30 @@ export function useBatchTranslation(session: TranslationSession) {
       }
 
       pendingUidsRef.current = new Set(selectedEntries.map((entry) => entry.uid))
+      batchErrorsRef.current = new Map()
       setBatchCompleted(0)
       setBatchTotal(selectedEntries.length)
       setIsBatchTranslating(true)
       clearListeners()
+      const selectedEntriesByUid = new Map(selectedEntries.map((entry) => [entry.uid, entry]))
 
       const handleBatchProgress = ({
         jobId,
         uid,
         target,
+        error,
         completed,
         total
       }: TranslationBatchProgressEvent) => {
         if (jobId !== activeJobIdRef.current) return
         setBatchCompleted(completed)
         setBatchTotal(total)
-        if (target === null) return
+        if (target === null) {
+          batchErrorsRef.current.set(uid, error ?? 'Falha desconhecida na traducao em lote')
+          return
+        }
         pendingUidsRef.current.delete(uid)
+        batchErrorsRef.current.delete(uid)
         updateEntry(uid, target)
       }
 
@@ -98,8 +107,28 @@ export function useBatchTranslation(session: TranslationSession) {
           toast.info(`${translated} de ${total} entradas traduzidas antes do cancelamento`)
         } else if (failed > 0) {
           restorePendingSelection()
+          const firstError = batchErrorsRef.current.values().next().value
+          void window.api.log.write({
+            scope: 'renderer.batchTranslation.entries',
+            message: `${failed} entradas falharam na traducao em lote`,
+            meta: {
+              provider,
+              sourceLang,
+              targetLang,
+              total,
+              translated,
+              failed,
+              entries: Array.from(batchErrorsRef.current.entries()).map(([uid, error]) => ({
+                uid,
+                error,
+                source: selectedEntriesByUid.get(uid)?.source
+              }))
+            }
+          })
           toast.warning(
-            `${translated} de ${total} entradas traduzidas; ${failed} permanecem pendentes`
+            firstError
+              ? `${translated} de ${total} entradas traduzidas; ${failed} permanecem pendentes. Primeiro erro: ${firstError}`
+              : `${translated} de ${total} entradas traduzidas; ${failed} permanecem pendentes`
           )
         } else {
           clearSelection()

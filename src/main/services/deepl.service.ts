@@ -20,33 +20,98 @@ export interface BatchTranslationResult {
   error?: string
 }
 
+interface ProtectedTag {
+  name: string
+  kind: 'open' | 'close' | 'self'
+  original: string
+}
+
+interface ProtectedText {
+  protectedText: string
+  tags: ProtectedTag[]
+}
+
+interface TagToken {
+  raw: string
+  name: string
+  start: number
+  isClosing: boolean
+  isSelfClosing: boolean
+  replacement?: string
+}
+
+const TAG_RE = /<\/?[a-zA-Z][a-zA-Z0-9]*[^<>]*>/g
+const WRAPPER_TAG = 'icosa-root'
+
 function toDeepLLang(code: string): string {
   return code.toUpperCase()
 }
 
-function protectTags(text: string): {
-  protectedText: string
-  tags: string[]
-} {
-  const tags: string[] = []
-  const protectedText = decodeEntities(text).replace(
-    /<\/?[a-zA-Z][a-zA-Z0-9]*[^<>]*>/g,
-    (tag) => {
-      const index = tags.push(tag) - 1
-      return `xXxICOSA${index}TAGxXx`
-    }
+function protectTags(text: string): ProtectedText {
+  const decoded = decodeEntities(text)
+  const tags: ProtectedTag[] = []
+  const tokens = Array.from(decoded.matchAll(TAG_RE), (match) =>
+    createTagToken(match[0], match.index ?? 0)
   )
-  return { protectedText, tags }
+
+  const stackByName = new Map<string, TagToken[]>()
+  let placeholderIndex = 0
+
+  for (const token of tokens) {
+    if (token.isSelfClosing) {
+      assignSelfClosingPlaceholder(token, placeholderIndex++, tags)
+      continue
+    }
+
+    if (token.isClosing) {
+      const stack = stackByName.get(token.name)
+      const opening = stack?.pop()
+      if (!opening) {
+        assignSelfClosingPlaceholder(token, placeholderIndex++, tags)
+        continue
+      }
+
+      const placeholderName = createPlaceholderName(placeholderIndex++)
+      opening.replacement = `<${placeholderName}>`
+      token.replacement = `</${placeholderName}>`
+      tags.push(
+        { name: placeholderName, kind: 'open', original: opening.raw },
+        { name: placeholderName, kind: 'close', original: token.raw }
+      )
+      continue
+    }
+
+    const stack = stackByName.get(token.name)
+    if (stack) stack.push(token)
+    else stackByName.set(token.name, [token])
+  }
+
+  for (const stack of stackByName.values()) {
+    for (const token of stack) {
+      assignSelfClosingPlaceholder(token, placeholderIndex++, tags)
+    }
+  }
+
+  let cursor = 0
+  let protectedBody = ''
+  for (const token of tokens) {
+    protectedBody += escapeXmlText(decoded.slice(cursor, token.start))
+    protectedBody += token.replacement ?? escapeXmlText(token.raw)
+    cursor = token.start + token.raw.length
+  }
+  protectedBody += escapeXmlText(decoded.slice(cursor))
+
+  return { protectedText: wrapXmlContent(protectedBody), tags }
 }
 
-function restoreTags(text: string, tags: string[], originalText: string): string {
-  let restored = text
-  for (let i = 0; i < tags.length; i++) {
-    const placeholder = `xXxICOSA${i}TAGxXx`
-    if (!restored.includes(placeholder)) {
-      throw new Error(`DeepL response did not preserve placeholder ${placeholder}`)
+function restoreTags(text: string, tags: ProtectedTag[], originalText: string): string {
+  let restored = decodeEntities(unwrapXmlContent(text))
+  for (const tag of tags) {
+    const placeholder = placeholderPattern(tag)
+    if (!placeholder.test(restored)) {
+      throw new Error(`DeepL response did not preserve placeholder ${tag.name}`)
     }
-    restored = restored.replaceAll(placeholder, tags[i])
+    restored = restored.replace(placeholder, tag.original)
   }
 
   return tags.length > 0 || originalText.includes('&lt;') ? encodeEntities(restored) : restored
@@ -180,6 +245,9 @@ async function requestDeepL(
   for (const text of texts) body.append('text', text)
   body.append('source_lang', toDeepLLang(sourceLang))
   body.append('target_lang', toDeepLLang(targetLang))
+  body.append('tag_handling', 'xml')
+  body.append('tag_handling_version', 'v2')
+  body.append('split_sentences', 'nonewlines')
   if (context) body.append('context', context)
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -232,4 +300,69 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 
 function isFatalBatchError(err: unknown): boolean {
   return err instanceof DeepLApiError && [401, 403, 456].includes(err.status)
+}
+
+function createTagToken(raw: string, start: number): TagToken {
+  const nameMatch = raw.match(/^<\/?([a-zA-Z][a-zA-Z0-9]*)/)
+  if (!nameMatch) {
+    throw new Error(`Unable to parse tag token: ${raw}`)
+  }
+
+  return {
+    raw,
+    name: nameMatch[1],
+    start,
+    isClosing: raw.startsWith('</'),
+    isSelfClosing: raw.endsWith('/>')
+  }
+}
+
+function assignSelfClosingPlaceholder(
+  token: TagToken,
+  index: number,
+  tags: ProtectedTag[]
+): void {
+  const placeholderName = createPlaceholderName(index)
+  token.replacement = `<${placeholderName}/>`
+  tags.push({ name: placeholderName, kind: 'self', original: token.raw })
+}
+
+function createPlaceholderName(index: number): string {
+  return `icosa-${index}`
+}
+
+function wrapXmlContent(text: string): string {
+  return `<${WRAPPER_TAG}>${text}</${WRAPPER_TAG}>`
+}
+
+function unwrapXmlContent(text: string): string {
+  const match = text
+    .trim()
+    .match(new RegExp(`^<${WRAPPER_TAG}>([\\s\\S]*)</${WRAPPER_TAG}>$`))
+  if (!match) {
+    throw new Error('DeepL response did not preserve the XML wrapper')
+  }
+  return match[1]
+}
+
+function escapeXmlText(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+function placeholderPattern(tag: ProtectedTag): RegExp {
+  const name = escapeRegExp(tag.name)
+  if (tag.kind === 'self') {
+    return new RegExp(`<${name}\\s*/>`)
+  }
+  if (tag.kind === 'close') {
+    return new RegExp(`</${name}>`)
+  }
+  return new RegExp(`<${name}>`)
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
