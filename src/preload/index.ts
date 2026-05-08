@@ -257,6 +257,24 @@ const api: AppApi = {
     }): Promise<void> => ipcRenderer.invoke('xml:export', params)
   },
 
+  merge: {
+    prepareInput: (params: { inputPath: string }) =>
+      ipcRenderer.invoke('merge:prepareInput', params),
+
+    discardInput: (params: { importId: string }): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('merge:discardInput', params),
+
+    run: (params: {
+      sourceImportId: string
+      sourceCandidateId: string
+      sourceLang: string
+      targetImportId: string
+      targetCandidateId: string
+      targetLang: string
+      modName: string
+    }) => ipcRenderer.invoke('merge:run', params)
+  },
+
   config: {
     get: (params: { key: string }): Promise<{ value: string | null }> =>
       ipcRenderer.invoke('config:get', params),
