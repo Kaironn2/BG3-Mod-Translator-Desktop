@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 
 interface ModSelectorProps {
@@ -8,6 +9,7 @@ interface ModSelectorProps {
 }
 
 export function ModSelector({ value, onChange, className }: ModSelectorProps): React.JSX.Element {
+  const { t } = useAppTranslation(['common', 'translate'])
   const [mods, setMods] = useState<string[]>([])
   const [showInput, setShowInput] = useState(false)
   const [newName, setNewName] = useState('')
@@ -44,7 +46,7 @@ export function ModSelector({ value, onChange, className }: ModSelectorProps): R
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       <label htmlFor={showInput ? inputId : selectId} className="text-xs text-neutral-400">
-        Mod
+        {t('fields.mod', { ns: 'common' })}
       </label>
       <div className="flex gap-2">
         {showInput ? (
@@ -55,7 +57,7 @@ export function ModSelector({ value, onChange, className }: ModSelectorProps): R
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Nome do mod..."
+              placeholder={t('setup.modSelection.modNamePlaceholder', { ns: 'translate' })}
               className="flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:border-neutral-500 focus:outline-none"
             />
             <button
@@ -63,7 +65,7 @@ export function ModSelector({ value, onChange, className }: ModSelectorProps): R
               onClick={handleAdd}
               className="rounded-md bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
             >
-              Adicionar
+              {t('actions.save', { ns: 'common' })}
             </button>
             <button
               type="button"
@@ -73,7 +75,7 @@ export function ModSelector({ value, onChange, className }: ModSelectorProps): R
               }}
               className="rounded-md bg-neutral-800 px-3 py-2 text-sm text-neutral-300 hover:bg-neutral-700"
             >
-              Cancelar
+              {t('actions.cancel', { ns: 'common' })}
             </button>
           </>
         ) : (
@@ -84,7 +86,7 @@ export function ModSelector({ value, onChange, className }: ModSelectorProps): R
               onChange={(e) => onChange(e.target.value)}
               className="flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 focus:border-neutral-500 focus:outline-none"
             >
-              <option value="">Selecionar mod...</option>
+              <option value="">{t('setup.modSelection.title', { ns: 'translate' })}</option>
               {mods.map((m) => (
                 <option key={m} value={m}>
                   {m}
@@ -96,7 +98,7 @@ export function ModSelector({ value, onChange, className }: ModSelectorProps): R
               onClick={() => setShowInput(true)}
               className="rounded-md bg-neutral-800 px-3 py-2 text-sm text-neutral-300 hover:bg-neutral-700 whitespace-nowrap"
             >
-              + Novo
+              {t('setup.modSelection.new', { ns: 'translate' })}
             </button>
           </>
         )}

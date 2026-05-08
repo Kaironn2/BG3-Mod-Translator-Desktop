@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import type { Language } from '@/types'
 
 interface LanguagePickerProps {
@@ -15,6 +16,7 @@ export function LanguagePicker({
   languages,
   accent
 }: LanguagePickerProps): React.JSX.Element {
+  const { t } = useAppTranslation('common')
   const options = useMemo(
     () =>
       languages.map((language) => ({
@@ -31,10 +33,10 @@ export function LanguagePicker({
       value={value}
       onChange={onChange}
       options={options}
-      placeholder="Selecionar"
+      placeholder={t('placeholders.select')}
       searchable
-      searchPlaceholder="Buscar idioma..."
-      emptyLabel="Nenhum idioma encontrado."
+      searchPlaceholder={t('placeholders.searchLanguage')}
+      emptyLabel={t('placeholders.noLanguageFound')}
       accent={accent}
     />
   )

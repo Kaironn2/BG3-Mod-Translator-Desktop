@@ -13,6 +13,7 @@ import {
   useTranslationSession
 } from '@/context/TranslationSession'
 import { HighlightedTextarea } from '@/components/shared/HighlightedTextarea'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import { renderSource } from '@/utils/renderSource'
 
@@ -68,7 +69,9 @@ export function TranslationGrid({
   onEntrySave,
   viewMode
 }: TranslationGridProps): React.JSX.Element {
-  const { selectedUids, selectEntry, selectEntries } = useTranslationSession()
+  const { t } = useAppTranslation(['translate', 'common'])
+  const { selectedUids, selectEntry, selectEntries, sourceLang, targetLang } =
+    useTranslationSession()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterMode>('all')
   const deferredSearch = useDeferredValue(search)
@@ -196,13 +199,28 @@ export function TranslationGrid({
   }> = [
     {
       mode: 'untranslated',
-      label: 'Nao traduzidas',
+      label: t('grid.untranslated', { ns: 'translate' }),
       count: counts.untranslated,
       dot: 'bg-slate-500'
     },
-    { mode: 'translated', label: 'Traduzidas', count: counts.translated, dot: 'bg-amber-400' },
-    { mode: 'dictionary', label: 'Com dicionario', count: counts.dictionary, dot: 'bg-blue-500' },
-    { mode: 'tags', label: 'Com tags XML', count: counts.tags, dot: 'bg-purple-400' }
+    {
+      mode: 'translated',
+      label: t('grid.translated', { ns: 'translate' }),
+      count: counts.translated,
+      dot: 'bg-amber-400'
+    },
+    {
+      mode: 'dictionary',
+      label: t('grid.dictionary', { ns: 'translate' }),
+      count: counts.dictionary,
+      dot: 'bg-blue-500'
+    },
+    {
+      mode: 'tags',
+      label: t('grid.tags', { ns: 'translate' }),
+      count: counts.tags,
+      dot: 'bg-purple-400'
+    }
   ]
 
   const searchBar = (
@@ -216,7 +234,7 @@ export function TranslationGrid({
             const value = event.target.value
             startTransition(() => setSearch(value))
           }}
-          placeholder="Buscar em strings..."
+          placeholder={t('grid.searchPlaceholder', { ns: 'translate' })}
           className="min-w-0 flex-1 bg-transparent text-xs font-medium text-neutral-300 placeholder:text-neutral-600 focus:outline-none"
         />
         {search && (
@@ -244,7 +262,7 @@ export function TranslationGrid({
               : 'border-transparent text-neutral-400 hover:border-[#2a2f37] hover:bg-[#181b1f] hover:text-neutral-200'
           )}
         >
-          Todas
+          {t('grid.all', { ns: 'translate' })}
           <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[11px] tabular-nums text-neutral-500">
             {entries.length}
           </span>
@@ -277,11 +295,15 @@ export function TranslationGrid({
       <div className="ml-auto flex items-center gap-3 text-xs font-semibold text-neutral-400">
         {isPending && (
           <span className="rounded-full border border-[#252a32] bg-[#181b1f] px-2 py-0.5 text-[10px] font-mono text-amber-400">
-            atualizando...
+            {t('status.updating', { ns: 'common' })}
           </span>
         )}
         <span className="font-mono tabular-nums text-neutral-500">
-          {selectedStats.selectedStrings} strings • {selectedStats.selectedCharacters} characters
+          {t('grid.selectedStats', {
+            ns: 'translate',
+            strings: selectedStats.selectedStrings,
+            characters: selectedStats.selectedCharacters
+          })}
         </span>
       </div>
     </div>
@@ -304,15 +326,21 @@ export function TranslationGrid({
               className="cursor-pointer accent-amber-500"
             />
           </div>
-          <div className="px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
-            Origem · EN
+          <div className="px-4 py-2 text-[10px] font-semibold tracking-[0.08em] text-neutral-500 uppercase">
+            {t('grid.sourceHeader', {
+              ns: 'translate',
+              language: sourceLang.toUpperCase()
+            })}
           </div>
-          <div className="border-l border-[#1f2329] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
-            Traducao · PT-BR
+          <div className="border-l border-[#1f2329] px-4 py-2 text-[10px] font-semibold tracking-[0.08em] text-neutral-500 uppercase">
+            {t('grid.translationHeader', {
+              ns: 'translate',
+              language: targetLang.toUpperCase()
+            })}
           </div>
         </div>
 
-        <div className="icosa-scroll flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable]">
+        <div className="icosa-scroll min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]">
           {filteredEntries.map((entry, index) => {
             const category = getCategory(entry)
             const isDone = entry.target.trim() !== ''
@@ -355,9 +383,13 @@ export function TranslationGrid({
                   className="flex min-w-0 cursor-pointer flex-col gap-2 px-4 py-3"
                   onClick={() => focusEntry(entry.rowId)}
                 >
-                  <div className="font-mono text-[13px] leading-[1.6] text-neutral-200 whitespace-pre-wrap wrap-break-word">
-                    {entry.source ? renderSource(entry.source) : (
-                      <span className="italic text-neutral-600">vazio</span>
+                  <div className="wrap-break-word font-mono text-[13px] leading-[1.6] text-neutral-200 whitespace-pre-wrap">
+                    {entry.source ? (
+                      renderSource(entry.source)
+                    ) : (
+                      <span className="italic text-neutral-600">
+                        {t('grid.emptySource', { ns: 'translate' })}
+                      </span>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -367,7 +399,7 @@ export function TranslationGrid({
                       </span>
                     )}
                     <span className="font-mono text-[10px] text-neutral-600">
-                      {charCount} characters
+                      {t('grid.charCount', { ns: 'translate', count: charCount })}
                     </span>
                   </div>
                 </div>
@@ -386,31 +418,27 @@ export function TranslationGrid({
                     onChange={() => {}}
                     onKeyDown={(event) => handleEnterKey(event, entry)}
                     rows={1}
-                    placeholder="Traducao..."
+                    placeholder={t('grid.translationPlaceholder', { ns: 'translate' })}
                     containerClassName="rounded-md"
                     className="field-sizing-content"
                   />
-                  <div
-                    className={cn(
-                      'pointer-events-none flex items-center gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100'
-                    )}
-                  >
+                  <div className="pointer-events-none flex items-center gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
                     {/* <button
                       type="button"
                       className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
                     >
-                      <Sparkles size={11} /> Sugerir IA
+                      <Sparkles size={11} /> Suggest AI
                     </button> */}
                     <button
                       type="button"
                       className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
                     >
-                      <BookOpen size={11} /> Aplicar dicionario
+                      <BookOpen size={11} /> {t('grid.applyDictionary', { ns: 'translate' })}
                     </button>
                     <span className="ml-auto flex items-center gap-1 text-[11px] text-neutral-500">
-                      <KbdHint>↵</KbdHint> proximo
-                      <span className="mx-1 text-neutral-700">·</span>
-                      <KbdHint>⇧↵</KbdHint> nova linha
+                      <KbdHint>Enter</KbdHint> {t('grid.next', { ns: 'translate' })}
+                      <span className="mx-1 text-neutral-700">-</span>
+                      <KbdHint>Shift Enter</KbdHint> {t('grid.newLine', { ns: 'translate' })}
                     </span>
                   </div>
                 </div>
@@ -426,7 +454,7 @@ export function TranslationGrid({
     <div className="flex h-full min-h-0 flex-col">
       {searchBar}
 
-      <div className="flex shrink-0 items-center gap-2 border-b border-[#1f2329] bg-[#0f1114] px-7 py-2 select-none">
+      <div className="flex shrink-0 select-none items-center gap-2 border-b border-[#1f2329] bg-[#0f1114] px-7 py-2">
         <input
           type="checkbox"
           checked={allFiltered}
@@ -434,11 +462,11 @@ export function TranslationGrid({
           className="cursor-pointer accent-amber-500"
         />
         <span className="text-[11px] font-medium tabular-nums text-neutral-500">
-          {filteredEntries.length} entradas
+          {t('grid.entries', { ns: 'translate', count: filteredEntries.length })}
         </span>
       </div>
 
-      <div className="icosa-scroll flex-1 min-h-0 overflow-y-auto">
+      <div className="icosa-scroll min-h-0 flex-1 overflow-y-auto">
         <div className="px-7 pb-20 pt-5">
           <div className="mx-auto flex max-w-275 flex-col gap-3.5">
             {filteredEntries.map((entry, index) => {
@@ -501,34 +529,44 @@ export function TranslationGrid({
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="flex items-center gap-2.5">
-                      <LangTag>EN</LangTag>
+                      <LangTag>{sourceLang.toUpperCase()}</LangTag>
                       <span className="font-mono text-[10px] tracking-[0.02em] text-neutral-600">
-                        {charCount} characters · {wordCount} palavras
+                        {t('grid.wordAndCharCount', {
+                          ns: 'translate',
+                          chars: charCount,
+                          words: wordCount
+                        })}
                       </span>
                       <span className="flex-1" />
                       {isDictionary && (
                         <span className="inline-flex items-center gap-1 rounded bg-blue-500/12 px-2 py-0.5 text-[11px] font-medium text-blue-400">
                           <BookOpen size={11} />
-                          {entry.matchType === 'mod-text' ? '1 termo (mod)' : '1 termo'}
+                          {entry.matchType === 'mod-text'
+                            ? t('grid.dictionaryTagMod', { ns: 'translate' })
+                            : t('grid.dictionaryTag', { ns: 'translate' })}
                         </span>
                       )}
                       {hasTags && (
                         <span className="inline-flex items-center gap-1 rounded bg-purple-500/14 px-2 py-0.5 text-[11px] font-medium text-purple-300">
-                          <AlertTriangle size={11} /> contem tags
+                          <AlertTriangle size={11} /> {t('grid.containsTags', { ns: 'translate' })}
                         </span>
                       )}
                     </div>
 
-                    <div className="font-mono text-[14px] leading-[1.65] text-neutral-200 whitespace-pre-wrap wrap-break-word">
-                      {entry.source ? renderSource(entry.source) : (
-                        <span className="italic text-neutral-600">vazio</span>
+                    <div className="wrap-break-word font-mono text-[14px] leading-[1.65] text-neutral-200 whitespace-pre-wrap">
+                      {entry.source ? (
+                        renderSource(entry.source)
+                      ) : (
+                        <span className="italic text-neutral-600">
+                          {t('grid.emptySource', { ns: 'translate' })}
+                        </span>
                       )}
                     </div>
 
                     {isDictionary && (
                       <div className="hidden flex-wrap items-center gap-2 rounded-lg border border-dashed border-[#2a2f37] bg-[#0c0d0f] px-3 py-2 group-focus-within:flex">
-                        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                          Dicionario sugere:
+                        <span className="text-[11px] font-semibold tracking-[0.08em] text-neutral-500 uppercase">
+                          {t('grid.dictionarySuggestion', { ns: 'translate' })}
                         </span>
                         <button
                           type="button"
@@ -539,38 +577,36 @@ export function TranslationGrid({
                         >
                           <span className="font-mono text-neutral-400">
                             {entry.source.slice(0, 24)}
-                            {entry.source.length > 24 ? '…' : ''}
+                            {entry.source.length > 24 ? '...' : ''}
                           </span>
-                          <span className="text-neutral-600">→</span>
-                          <span className="font-medium text-neutral-200">{entry.target || '—'}</span>
+                          <span className="text-neutral-600">-&gt;</span>
+                          <span className="font-medium text-neutral-200">
+                            {entry.target || '-'}
+                          </span>
                         </button>
                       </div>
                     )}
 
                     <div className="mt-1 flex items-center gap-2.5 border-t border-dashed border-[#1f2329] pt-1">
-                      <LangTag accent>PT-BR</LangTag>
-                      <div
-                        className={cn(
-                          'pointer-events-none flex flex-1 items-center gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100'
-                        )}
-                      >
+                      <LangTag accent>{targetLang.toUpperCase()}</LangTag>
+                      <div className="pointer-events-none flex flex-1 items-center gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
                         {/* <button
                           type="button"
                           className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
                         >
-                          <Sparkles size={11} /> Sugerir IA
+                          <Sparkles size={11} /> Suggest AI
                         </button> */}
                         <button
                           type="button"
                           className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
                         >
-                          <Check size={11} /> Marcar como traduzida
+                          <Check size={11} /> {t('grid.markTranslated', { ns: 'translate' })}
                         </button>
                         <span className="flex-1" />
                         <span className="flex items-center gap-1 text-[11px] text-neutral-500">
-                          <KbdHint>↵</KbdHint> proximo
-                          <span className="mx-0.5 text-neutral-700">·</span>
-                          <KbdHint>⇧↵</KbdHint> nova linha
+                          <KbdHint>Enter</KbdHint> {t('grid.next', { ns: 'translate' })}
+                          <span className="mx-0.5 text-neutral-700">-</span>
+                          <KbdHint>Shift Enter</KbdHint> {t('grid.newLine', { ns: 'translate' })}
                         </span>
                       </div>
                     </div>
@@ -585,7 +621,7 @@ export function TranslationGrid({
                       onChange={() => {}}
                       onKeyDown={(event) => handleEnterKey(event, entry)}
                       rows={rows}
-                      placeholder={isDone ? '' : 'Comece a digitar a traducao...'}
+                      placeholder={isDone ? '' : t('grid.startTyping', { ns: 'translate' })}
                       containerClassName="min-h-11 rounded-lg border-[#1f2329] bg-[#0c0d0f] focus-within:border-amber-500 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.25)]"
                       overlayClassName="px-3.5 py-3 text-[13px] leading-[1.6]"
                       className="min-h-11 px-3.5 py-3 text-[13px] leading-[1.6]"

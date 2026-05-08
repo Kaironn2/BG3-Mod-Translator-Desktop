@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { DragDrop } from '@/components/shared/DragDrop'
 import { LanguageSelect } from '@/components/shared/LanguageSelect'
+import { getLocalizedErrorMessage } from '@/i18n/errors'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 
 export function ExtractPage(): React.JSX.Element {
+  const { t } = useAppTranslation(['extract', 'common', 'toasts'])
   const [inputPath, setInputPath] = useState('')
   const [outputPath, setOutputPath] = useState('')
   const [sourceLang, setSourceLang] = useState('')
@@ -22,15 +25,15 @@ export function ExtractPage(): React.JSX.Element {
     try {
       const result = await window.api.mod.extract({ inputPath, outputPath, sourceLang })
       const lines = [
-        `Extracted successfully.`,
-        `Found ${result.xmlFiles.length} localization XML(s):`,
+        t('logs.success'),
+        t('logs.foundXml', { count: result.xmlFiles.length }),
         ...result.xmlFiles.map((f) => `  ${f}`)
       ]
       setLog(lines)
-      toast.success(`Extracted - ${result.xmlFiles.length} XML(s) found`)
+      toast.success(t('extract.success', { ns: 'toasts', count: result.xmlFiles.length }))
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setLog([`Error: ${msg}`])
+      const msg = getLocalizedErrorMessage(err, t)
+      setLog([t('logs.error', { message: msg })])
       toast.error(msg)
     } finally {
       setRunning(false)
@@ -39,12 +42,12 @@ export function ExtractPage(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <h1 className="text-xl font-semibold text-neutral-100">Extract Mod</h1>
+      <h1 className="text-xl font-semibold text-neutral-100">{t('title')}</h1>
 
       <DragDrop
         accept={['zip', 'pak']}
         onFile={setInputPath}
-        label="Drop your .zip or .pak file here"
+        label={t('dropLabel')}
       />
 
       {inputPath && (
@@ -54,26 +57,26 @@ export function ExtractPage(): React.JSX.Element {
       )}
 
       <LanguageSelect
-        label="Source language"
+        label={t('fields.sourceLanguage', { ns: 'common' })}
         value={sourceLang}
         onChange={setSourceLang}
         className="w-56"
       />
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs text-neutral-400">Output folder</label>
+        <label className="text-xs text-neutral-400">{t('outputFolder')}</label>
         <div className="flex gap-2">
           <input
             readOnly
             value={outputPath}
-            placeholder="Select output folder..."
+            placeholder={t('selectOutputFolder')}
             className="flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-400"
           />
           <button
             onClick={pickOutput}
             className="cursor-pointer rounded-md bg-neutral-800 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-700"
           >
-            Browse
+            {t('actions.browse', { ns: 'common' })}
           </button>
         </div>
       </div>
@@ -83,7 +86,7 @@ export function ExtractPage(): React.JSX.Element {
         disabled={running || !inputPath || !outputPath || !sourceLang}
         className="w-fit cursor-pointer rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {running ? 'Extracting...' : 'Extract'}
+        {running ? t('extracting') : t('extract')}
       </button>
 
       {log.length > 0 && (

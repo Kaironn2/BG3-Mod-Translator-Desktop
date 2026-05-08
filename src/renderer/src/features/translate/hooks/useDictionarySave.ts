@@ -1,9 +1,12 @@
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
+import { getLocalizedErrorMessage } from '@/i18n/errors'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { encodeEntities } from '@/lib/xmlEntities'
 import type { TranslationSession } from '../types'
 
 export function useDictionarySave(session: TranslationSession) {
+  const { t } = useAppTranslation(['toasts', 'common'])
   const [isSaving, setIsSaving] = useState(false)
   const { entries, sourceLang, targetLang, modName } = session
 
@@ -22,7 +25,7 @@ export function useDictionarySave(session: TranslationSession) {
           uid: entry.uid || null
         })
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao salvar entrada')
+        toast.error(getLocalizedErrorMessage(err, t))
       }
     },
     [entries, modName, sourceLang, targetLang]
@@ -31,7 +34,7 @@ export function useDictionarySave(session: TranslationSession) {
   const saveAll = useCallback(async () => {
     const toSave = entries.filter((entry) => entry.target.trim() !== '')
     if (toSave.length === 0) {
-      toast.info('Nenhuma traducao para salvar')
+      toast.info(t('translate.nothingToSave', { ns: 'toasts' }))
       return
     }
 
@@ -47,9 +50,9 @@ export function useDictionarySave(session: TranslationSession) {
           uid: entry.uid || null
         })
       }
-      toast.success(`${toSave.length} traducoes salvas no dicionario`)
+      toast.success(t('translate.savedCount', { ns: 'toasts', count: toSave.length }))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao salvar')
+      toast.error(getLocalizedErrorMessage(err, t))
     } finally {
       setIsSaving(false)
     }

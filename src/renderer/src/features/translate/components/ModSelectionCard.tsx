@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import type { ModInfo } from '@/types'
 import { formatRelativeDate } from '../utils/relativeDate'
@@ -38,15 +39,18 @@ export function ModSelectionCard({
   onModSelect,
   onPageChange
 }: ModSelectionCardProps): React.JSX.Element {
+  const { t, currentLanguage } = useAppTranslation(['translate', 'common'])
   const shouldHighlightNewMode = mods.length === 0 && isNewMod
 
   return (
     <>
       <div className="flex items-start gap-3">
         <div className="flex-1">
-          <h3 className="text-[15px] font-semibold text-neutral-200 tracking-tight m-0">Mod</h3>
+          <h3 className="text-[15px] font-semibold text-neutral-200 tracking-tight m-0">
+            {t('setup.modSelection.title')}
+          </h3>
           <p className="text-xs text-neutral-500 mt-1 m-0">
-            Selecione um existente ou crie um novo.
+            {t('setup.modSelection.description')}
           </p>
         </div>
         <div className="flex items-center bg-[#0f1114] border border-[#1f2329] rounded-md p-0.5 gap-0.5 text-xs shrink-0">
@@ -60,7 +64,7 @@ export function ModSelectionCard({
                 : 'bg-transparent text-neutral-500 hover:text-neutral-300'
             )}
           >
-            Existente
+            {t('setup.modSelection.existing')}
           </button>
           <button
             type="button"
@@ -73,7 +77,7 @@ export function ModSelectionCard({
               shouldHighlightNewMode && 'ring-2 ring-amber-500/40'
             )}
           >
-            + Novo
+            {t('setup.modSelection.new')}
           </button>
         </div>
       </div>
@@ -86,7 +90,7 @@ export function ModSelectionCard({
             </span>
             <input
               className="w-full h-8 pl-8 pr-3 rounded-md border border-[#1f2329] bg-[#0f1114] text-xs text-neutral-200 focus:outline-none focus:border-neutral-600 placeholder:text-neutral-600"
-              placeholder="Buscar mod..."
+              placeholder={t('setup.modSelection.searchPlaceholder')}
               value={modSearch}
               onChange={(event) => onModSearchChange(event.target.value)}
             />
@@ -96,8 +100,8 @@ export function ModSelectionCard({
             {filteredMods.length === 0 ? (
               <p className="text-xs text-neutral-600 py-4 text-center">
                 {mods.length === 0
-                  ? 'Nenhum mod encontrado. Crie um novo.'
-                  : 'Nenhum resultado para a busca.'}
+                  ? t('setup.modSelection.noMods')
+                  : t('setup.modSelection.noSearchResults')}
               </p>
             ) : (
               pagedMods.map((mod) => (
@@ -106,6 +110,7 @@ export function ModSelectionCard({
                   mod={mod}
                   selected={selectedMod === mod.name}
                   onSelect={() => onModSelect(mod)}
+                  currentLanguage={currentLanguage}
                 />
               ))
             )}
@@ -119,7 +124,7 @@ export function ModSelectionCard({
                 onClick={() => onPageChange((page) => Math.max(0, page - 1))}
                 className="inline-flex items-center gap-1 text-[11px] text-neutral-500 hover:text-neutral-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
               >
-                Anterior
+                {t('actions.previous', { ns: 'common' })}
               </button>
               <span className="font-mono text-[11px] text-neutral-600 tabular-nums">
                 {clampedPage + 1} / {totalPages}
@@ -130,7 +135,7 @@ export function ModSelectionCard({
                 onClick={() => onPageChange((page) => Math.min(totalPages - 1, page + 1))}
                 className="inline-flex items-center gap-1 text-[11px] text-neutral-500 hover:text-neutral-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
               >
-                Proxima
+                {t('actions.next', { ns: 'common' })}
               </button>
             </div>
           )}
@@ -138,11 +143,11 @@ export function ModSelectionCard({
       ) : (
         <div className="flex flex-col gap-1.5">
           <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
-            Nome do mod
+            {t('setup.modSelection.modName')}
           </span>
           <input
             className="h-9 px-3 rounded-md border border-[#1f2329] bg-[#0f1114] text-sm text-neutral-200 focus:outline-none focus:border-amber-500 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.15)] placeholder:text-neutral-600"
-            placeholder="ex: Order of the Dracolich"
+            placeholder={t('setup.modSelection.modNamePlaceholder')}
             value={newModName}
             onChange={(event) => onNewModNameChange(event.target.value)}
             autoFocus={mods.length === 0}
@@ -156,15 +161,18 @@ export function ModSelectionCard({
 function ModOption({
   mod,
   selected,
-  onSelect
+  onSelect,
+  currentLanguage
 }: {
   mod: ModInfo
   selected: boolean
   onSelect: () => void
+  currentLanguage: string
 }): React.JSX.Element {
   const pct =
     mod.totalStrings > 0 ? Math.min((mod.translatedStrings / mod.totalStrings) * 100, 100) : 0
-  const rel = formatRelativeDate(mod.updatedAt)
+  const { t } = useAppTranslation('translate')
+  const rel = formatRelativeDate(mod.updatedAt, currentLanguage)
 
   return (
     <button
@@ -190,7 +198,7 @@ function ModOption({
       <div className="min-w-0">
         <div className="text-[13px] font-semibold text-neutral-200 truncate">{mod.name}</div>
         <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 mt-0.5">
-          {mod.totalStrings > 0 && <span>{mod.totalStrings} strings</span>}
+          {mod.totalStrings > 0 && <span>{t('grid.entries', { count: mod.totalStrings })}</span>}
           {mod.totalStrings > 0 && rel && <span>-</span>}
           {rel && <span>{rel}</span>}
         </div>

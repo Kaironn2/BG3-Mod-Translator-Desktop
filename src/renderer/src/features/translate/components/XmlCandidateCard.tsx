@@ -1,3 +1,4 @@
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import type { TranslationXmlCandidate } from '@/types'
 
@@ -14,6 +15,8 @@ export function XmlCandidateCard({
   selected,
   onSelect
 }: XmlCandidateCardProps): React.JSX.Element {
+  const { t } = useAppTranslation(['translate', 'toasts'])
+
   return (
     <button
       type="button"
@@ -38,12 +41,12 @@ export function XmlCandidateCard({
           <div className="flex items-center gap-2 mt-1 text-[11px] text-neutral-500">
             {candidate.valid ? (
               <>
-                <span>{candidate.stringCount} strings</span>
+                <span>{t('xmlSelection.strings', { ns: 'translate', count: candidate.stringCount })}</span>
                 <span className="text-neutral-700">-</span>
                 <span>{candidate.sizeKb} KB</span>
               </>
             ) : (
-              <span className="text-red-300">Formato invalido</span>
+              <span className="text-red-300">{t('translate.invalidFormat', { ns: 'toasts' })}</span>
             )}
           </div>
         </div>

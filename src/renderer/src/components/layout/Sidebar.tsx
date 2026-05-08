@@ -1,16 +1,17 @@
 import { BookOpen, Languages, Merge, Package, PackageOpen, Settings } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { to: '/translate', icon: Languages, label: 'Translate', kbd: 'Ctrl 1' },
-  { to: '/dictionary', icon: BookOpen, label: 'Dictionary', kbd: 'Ctrl 2' },
-  { to: '/merge', icon: Merge, label: 'Merge Translations', kbd: 'Ctrl 3' },
-  { to: '/extract', icon: PackageOpen, label: 'Extract Mod', kbd: 'Ctrl 4' },
-  { to: '/package', icon: Package, label: 'Create Package', kbd: 'Ctrl 5' }
+  { to: '/translate', icon: Languages, labelKey: 'translate', kbd: 'Ctrl 1' },
+  { to: '/dictionary', icon: BookOpen, labelKey: 'dictionary', kbd: 'Ctrl 2' },
+  { to: '/merge', icon: Merge, labelKey: 'merge', kbd: 'Ctrl 3' },
+  { to: '/extract', icon: PackageOpen, labelKey: 'extract', kbd: 'Ctrl 4' },
+  { to: '/package', icon: Package, labelKey: 'package', kbd: 'Ctrl 5' }
 ] as const
 
-const FOOTER_ITEMS = [{ to: '/settings', icon: Settings, label: 'Settings', kbd: 'Ctrl 6' }] as const
+const FOOTER_ITEMS = [{ to: '/settings', icon: Settings, labelKey: 'settings', kbd: 'Ctrl 6' }] as const
 
 function NavItem({
   to,
@@ -56,6 +57,8 @@ function NavItem({
 }
 
 export function Sidebar(): React.JSX.Element {
+  const { t } = useAppTranslation('sidebar')
+
   return (
     <aside
       style={{ transition: 'width 180ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}
@@ -63,13 +66,13 @@ export function Sidebar(): React.JSX.Element {
     >
       <nav className="flex flex-1 flex-col gap-0.5 px-2 py-3">
         {NAV_ITEMS.map((item) => (
-          <NavItem key={item.to} {...item} />
+          <NavItem key={item.to} to={item.to} icon={item.icon} kbd={item.kbd} label={t(item.labelKey)} />
         ))}
       </nav>
 
       <div className="border-t border-[#1f2329] px-2 py-3">
         {FOOTER_ITEMS.map((item) => (
-          <NavItem key={item.to} {...item} />
+          <NavItem key={item.to} to={item.to} icon={item.icon} kbd={item.kbd} label={t(item.labelKey)} />
         ))}
       </div>
     </aside>

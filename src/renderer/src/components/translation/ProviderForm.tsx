@@ -1,5 +1,6 @@
-import { LanguageSelect } from '@/components/shared/LanguageSelect'
 import { DragDrop } from '@/components/shared/DragDrop'
+import { LanguageSelect } from '@/components/shared/LanguageSelect'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 
 export interface ProviderFields {
   filePath: string
@@ -26,12 +27,14 @@ export function ProviderForm({
   onChange,
   disabled
 }: ProviderFormProps): React.JSX.Element {
+  const { t } = useAppTranslation(['common', 'translate'])
+
   return (
     <div className="flex flex-col gap-4">
       <DragDrop
         accept={MOD_EXTENSIONS}
         onFile={(path) => onChange({ filePath: path })}
-        label="Drop your mod file here"
+        label={t('setup.fileCard.dropPrompt', { ns: 'translate' })}
         className={disabled ? 'pointer-events-none opacity-50' : ''}
       />
 
@@ -43,19 +46,19 @@ export function ProviderForm({
 
       <div className="grid grid-cols-2 gap-3">
         <LanguageSelect
-          label="Source language"
+          label={t('fields.sourceLanguage')}
           value={fields.sourceLang}
           onChange={(v) => onChange({ sourceLang: v })}
         />
         <LanguageSelect
-          label="Target language"
+          label={t('fields.targetLanguage')}
           value={fields.targetLang}
           onChange={(v) => onChange({ targetLang: v })}
         />
       </div>
 
       <Field
-        label="Mod name"
+        label={t('fields.mod')}
         value={fields.modName}
         onChange={(v) => onChange({ modName: v })}
         disabled={disabled}
@@ -63,7 +66,7 @@ export function ProviderForm({
       />
 
       <Field
-        label="Author"
+        label={t('fields.author')}
         value={fields.author ?? ''}
         onChange={(v) => onChange({ author: v })}
         disabled={disabled}

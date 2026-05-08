@@ -1,3 +1,5 @@
+import { useAppTranslation } from '@/i18n/useAppTranslation'
+
 interface TranslationStatsProps {
   translatedCount: number
   total: number
@@ -13,6 +15,8 @@ export function TranslationStats({
   batchCompleted = 0,
   batchTotal = 0
 }: TranslationStatsProps): React.JSX.Element {
+  const { t } = useAppTranslation('translate')
+
   return (
     <div className="flex flex-col gap-2 min-w-70">
       <div className="flex items-baseline gap-1 justify-end font-mono">
@@ -22,7 +26,7 @@ export function TranslationStats({
         <span className="text-base text-neutral-500">/{total}</span>
         {batchTotal > 0 && (
           <span className="ml-3 text-[11px] text-neutral-500">
-            batch {batchCompleted}/{batchTotal}
+            {t('editor.batch', { completed: batchCompleted, total: batchTotal })}
           </span>
         )}
       </div>

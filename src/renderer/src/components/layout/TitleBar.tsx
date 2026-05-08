@@ -1,5 +1,6 @@
 import { Maximize2, Minimize2, Minus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 
 function IcosaLogo() {
   return (
@@ -25,6 +26,7 @@ const NO_DRAG: AppRegionStyle = { WebkitAppRegion: 'no-drag' }
 
 export function TitleBar(): React.JSX.Element {
   const [isMaximized, setIsMaximized] = useState(false)
+  const { t } = useAppTranslation('common')
 
   useEffect(() => {
     window.api.window.isMaximized().then(setIsMaximized)
@@ -53,6 +55,7 @@ export function TitleBar(): React.JSX.Element {
 
       <div style={NO_DRAG} className="flex">
         <button
+          title={t('window.minimize')}
           onClick={() => window.api.window.minimize()}
           className="h-9 w-11 flex items-center justify-center text-neutral-500 hover:bg-white/5 hover:text-neutral-200 transition-colors"
         >
@@ -60,6 +63,7 @@ export function TitleBar(): React.JSX.Element {
         </button>
 
         <button
+          title={t(isMaximized ? 'window.restore' : 'window.maximize')}
           onClick={() => window.api.window.maximize()}
           className="h-9 w-11 flex items-center justify-center text-neutral-500 hover:bg-white/5 hover:text-neutral-200 transition-colors"
         >
@@ -67,6 +71,7 @@ export function TitleBar(): React.JSX.Element {
         </button>
 
         <button
+          title={t('window.close')}
           onClick={() => window.api.window.close()}
           className="h-9 w-11 flex items-center justify-center text-neutral-500 hover:bg-red-500 hover:text-white transition-colors"
         >

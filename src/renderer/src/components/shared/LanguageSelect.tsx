@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import type { Language } from '@/types'
 
@@ -16,6 +17,7 @@ export function LanguageSelect({
   className
 }: LanguageSelectProps): React.JSX.Element {
   const [languages, setLanguages] = useState<Language[]>([])
+  const { t } = useAppTranslation('common')
 
   useEffect(() => {
     window.api.language.getAll().then(setLanguages)
@@ -27,10 +29,10 @@ export function LanguageSelect({
       onChange={onChange}
       label={label}
       className={className}
-      placeholder="Select language"
+      placeholder={t('placeholders.select')}
       searchable
-      searchPlaceholder="Search language..."
-      emptyLabel="No language found."
+      searchPlaceholder={t('placeholders.searchLanguage')}
+      emptyLabel={t('placeholders.noLanguageFound')}
       options={languages.map((language) => ({
         value: language.code,
         label: language.name,

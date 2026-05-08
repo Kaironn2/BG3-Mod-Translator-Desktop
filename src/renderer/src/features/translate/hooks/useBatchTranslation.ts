@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { getLocalizedErrorMessage } from '@/i18n/errors'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import type {
   TranslationBatchDoneEvent,
   TranslationBatchErrorEvent,
@@ -8,6 +10,7 @@ import type {
 import type { TranslationSession } from '../types'
 
 export function useBatchTranslation(session: TranslationSession) {
+  const { t } = useAppTranslation(['translate', 'toasts', 'common', 'errors'])
   const [isBatchTranslating, setIsBatchTranslating] = useState(false)
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const [batchCompleted, setBatchCompleted] = useState(0)
@@ -61,7 +64,7 @@ export function useBatchTranslation(session: TranslationSession) {
         .map((entry) => ({ uid: entry.rowId, source: entry.source }))
 
       if (selectedEntries.length === 0) {
-        toast.info('Nenhuma entrada selecionada')
+        toast.info(t('batchBar.noSelection', { ns: 'translate' }))
         return
       }
 
@@ -85,7 +88,7 @@ export function useBatchTranslation(session: TranslationSession) {
         setBatchCompleted(completed)
         setBatchTotal(total)
         if (target === null) {
-          batchErrorsRef.current.set(uid, error ?? 'Falha desconhecida na traducao em lote')
+          batchErrorsRef.current.set(uid, error ?? t('common.unknown', { ns: 'errors' }))
           return
         }
         pendingUidsRef.current.delete(uid)
@@ -104,13 +107,13 @@ export function useBatchTranslation(session: TranslationSession) {
 
         if (cancelled) {
           restorePendingSelection()
-          toast.info(`${translated} de ${total} entradas traduzidas antes do cancelamento`)
+          toast.info(t('batchBar.cancelled', { ns: 'translate', translated, total }))
         } else if (failed > 0) {
           restorePendingSelection()
           const firstError = batchErrorsRef.current.values().next().value
           void window.api.log.write({
             scope: 'renderer.batchTranslation.entries',
-            message: `${failed} entradas falharam na traducao em lote`,
+            message: `${failed} entries failed during batch translation`,
             meta: {
               provider,
               sourceLang,
@@ -127,12 +130,23 @@ export function useBatchTranslation(session: TranslationSession) {
           })
           toast.warning(
             firstError
-              ? `${translated} de ${total} entradas traduzidas; ${failed} permanecem pendentes. Primeiro erro: ${firstError}`
-              : `${translated} de ${total} entradas traduzidas; ${failed} permanecem pendentes`
+              ? t('batchBar.partialWithError', {
+                  ns: 'translate',
+                  translated,
+                  total,
+                  failed,
+                  error: firstError
+                })
+              : t('batchBar.partial', {
+                  ns: 'translate',
+                  translated,
+                  total,
+                  failed
+                })
           )
         } else {
           clearSelection()
-          toast.success(`${translated} entradas traduzidas`)
+          toast.success(t('batchBar.completed', { ns: 'translate', count: translated }))
         }
 
         finishBatchJob(jobId)
@@ -142,7 +156,7 @@ export function useBatchTranslation(session: TranslationSession) {
         if (jobId !== activeJobIdRef.current) return
 
         restorePendingSelection()
-        toast.error(message)
+        toast.error(getLocalizedErrorMessage(new Error(message), t))
         void window.api.log.write({
           scope: 'renderer.batchTranslation',
           message,
@@ -170,7 +184,7 @@ export function useBatchTranslation(session: TranslationSession) {
         activeJobIdRef.current = jobId
         setActiveJobId(jobId)
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Erro na traducao em lote'
+        const message = getLocalizedErrorMessage(err, t)
         clearListeners()
         activeJobIdRef.current = null
         setActiveJobId(null)
@@ -180,7 +194,7 @@ export function useBatchTranslation(session: TranslationSession) {
         toast.error(message)
         void window.api.log.write({
           scope: 'renderer.batchTranslation',
-          message,
+          message: err instanceof Error ? err.message : String(err),
           stack: err instanceof Error ? err.stack : undefined,
           meta: { provider, sourceLang, targetLang, total: selectedEntries.length }
         })

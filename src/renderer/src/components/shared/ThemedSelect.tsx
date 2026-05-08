@@ -1,6 +1,7 @@
 import { Check, ChevronDown, Search } from 'lucide-react'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 
 export interface ThemedSelectOption {
@@ -40,10 +41,10 @@ export function ThemedSelect({
   value,
   onChange,
   options,
-  placeholder = 'Selecionar',
-  emptyLabel = 'Nenhuma opcao encontrada.',
+  placeholder,
+  emptyLabel,
   searchable = false,
-  searchPlaceholder = 'Buscar...',
+  searchPlaceholder,
   label,
   className,
   accent = false,
@@ -52,6 +53,7 @@ export function ThemedSelect({
   menuMinWidth,
   triggerAdornment
 }: ThemedSelectProps): React.JSX.Element {
+  const { t } = useAppTranslation('common')
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null)
@@ -60,6 +62,9 @@ export function ThemedSelect({
   const menuRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const listboxId = useId()
+  const resolvedPlaceholder = placeholder ?? t('placeholders.select')
+  const resolvedEmptyLabel = emptyLabel ?? t('placeholders.noOptionFound')
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t('placeholders.search')
 
   const selected = options.find((option) => option.value === value)
   const filteredOptions = useMemo(() => {
@@ -162,7 +167,7 @@ export function ThemedSelect({
                 ref={searchRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={searchPlaceholder}
+                placeholder={resolvedSearchPlaceholder}
                 className="flex-1 bg-transparent text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
               />
             </div>
@@ -198,7 +203,7 @@ export function ThemedSelect({
                 )
               })
             ) : (
-              <div className="px-2.5 py-3 text-xs text-neutral-500">{emptyLabel}</div>
+              <div className="px-2.5 py-3 text-xs text-neutral-500">{resolvedEmptyLabel}</div>
             )}
           </div>
         </div>,
@@ -225,7 +230,9 @@ export function ThemedSelect({
           triggerClassName
         )}
       >
-        <span className="flex-1 truncate font-medium">{selected?.label ?? placeholder}</span>
+        <span className="flex-1 truncate font-medium">
+          {selected?.label ?? resolvedPlaceholder}
+        </span>
         {selected?.badge && (
           <span
             className={cn(

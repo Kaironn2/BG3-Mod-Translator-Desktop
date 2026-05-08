@@ -1,4 +1,5 @@
 import { Check, File, Upload, X } from 'lucide-react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import { btnBase, btnGhostIcon } from './styles'
 
@@ -21,19 +22,21 @@ export function FileInputCard({
   onDrop,
   onClear
 }: FileInputCardProps): React.JSX.Element {
+  const { t } = useAppTranslation(['translate', 'common'])
+
   return (
     <>
       <div>
         <h3 className="text-[15px] font-semibold text-neutral-200 tracking-tight m-0">
-          Arquivo do mod
+          {t('setup.fileCard.title', { ns: 'translate' })}
         </h3>
         <p className="text-xs text-neutral-500 mt-1 m-0">
-          Solte aqui ou navegue. Aceita .xml, .pak, .zip.
+          {t('setup.fileCard.description', { ns: 'translate' })}
         </p>
       </div>
 
       <section
-        aria-label="Zona de arrastar arquivo"
+        aria-label={t('setup.fileCard.dropZone', { ns: 'translate' })}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
@@ -60,7 +63,7 @@ export function FileInputCard({
               <Upload />
             </div>
             <div className="text-[13px] font-medium text-neutral-300">
-              Arraste o arquivo do mod aqui
+              {t('setup.fileCard.dropPrompt', { ns: 'translate' })}
             </div>
             <div className="flex gap-1.5">
               {['.xml', '.pak', '.zip'].map((ext) => (
@@ -74,7 +77,7 @@ export function FileInputCard({
             </div>
             <button type="button" onClick={onBrowse} className={btnBase}>
               <File size={13} />
-              Procurar arquivo
+              {t('setup.fileCard.browseFile', { ns: 'translate' })}
             </button>
           </div>
         ) : (
@@ -88,7 +91,7 @@ export function FileInputCard({
               </div>
               <div className="flex items-center gap-1 text-[11px] text-amber-400 mt-0.5">
                 <Check size={10} />
-                Arquivo selecionado
+                {t('setup.fileCard.fileSelected', { ns: 'translate' })}
               </div>
             </div>
             <button type="button" onClick={onClear} className={btnGhostIcon}>
