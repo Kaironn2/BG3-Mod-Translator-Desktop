@@ -39,6 +39,11 @@ function sanitizeModName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)
 }
 
+function languageFolder(repos: RepositoryRegistry, languageCode: string): string {
+  const language = repos.language.findByCode(languageCode)
+  return (language?.name ?? languageCode).replace(/[^a-zA-Z0-9]/g, '')
+}
+
 export function registerModHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle('mod:extract', async (_event, payload: ExtractPayload) => {
     const { inputPath, outputPath, sourceLang = 'English' } = payload
@@ -56,7 +61,7 @@ export function registerModHandlers(repos: RepositoryRegistry): void {
     }
 
     await unpackMod(pakPath, outputPath)
-    const xmlFiles = findLocalizationXmls(outputPath, sourceLang)
+    const xmlFiles = findLocalizationXmls(outputPath, languageFolder(repos, sourceLang))
 
     return { success: true, xmlFiles }
   })

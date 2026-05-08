@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 
 export interface LocalizationEntry {
   contentuid: string
@@ -13,9 +13,10 @@ export function parseLocalizationXml(filePath: string): LocalizationEntry[] {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const entries: LocalizationEntry[] = []
   const re = /<content\s+contentuid="([^"]+)"\s+version="([^"]+)">([\s\S]*?)<\/content>/g
-  let match: RegExpExecArray | null
-  while ((match = re.exec(raw)) !== null) {
+  let match = re.exec(raw)
+  while (match !== null) {
     entries.push({ contentuid: match[1], version: match[2], text: match[3] })
+    match = re.exec(raw)
   }
   return entries
 }
@@ -33,12 +34,27 @@ export function writeLocalizationXml(entries: LocalizationEntry[], outputPath: s
   fs.writeFileSync(outputPath, lines.join('\n'), 'utf-8')
 }
 
-// Returns every .xml file inside a Localization/{langCode}/ folder within a given directory.
-export function findLocalizationXmls(dir: string, langCode: string): string[] {
-  const locDir = path.join(dir, 'Localization', langCode)
-  if (!fs.existsSync(locDir)) return []
-  return fs
-    .readdirSync(locDir)
-    .filter((f) => f.endsWith('.xml'))
-    .map((f) => path.join(locDir, f))
+// Returns every .xml file inside any Localization/{langFolder}/ folder below dir.
+export function findLocalizationXmls(dir: string, langFolder: string): string[] {
+  const results: string[] = []
+  collectLocalizationXmls(dir, langFolder, results)
+  return results.sort((a, b) => a.localeCompare(b))
+}
+
+function collectLocalizationXmls(dir: string, langFolder: string, results: string[]): void {
+  if (!fs.existsSync(dir)) return
+
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      collectLocalizationXmls(full, langFolder, results)
+    } else if (entry.name.endsWith('.xml') && isInsideLanguageFolder(full, langFolder)) {
+      results.push(full)
+    }
+  }
+}
+
+function isInsideLanguageFolder(filePath: string, langFolder: string): boolean {
+  const parts = filePath.split(/[\\/]/)
+  return parts.some((part, index) => part === 'Localization' && parts[index + 1] === langFolder)
 }
