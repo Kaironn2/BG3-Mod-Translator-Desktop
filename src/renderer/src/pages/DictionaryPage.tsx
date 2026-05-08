@@ -57,6 +57,8 @@ interface DictionaryResultState {
   totalPages: number
 }
 
+type DictionaryLoadingMode = 'overlay' | 'replace'
+
 const TABLE_HEADER =
   'select-none text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500'
 const DEFAULT_PAGE_SIZE = 200
@@ -74,6 +76,7 @@ export function DictionaryPage(): React.JSX.Element {
   const [languages, setLanguages] = useState<Language[]>([])
   const [knownMods, setKnownMods] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingMode, setLoadingMode] = useState<DictionaryLoadingMode>('overlay')
   const [bootstrapping, setBootstrapping] = useState(true)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
@@ -89,6 +92,7 @@ export function DictionaryPage(): React.JSX.Element {
   const [editingEntry, setEditingEntry] = useState<DisplayEntry | null>(null)
   const [pendingDelete, setPendingDelete] = useState<PendingDeleteState | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const nextLoadingModeRef = useRef<DictionaryLoadingMode>('overlay')
   const debouncedText = useDebouncedFilter(text)
 
   const filters = useMemo<DictionaryFilters>(
@@ -112,8 +116,13 @@ export function DictionaryPage(): React.JSX.Element {
       nextFilters: DictionaryFilters,
       nextPage: number,
       nextPageSize: number,
-      options?: { silent?: boolean }
+      options?: { silent?: boolean; mode?: DictionaryLoadingMode }
     ) => {
+      const mode = options?.mode ?? 'overlay'
+      setLoadingMode(mode)
+      if (mode === 'replace') {
+        setResult((previous) => ({ ...previous, items: [] }))
+      }
       if (!options?.silent) setLoading(true)
       try {
         const response = await window.api.dictionary.list({
@@ -160,7 +169,9 @@ export function DictionaryPage(): React.JSX.Element {
 
   useEffect(() => {
     if (bootstrapping) return
-    void loadEntries(filters, page, pageSize)
+    const mode = nextLoadingModeRef.current
+    nextLoadingModeRef.current = 'overlay'
+    void loadEntries(filters, page, pageSize, { mode })
   }, [bootstrapping, filters, loadEntries, page, pageSize])
 
   useEffect(() => {
@@ -407,6 +418,7 @@ export function DictionaryPage(): React.JSX.Element {
   const handlePageSizeChange = async (value: string) => {
     const nextPageSize = normalizePageSize(value)
     setSelectedIds(new Set())
+    nextLoadingModeRef.current = 'replace'
     setPageSize(nextPageSize)
     setPage(1)
     await window.api.config.set({
@@ -728,7 +740,7 @@ export function DictionaryPage(): React.JSX.Element {
           </table>
         </div>
 
-        {loading && <DictionaryLoadingOverlay />}
+        {loading && <DictionaryLoadingOverlay mode={loadingMode} />}
       </div>
 
       <footer className="flex items-center gap-4 border-t border-[#1f2329] bg-[#0c0d0f] px-4 py-2 text-[11px] text-neutral-500">
@@ -904,9 +916,18 @@ function StatBlock({
   )
 }
 
-function DictionaryLoadingOverlay(): React.JSX.Element {
+function DictionaryLoadingOverlay({
+  mode
+}: {
+  mode: DictionaryLoadingMode
+}): React.JSX.Element {
   return (
-    <div className="pointer-events-none absolute inset-0 bg-[#0f1114]/55 backdrop-blur-[1px]">
+    <div
+      className={cn(
+        'pointer-events-none absolute inset-0',
+        mode === 'replace' ? 'bg-[#0f1114]' : 'bg-[#0f1114]/55 backdrop-blur-[1px]'
+      )}
+    >
       <div className="flex h-full flex-col gap-3 px-4 py-4">
         <div className="h-10 rounded-md bg-[#1a1d22]/90" />
         {Array.from({ length: 7 }).map((_, index) => (
