@@ -270,6 +270,26 @@ export interface ModApi {
   }): Promise<{ outputPath: string }>
 }
 
+export interface MergeResult {
+  matched: number
+  sourceOnly: number
+  targetOnly: number
+}
+
+export interface MergeApi {
+  prepareInput(params: { inputPath: string }): Promise<PreparedTranslationInput>
+  discardInput(params: { importId: string }): Promise<{ success: boolean }>
+  run(params: {
+    sourceImportId: string
+    sourceCandidateId: string
+    sourceLang: string
+    targetImportId: string
+    targetCandidateId: string
+    targetLang: string
+    modName: string
+  }): Promise<MergeResult>
+}
+
 export interface XmlApi {
   load(params: {
     inputPath: string
@@ -320,6 +340,7 @@ export interface AppApi {
   fs: FsApi
   log: LogApi
   xml: XmlApi
+  merge: MergeApi
   window: WindowApi
 }
 
