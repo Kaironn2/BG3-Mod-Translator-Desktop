@@ -17,6 +17,11 @@ export interface DictionaryFilters {
   targetLang?: string
 }
 
+export interface PaginatedDictionaryResult {
+  items: DictionaryEntry[]
+  total: number
+}
+
 export interface UpsertParams {
   sourceLang: string
   targetLang: string
@@ -43,17 +48,35 @@ export class DictionaryRepository {
   constructor(private db: AppDb) {}
 
   list(filters: DictionaryFilters = {}): DictionaryEntry[] {
+    return this.queryList(filters).all() as DictionaryEntry[]
+  }
+
+  listPaginated(
+    filters: DictionaryFilters = {},
+    page: number,
+    pageSize: number
+  ): PaginatedDictionaryResult {
+    const safePage = Math.max(1, page)
+    const safePageSize = Math.max(1, pageSize)
     const where = this.buildFilterWhere(filters)
-    const query = this.db.select().from(dictionary)
+    const totalRow = where
+      ? (this.db
+          .select({ count: sql<number>`count(*)` })
+          .from(dictionary)
+          .where(where)
+          .get() as { count: number } | undefined)
+      : (this.db
+          .select({ count: sql<number>`count(*)` })
+          .from(dictionary)
+          .get() as { count: number } | undefined)
 
-    if (where) {
-      return query
-        .where(where)
-        .orderBy(desc(dictionary.updatedAt), desc(dictionary.id))
-        .all() as DictionaryEntry[]
-    }
+    const total = totalRow?.count ?? 0
+    const items = this.queryList(filters)
+      .limit(safePageSize)
+      .offset((safePage - 1) * safePageSize)
+      .all() as DictionaryEntry[]
 
-    return query.orderBy(desc(dictionary.updatedAt), desc(dictionary.id)).all() as DictionaryEntry[]
+    return { items, total }
   }
 
   findByText(
@@ -221,6 +244,17 @@ export class DictionaryRepository {
 
   delete(id: number): void {
     this.db.delete(dictionary).where(eq(dictionary.id, id)).run()
+  }
+
+  private queryList(filters: DictionaryFilters) {
+    const where = this.buildFilterWhere(filters)
+    const query = this.db.select().from(dictionary)
+
+    if (where) {
+      return query.where(where).orderBy(desc(dictionary.updatedAt), desc(dictionary.id))
+    }
+
+    return query.orderBy(desc(dictionary.updatedAt), desc(dictionary.id))
   }
 
   private buildFilterWhere(filters: DictionaryFilters): SQL | undefined {

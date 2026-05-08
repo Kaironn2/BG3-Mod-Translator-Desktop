@@ -62,9 +62,14 @@ export function useMergeSetup(): UseMergeSetupResult {
 
   useEffect(() => {
     window.api.language.getAll().then((items) => {
+      const sourceDefault =
+        items.find((item) => item.code === 'en')?.code ?? items[0]?.code ?? ''
+      const targetDefault =
+        items.find((item) => item.code === 'pt-BR')?.code ?? items[1]?.code ?? items[0]?.code ?? ''
+
       setLanguages(items)
-      setSource((prev) => (prev.lang ? prev : { ...prev, lang: items[0]?.code ?? '' }))
-      setTarget((prev) => (prev.lang ? prev : { ...prev, lang: items[1]?.code ?? items[0]?.code ?? '' }))
+      setSource((prev) => (prev.lang ? prev : { ...prev, lang: sourceDefault }))
+      setTarget((prev) => (prev.lang ? prev : { ...prev, lang: targetDefault }))
     })
   }, [])
 

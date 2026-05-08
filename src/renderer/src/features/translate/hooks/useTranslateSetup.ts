@@ -19,6 +19,7 @@ export function useTranslateSetup(session: TranslationSession) {
   >([])
   const [modSearch, setModSearch] = useState('')
   const [modPage, setModPage] = useState(0)
+  const [hasUserChosenMode, setHasUserChosenMode] = useState(false)
 
   const filteredMods = mods.filter((mod) =>
     mod.name.toLowerCase().includes(modSearch.toLowerCase())
@@ -45,16 +46,23 @@ export function useTranslateSetup(session: TranslationSession) {
 
   useEffect(() => {
     if (sourceLang && targetLang) {
+      setHasUserChosenMode(false)
       window.api.mod.getAll({ lang1: sourceLang, lang2: targetLang }).then(setMods)
     }
   }, [sourceLang, targetLang])
 
   useEffect(() => {
+    if (hasUserChosenMode) return
     if (mods.length === 0) {
       setIsNewMod(true)
       setSelectedMod(null)
+      return
     }
-  }, [mods])
+    setIsNewMod(false)
+    if (!selectedMod || !mods.some((mod) => mod.name === selectedMod)) {
+      setSelectedMod(mods[0]?.name ?? null)
+    }
+  }, [hasUserChosenMode, mods, selectedMod])
 
   const handleSourceChange = (lang: string) => {
     setSourceLangLocal(lang)
@@ -70,6 +78,8 @@ export function useTranslateSetup(session: TranslationSession) {
 
   const handleModSelect = (mod: ModInfo) => {
     setSelectedMod(mod.name)
+    setIsNewMod(false)
+    setHasUserChosenMode(true)
     if (mod.lastFilePath) {
       setFilePath(mod.lastFilePath)
       setFileName(mod.lastFilePath.split(/[\\/]/).pop() ?? mod.lastFilePath)
@@ -130,7 +140,10 @@ export function useTranslateSetup(session: TranslationSession) {
     ready,
     srcLang,
     tgtLang,
-    setIsNewMod,
+    setIsNewMod: (value: boolean) => {
+      setHasUserChosenMode(true)
+      setIsNewMod(value)
+    },
     setNewModName,
     setIsDragging,
     setModPage,

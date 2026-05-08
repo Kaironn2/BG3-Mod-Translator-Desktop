@@ -112,7 +112,7 @@ function EntryEditor({
           {translating === 'deepl' && <Loader2 size={14} className="animate-spin" />}
           Traduzir com DeepL
         </button>
-        <button
+        {/* <button
           type="button"
           onClick={() => handleTranslate('openai')}
           disabled={translating !== null}
@@ -120,7 +120,7 @@ function EntryEditor({
         >
           {translating === 'openai' && <Loader2 size={14} className="animate-spin" />}
           Traduzir com OpenAI
-        </button>
+        </button> */}
 
         <div className="ml-auto flex gap-2">
           <button

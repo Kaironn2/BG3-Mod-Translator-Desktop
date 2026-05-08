@@ -1,5 +1,13 @@
-import { AlertTriangle, BookOpen, Check, Search, Sparkles, X } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { AlertTriangle, BookOpen, Check, Search, X } from 'lucide-react'
+import {
+  startTransition,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition
+} from 'react'
 import {
   type TranslationSessionEntry,
   useTranslationSession
@@ -63,6 +71,9 @@ export function TranslationGrid({
   const { selectedUids, selectEntry, selectEntries } = useTranslationSession()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterMode>('all')
+  const deferredSearch = useDeferredValue(search)
+  const deferredFilter = useDeferredValue(filter)
+  const [isPending, startFilterTransition] = useTransition()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const textareaRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map())
   const savedByEnterRef = useRef<Set<string>>(new Set())
@@ -85,19 +96,19 @@ export function TranslationGrid({
 
   const filteredEntries = useMemo(() => {
     return entries.filter((entry) => {
-      if (filter === 'untranslated' && entry.target.trim()) return false
-      if (filter === 'translated' && !entry.target.trim()) return false
-      if (filter === 'dictionary' && getCategory(entry) !== 'dictionary') return false
-      if (filter === 'tags' && !hasXmlTags(entry)) return false
-      if (search) {
-        const query = search.toLowerCase()
+      if (deferredFilter === 'untranslated' && entry.target.trim()) return false
+      if (deferredFilter === 'translated' && !entry.target.trim()) return false
+      if (deferredFilter === 'dictionary' && getCategory(entry) !== 'dictionary') return false
+      if (deferredFilter === 'tags' && !hasXmlTags(entry)) return false
+      if (deferredSearch) {
+        const query = deferredSearch.toLowerCase()
         return (
           entry.source.toLowerCase().includes(query) || entry.target.toLowerCase().includes(query)
         )
       }
       return true
     })
-  }, [entries, filter, search])
+  }, [deferredFilter, deferredSearch, entries])
 
   const selectedStats = useMemo(() => {
     let selectedStrings = 0
@@ -201,7 +212,10 @@ export function TranslationGrid({
         <input
           ref={searchInputRef}
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => {
+            const value = event.target.value
+            startTransition(() => setSearch(value))
+          }}
           placeholder="Buscar em strings..."
           className="min-w-0 flex-1 bg-transparent text-xs font-medium text-neutral-300 placeholder:text-neutral-600 focus:outline-none"
         />
@@ -222,7 +236,7 @@ export function TranslationGrid({
       <div className="flex shrink-0 items-center gap-3">
         <button
           type="button"
-          onClick={() => setFilter('all')}
+          onClick={() => startFilterTransition(() => setFilter('all'))}
           className={cn(
             'flex h-8 cursor-pointer items-center gap-2 rounded-md border px-3 text-xs font-semibold transition-colors focus:outline-none focus-visible:border-[#2a2f37] focus-visible:bg-[#181b1f] focus-visible:text-neutral-100',
             filter === 'all'
@@ -242,7 +256,7 @@ export function TranslationGrid({
             <button
               key={item.mode}
               type="button"
-              onClick={() => setFilter(item.mode)}
+              onClick={() => startFilterTransition(() => setFilter(item.mode))}
               className={cn(
                 'flex h-8 cursor-pointer items-center gap-2 rounded-md border px-2 text-xs font-semibold transition-colors focus:outline-none focus-visible:border-[#2a2f37] focus-visible:bg-[#181b1f] focus-visible:text-neutral-100',
                 active
@@ -261,6 +275,11 @@ export function TranslationGrid({
       </div>
 
       <div className="ml-auto flex items-center gap-3 text-xs font-semibold text-neutral-400">
+        {isPending && (
+          <span className="rounded-full border border-[#252a32] bg-[#181b1f] px-2 py-0.5 text-[10px] font-mono text-amber-400">
+            atualizando...
+          </span>
+        )}
         <span className="font-mono tabular-nums text-neutral-500">
           {selectedStats.selectedStrings} strings • {selectedStats.selectedCharacters} characters
         </span>
@@ -376,12 +395,12 @@ export function TranslationGrid({
                       'pointer-events-none flex items-center gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100'
                     )}
                   >
-                    <button
+                    {/* <button
                       type="button"
                       className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
                     >
                       <Sparkles size={11} /> Sugerir IA
-                    </button>
+                    </button> */}
                     <button
                       type="button"
                       className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
@@ -535,12 +554,12 @@ export function TranslationGrid({
                           'pointer-events-none flex flex-1 items-center gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100'
                         )}
                       >
-                        <button
+                        {/* <button
                           type="button"
                           className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
                         >
                           <Sparkles size={11} /> Sugerir IA
-                        </button>
+                        </button> */}
                         <button
                           type="button"
                           className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"

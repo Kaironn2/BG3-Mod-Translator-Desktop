@@ -23,10 +23,14 @@ export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): Reac
     modName: setup.modName
   })
   const isLoading = session.phase === 'loading' || importFlow.isPreparing
+  const loadingLabel =
+    importFlow.isPreparing && session.phase !== 'loading'
+      ? 'Preparando arquivo para abrir o editor...'
+      : session.loadingLabel || 'Carregando editor de traducao...'
 
   return (
     <>
-      <div className="flex flex-col h-full min-h-0">
+      <div className="relative flex flex-col h-full min-h-0">
         <div className="flex items-center gap-3 px-5 h-10 border-b border-[#1f2329] bg-[#131518] shrink-0">
           <span className="flex items-center gap-1.5 font-mono text-[12px] text-neutral-200">
             <File size={12} />
@@ -162,6 +166,27 @@ export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): Reac
             </button>
           </div>
         </div>
+
+        {isLoading && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0f1114]/80 backdrop-blur-[2px]">
+            <div className="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-[#2a2f37] bg-[#131518] px-5 py-5 shadow-2xl">
+              <div className="flex items-center gap-3">
+                <Loader2 size={18} className="animate-spin text-amber-400" />
+                <div className="text-sm font-semibold text-neutral-200">{loadingLabel}</div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-2 rounded-full bg-[#1d2127]">
+                  <div className="h-full w-2/3 animate-pulse rounded-full bg-amber-400/80" />
+                </div>
+                <div className="grid gap-2">
+                  <div className="h-8 rounded-lg bg-[#1a1d22] animate-pulse" />
+                  <div className="h-8 rounded-lg bg-[#1a1d22] animate-pulse" />
+                  <div className="h-8 rounded-lg bg-[#1a1d22] animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {importFlow.preparedImport && (

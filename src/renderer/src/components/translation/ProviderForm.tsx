@@ -70,7 +70,7 @@ export function ProviderForm({
         placeholder="Your name"
       />
 
-      {(provider === 'openai' || provider === 'deepl') && (
+      {/* {(provider === 'openai' || provider === 'deepl') && (
         <Field
           label={provider === 'openai' ? 'OpenAI API Key' : 'DeepL API Key'}
           value={fields.apiKey ?? ''}
@@ -79,9 +79,20 @@ export function ProviderForm({
           type="password"
           placeholder="sk-..."
         />
+      )} */}
+
+      {provider === 'deepl' && (
+        <Field
+          label="DeepL API Key"
+          value={fields.apiKey ?? ''}
+          onChange={(v) => onChange({ apiKey: v })}
+          disabled={disabled}
+          type="password"
+          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:fx"
+        />
       )}
 
-      {provider === 'openai' && (
+      {/* {provider === 'openai' && (
         <Field
           label="Model"
           value={fields.model ?? 'gpt-4o-mini'}
@@ -89,7 +100,7 @@ export function ProviderForm({
           disabled={disabled}
           placeholder="gpt-4o-mini"
         />
-      )}
+      )} */}
     </div>
   )
 }
