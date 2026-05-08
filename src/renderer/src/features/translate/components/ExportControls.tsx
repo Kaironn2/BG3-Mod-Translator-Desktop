@@ -20,14 +20,15 @@ export function ExportControls({
         value={exportFormat}
         onChange={(value) => onFormatChange(value as ExportFormat)}
         className="w-24"
-        triggerClassName="h-[30px] px-2 text-xs"
+        triggerClassName="h-[30px] border-neutral-700 bg-[#131518] px-3 text-xs text-neutral-200 hover:border-neutral-600"
+        menuClassName="border-neutral-700"
         options={[
           { value: 'xml', label: 'xml' },
           { value: 'pak', label: 'pak' },
           { value: 'zip', label: 'zip' }
         ]}
       />
-      <button type="button" className={btnPrimary} onClick={onExport}>
+      <button type="button" className={btnPrimary} onClick={onExport} title="Exportar (Ctrl+E)">
         <Download />
         Exportar
       </button>
