@@ -1,23 +1,24 @@
-import fs from 'fs'
-import path from 'path'
-import { BrowserWindow } from 'electron'
+import type { BrowserWindow } from 'electron'
+import fs from 'node:fs'
+import path from 'node:path'
 import { getDb } from '../database/connection'
+import type { SimilarityRow } from '../database/repositories/dictionary.repo'
 import {
   DictionaryRepository,
   getDictionaryTargetText
 } from '../database/repositories/dictionary.repo'
+import { LanguageRepository } from '../database/repositories/language.repo'
 import { ModRepository } from '../database/repositories/mod.repo'
-import { unpackMod, packMod } from '../services/lslib.service'
-import { extract, createZip } from '../services/zip.service'
-import {
-  parseLocalizationXml,
-  writeLocalizationXml,
-  findLocalizationXmls,
-  type LocalizationEntry
-} from '../services/xml-parser.service'
-import { createMeta, readAttributeValue } from '../services/lsx-parser.service'
+import { packMod, unpackMod } from '../services/lslib.service'
+import { createMeta, readAttributeValue, sanitizeMetaFolder } from '../services/lsx-parser.service'
 import { findSimilar, type SimilarEntry } from '../services/similarity.service'
-import type { SimilarityRow } from '../database/repositories/dictionary.repo'
+import {
+  findLocalizationXmls,
+  type LocalizationEntry,
+  parseLocalizationXml,
+  writeLocalizationXml
+} from '../services/xml-parser.service'
+import { createZip, extract } from '../services/zip.service'
 import { findPakFiles } from '../utils/findPakFiles'
 import { cleanupTempDir, createTempDir } from '../utils/tempDir'
 import { getActiveWindow } from '../utils/window'
@@ -44,6 +45,7 @@ export interface TranslatedEntry extends LocalizationEntry {
 export abstract class BasePipeline {
   protected ctx!: PipelineContext
   private dictRepo!: DictionaryRepository
+  private languageRepo!: LanguageRepository
   private modRepo!: ModRepository
   private corpus: SimilarityRow[] = []
 
@@ -58,6 +60,7 @@ export abstract class BasePipeline {
     this.ctx = ctx
     const db = getDb()
     this.dictRepo = new DictionaryRepository(db)
+    this.languageRepo = new LanguageRepository(db)
     this.modRepo = new ModRepository(db)
 
     const tmpDir = createTempDir(`icosa_${ctx.jobId}`)
@@ -77,9 +80,11 @@ export abstract class BasePipeline {
       await unpackMod(pakPath, unpackedDir)
 
       // 3 — find source XMLs
-      const xmlFiles = findLocalizationXmls(unpackedDir, ctx.sourceLang)
+      const sourceFolder = this.languageFolder(ctx.sourceLang)
+      const targetFolder = this.languageFolder(ctx.targetLang)
+      const xmlFiles = findLocalizationXmls(unpackedDir, sourceFolder)
       if (xmlFiles.length === 0) {
-        throw new Error(`No localization XMLs found for language '${ctx.sourceLang}' in the mod`)
+        throw new Error(`No localization XMLs found for language '${sourceFolder}' in the mod`)
       }
 
       // 4 — pre-load corpus for similarity search (once per run)
@@ -93,7 +98,14 @@ export abstract class BasePipeline {
       // 6 — ensure mod record exists
       this.modRepo.upsert(ctx.modName)
 
-      // 7 — translate each XML, preserving folder structure
+      const metaSrc = findMetaLsx(unpackedDir)
+      const translatedModName = this.translatedModName(metaSrc, ctx)
+      const translatedFolder =
+        sanitizeMetaFolder(translatedModName) || sanitizeMetaFolder(ctx.modName)
+      const packageRoot = path.join(outDir, translatedFolder)
+      const modRoot = path.join(packageRoot, 'Mods', translatedFolder)
+
+      // 7 - translate each XML into a localization-only add-on
       for (const xmlPath of xmlFiles) {
         this.checkCancelled()
         const entries = parseLocalizationXml(xmlPath)
@@ -107,29 +119,27 @@ export abstract class BasePipeline {
           this.emitProgress(current, total, entry.text, targetText)
         }
 
-        // Mirror folder structure: replace sourceLang folder with targetLang
-        const relPath = path.relative(unpackedDir, xmlPath)
         const outXmlPath = path.join(
-          outDir,
-          relPath.replace(
-            path.join('Localization', ctx.sourceLang),
-            path.join('Localization', ctx.targetLang)
-          )
+          modRoot,
+          'Localization',
+          targetFolder,
+          path.basename(xmlPath)
         )
         writeLocalizationXml(translated, outXmlPath)
       }
 
-      // 8 — copy non-localization files and update meta.lsx
-      this.copyNonLocalizationFiles(unpackedDir, outDir, ctx.sourceLang)
-      this.updateMeta(unpackedDir, outDir, ctx)
+      // 8 - generate meta.lsx for the translated add-on
+      this.updateMeta(metaSrc, modRoot, ctx, translatedModName)
 
       // 9 — pack translated folder into .pak
-      const outPakPath = path.join(tmpDir, `${ctx.modName}_${ctx.targetLang}.pak`)
-      await packMod(outDir, outPakPath)
+      const packedDir = path.join(tmpDir, 'packed')
+      fs.mkdirSync(packedDir, { recursive: true })
+      const outPakPath = path.join(packedDir, `${ctx.modName}_${ctx.targetLang}.pak`)
+      await packMod(packageRoot, outPakPath)
 
       // 10 — wrap in .zip for distribution
       const finalZip = path.join(path.dirname(ctx.filePath), `${ctx.modName}_${ctx.targetLang}.zip`)
-      createZip(path.dirname(outPakPath), finalZip)
+      createZip(packedDir, finalZip)
 
       this.emitDone(finalZip)
       return finalZip
@@ -220,49 +230,36 @@ export abstract class BasePipeline {
     return translated
   }
 
-  private copyNonLocalizationFiles(srcDir: string, dstDir: string, sourceLang: string): void {
-    const localizationDir = path.join(srcDir, 'Localization')
-    if (!fs.existsSync(srcDir)) return
-
-    for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
-      if (entry.name === 'Localization') continue
-      const src = path.join(srcDir, entry.name)
-      const dst = path.join(dstDir, entry.name)
-      if (entry.isDirectory()) {
-        fs.mkdirSync(dst, { recursive: true })
-        this.copyNonLocalizationFiles(src, dst, sourceLang)
-      } else {
-        fs.mkdirSync(path.dirname(dst), { recursive: true })
-        fs.copyFileSync(src, dst)
-      }
-    }
-
-    // copy Localization folders OTHER than the source language
-    if (fs.existsSync(localizationDir)) {
-      for (const langDir of fs.readdirSync(localizationDir, { withFileTypes: true })) {
-        if (!langDir.isDirectory() || langDir.name === sourceLang) continue
-        const src = path.join(localizationDir, langDir.name)
-        const dst = path.join(dstDir, 'Localization', langDir.name)
-        copyDirSync(src, dst)
-      }
-    }
+  private languageFolder(languageCode: string): string {
+    const language = this.languageRepo.findByCode(languageCode)
+    return (language?.name ?? languageCode).replace(/[^a-zA-Z0-9]/g, '')
   }
 
-  private updateMeta(srcDir: string, dstDir: string, ctx: PipelineContext): void {
-    const metaSrc = findMetaLsx(srcDir)
-    if (!metaSrc) return
+  private translatedModName(metaSrc: string | null, ctx: PipelineContext): string {
+    const originalName = metaSrc ? readAttributeValue(metaSrc, 'Name') : null
+    const baseName = originalName?.trim() || ctx.modName
+    const targetSuffix = ctx.targetLang.replace(/[^a-zA-Z0-9-]/g, '')
+    return `${baseName}_${targetSuffix}`
+  }
 
-    const originalName = readAttributeValue(metaSrc, 'Name') ?? ctx.modName
+  private updateMeta(
+    metaSrc: string | null,
+    modRoot: string,
+    ctx: PipelineContext,
+    translatedModName: string
+  ): void {
+    if (!metaSrc) throw new Error('No meta.lsx found in the mod')
+
     const originalDesc = readAttributeValue(metaSrc, 'Description') ?? ''
-    const metaDst = path.join(dstDir, path.relative(srcDir, metaSrc))
+    const metaDst = path.join(modRoot, 'meta.lsx')
 
     createMeta({
       sourcePath: metaSrc,
       outputPath: metaDst,
-      modName: `${originalName} (${ctx.targetLang})`,
+      modName: translatedModName,
       author: ctx.author ?? 'Icosa',
       description: originalDesc
-        ? `${originalDesc} — Translated to ${ctx.targetLang}`
+        ? `${originalDesc} - Translated to ${ctx.targetLang}`
         : `Translated to ${ctx.targetLang}`
     })
   }
@@ -309,12 +306,3 @@ function findMetaLsx(dir: string): string | null {
   return null
 }
 
-function copyDirSync(src: string, dst: string): void {
-  fs.mkdirSync(dst, { recursive: true })
-  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    const s = path.join(src, entry.name)
-    const d = path.join(dst, entry.name)
-    if (entry.isDirectory()) copyDirSync(s, d)
-    else fs.copyFileSync(s, d)
-  }
-}

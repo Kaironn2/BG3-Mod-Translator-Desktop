@@ -1,15 +1,15 @@
-import { ipcMain } from 'electron'
 import path from 'node:path'
-import type { RepositoryRegistry } from '../database/repositories/registry'
+import { ipcMain } from 'electron'
 import { getDictionaryTargetText } from '../database/repositories/dictionary.repo'
+import type { RepositoryRegistry } from '../database/repositories/registry'
 import { unpackMod } from '../services/lslib.service'
+import { decodeEntities, encodeEntities } from '../services/xml-entities.service'
 import {
-  type LocalizationEntry,
   findLocalizationXmls,
+  type LocalizationEntry,
   parseLocalizationXml,
   writeLocalizationXml
 } from '../services/xml-parser.service'
-import { decodeEntities, encodeEntities } from '../services/xml-entities.service'
 import { extract } from '../services/zip.service'
 import { findPakFiles } from '../utils/findPakFiles'
 import { cleanupTempDir, createTempDir } from '../utils/tempDir'
@@ -56,8 +56,9 @@ async function loadXml(repos: RepositoryRegistry, payload: LoadPayload): Promise
       const tempDir = createTempDir('icosa_xml')
       tempDirs.push(tempDir)
       await unpackMod(inputPath, tempDir)
-      const xmlFiles = findLocalizationXmls(tempDir, sourceLang)
-      if (xmlFiles.length === 0) throw new Error(`No XML found for language "${sourceLang}" in pak`)
+      const sourceFolder = languageFolder(repos, sourceLang)
+      const xmlFiles = findLocalizationXmls(tempDir, sourceFolder)
+      if (xmlFiles.length === 0) throw new Error(`No XML found for language "${sourceFolder}" in pak`)
       xmlPath = xmlFiles[0]
     } else if (ext === '.zip') {
       const archiveDir = createTempDir('icosa_zip')
@@ -69,8 +70,9 @@ async function loadXml(repos: RepositoryRegistry, payload: LoadPayload): Promise
       const unpackedDir = createTempDir('icosa_pak')
       tempDirs.push(unpackedDir)
       await unpackMod(pakFiles[0], unpackedDir)
-      const xmlFiles = findLocalizationXmls(unpackedDir, sourceLang)
-      if (xmlFiles.length === 0) throw new Error(`No XML found for language "${sourceLang}" in pak`)
+      const sourceFolder = languageFolder(repos, sourceLang)
+      const xmlFiles = findLocalizationXmls(unpackedDir, sourceFolder)
+      if (xmlFiles.length === 0) throw new Error(`No XML found for language "${sourceFolder}" in pak`)
       xmlPath = xmlFiles[0]
     } else {
       throw new Error(`Unsupported file type: ${ext}. Use .xml, .pak, or .zip`)
@@ -114,6 +116,11 @@ function exportXml(payload: ExportPayload): void {
     text: encodeEntities(entry.target || entry.source)
   }))
   writeLocalizationXml(localizationEntries, outputPath)
+}
+
+function languageFolder(repos: RepositoryRegistry, languageCode: string): string {
+  const language = repos.language.findByCode(languageCode)
+  return (language?.name ?? languageCode).replace(/[^a-zA-Z0-9]/g, '')
 }
 
 export function registerXmlHandlers(repos: RepositoryRegistry): void {

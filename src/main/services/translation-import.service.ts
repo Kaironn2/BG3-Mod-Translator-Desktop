@@ -234,7 +234,8 @@ export async function exportTranslatedPackage(
     const packageRoot = path.join(tempDir, meta.folder)
     const modRoot = path.join(packageRoot, 'Mods', meta.folder)
     const localizationDir = path.join(modRoot, 'Localization', payload.bg3LanguageFolder)
-    const exportXmlPath = path.join(localizationDir, `${meta.folder}.xml`)
+    const originalXmlName = readOriginalXmlName(repos, payload.modName, meta.folder)
+    const exportXmlPath = path.join(localizationDir, originalXmlName)
     const exportMetaPath = path.join(modRoot, 'meta.lsx')
 
     const locEntries = payload.entries.map((entry) => ({
@@ -302,7 +303,7 @@ function buildDefaultMeta(
         revision: original.versionRevision,
         build: original.versionBuild
       }
-    : { major: 1, minor: 0, revision: 0, build: 0 }
+    : { major: 1, minor: 0, revision: 0, build: 1 }
   const version64 = original?.version64 ?? calculateVersion64(version)
 
   return writeMeta({
@@ -320,7 +321,7 @@ function buildDefaultMeta(
 
 function validateMetaInput(meta: MetaInfo): void {
   if (!isValidMetaFolder(meta.folder)) {
-    throw new Error('Folder must contain only letters and numbers')
+    throw new Error('Folder must contain only letters, numbers, underscores, or hyphens')
   }
   const versionText = formatVersion({
     major: meta.versionMajor,
@@ -336,6 +337,16 @@ function readDefaultAuthor(repos: RepositoryRegistry): string {
     | { value: string | null }
     | undefined
   return row?.value?.trim() || 'Icosa'
+}
+
+function readOriginalXmlName(
+  repos: RepositoryRegistry,
+  modName: string,
+  fallbackFolder: string
+): string {
+  const lastFilePath = repos.mod.findByName(modName)?.lastFilePath
+  const fileName = lastFilePath ? path.basename(lastFilePath) : ''
+  return fileName.toLowerCase().endsWith('.xml') ? fileName : `${fallbackFolder}.xml`
 }
 
 function getStoredModDir(modName: string): string {

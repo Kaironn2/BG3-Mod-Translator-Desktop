@@ -30,7 +30,7 @@ export function PackageExportModal({
   const [languageFolder, setLanguageFolder] = useState(selectedLanguageFolder)
 
   const version64 = version64FromText(version)
-  const folderValid = /^[a-zA-Z0-9]+$/.test(draft.folder)
+  const folderValid = /^[a-zA-Z0-9_-]+$/.test(draft.folder)
   const languageFolderValid = /^[a-zA-Z0-9]+$/.test(languageFolder)
   const canExport = !!version64 && folderValid && languageFolderValid && !isExporting
 
@@ -77,7 +77,7 @@ export function PackageExportModal({
             value={draft.folder}
             onChange={(value) => updateDraft('folder', value)}
             invalid={!folderValid}
-            hint={!folderValid ? 'Use apenas letras e numeros' : undefined}
+            hint={!folderValid ? 'Use apenas letras, numeros, _ ou -' : undefined}
           />
           <MetaField
             label="Author"
