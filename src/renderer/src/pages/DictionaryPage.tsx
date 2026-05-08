@@ -17,8 +17,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { DictionaryEntryModal } from '@/components/dictionary/DictionaryEntryModal'
 import { DictionaryImportModal } from '@/components/dictionary/DictionaryImportModal'
+import { DictionaryReplaceModal } from '@/components/dictionary/DictionaryReplaceModal'
+import { applyTextReplace } from '@/components/dictionary/replace'
 import {
   EMPTY_ENTRY_DRAFT,
+  type ReplaceDraft,
   type DisplayEntry,
   type EntryDraft
 } from '@/components/dictionary/types'
@@ -29,6 +32,12 @@ import type { DictionaryEntry, DictionaryFilters, Language } from '@/types'
 import { formatRelativeDate } from '../features/translate/utils/relativeDate'
 
 type FilterMenuKey = 'mod' | 'source' | 'target' | null
+
+interface PendingDeleteState {
+  ids: number[]
+  title: string
+  description: string
+}
 
 interface FilterOption {
   value: string
@@ -53,9 +62,10 @@ export function DictionaryPage(): React.JSX.Element {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [importOpen, setImportOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const [replaceOpen, setReplaceOpen] = useState(false)
   const [createSeed, setCreateSeed] = useState<EntryDraft>(EMPTY_ENTRY_DRAFT)
   const [editingEntry, setEditingEntry] = useState<DisplayEntry | null>(null)
-  const [pendingDeleteEntry, setPendingDeleteEntry] = useState<DisplayEntry | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<PendingDeleteState | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const modAnchorRef = useRef<HTMLButtonElement>(null)
   const sourceAnchorRef = useRef<HTMLButtonElement>(null)
@@ -262,22 +272,6 @@ export function DictionaryPage(): React.JSX.Element {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    try {
-      await window.api.dictionary.delete({ id })
-      toast.success('Entrada removida')
-      setPendingDeleteEntry(null)
-      setSelectedIds((previous) => {
-        const next = new Set(previous)
-        next.delete(id)
-        return next
-      })
-      await loadEntries(filters)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao remover entrada')
-    }
-  }
-
   const handleExport = async () => {
     const outputPath = await window.api.fs.saveDialog({
       defaultName: buildExportName(filters),
@@ -320,6 +314,73 @@ export function DictionaryPage(): React.JSX.Element {
   const selectedModLabel = modMenuOptions.find((option) => option.value === modName)?.label
   const selectedSourceLabel = sourceLang || 'Todas'
   const selectedTargetLabel = targetLang || 'Todas'
+  const selectedCount = selectedIds.size
+
+  const handleDeleteMany = async (ids: number[]) => {
+    try {
+      for (const id of ids) {
+        await window.api.dictionary.delete({ id })
+      }
+      toast.success(ids.length === 1 ? 'Entrada removida' : `${ids.length} entradas removidas`)
+      setPendingDelete(null)
+      setSelectedIds((previous) => {
+        const next = new Set(previous)
+        for (const id of ids) next.delete(id)
+        return next
+      })
+      await loadEntries(filters)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao remover entradas')
+    }
+  }
+
+  const handleBatchReplace = async (draft: ReplaceDraft): Promise<boolean> => {
+    const selectedEntries = displayEntries.filter((entry) => selectedIds.has(entry.id))
+    const updates = selectedEntries
+      .map((entry) => {
+        const nextSource =
+          draft.scope === 'source' || draft.scope === 'both'
+            ? applyTextReplace(entry.sourceText, draft)
+            : entry.sourceText
+        const nextTarget =
+          draft.scope === 'target' || draft.scope === 'both'
+            ? applyTextReplace(entry.targetText, draft)
+            : entry.targetText
+
+        if (nextSource === entry.sourceText && nextTarget === entry.targetText) return null
+
+        return {
+          id: entry.id,
+          entry: {
+            language1: entry.sourceLang,
+            language2: entry.targetLang,
+            textLanguage1: nextSource,
+            textLanguage2: nextTarget,
+            modName: entry.modName || null,
+            uid: entry.uid || null
+          }
+        }
+      })
+      .filter((update): update is NonNullable<typeof update> => update !== null)
+
+    if (updates.length === 0) {
+      toast.info('Nenhuma ocorrencia encontrada nas entradas selecionadas')
+      return false
+    }
+
+    try {
+      for (const update of updates) {
+        await window.api.dictionary.update(update)
+      }
+      toast.success(`Replace aplicado em ${updates.length} entradas`)
+      setReplaceOpen(false)
+      await Promise.all([loadEntries(filters), loadReferenceData()])
+      return true
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao aplicar replace em lote')
+      return false
+    }
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#0f1114] text-neutral-100">
@@ -437,7 +498,33 @@ export function DictionaryPage(): React.JSX.Element {
           </button>
         )}
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[11px] font-medium text-neutral-500">
+            {selectedCount > 0 ? `${selectedCount} selecionadas` : 'Nenhuma selecao'}
+          </span>
+          <button
+            type="button"
+            disabled={selectedCount === 0}
+            onClick={() =>
+              setPendingDelete({
+                ids: Array.from(selectedIds),
+                title: 'Excluir selecao?',
+                description: `${selectedCount} entradas selecionadas serao removidas do dicionario.`
+              })
+            }
+            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/8 px-3 text-xs font-medium text-red-200 transition-colors hover:bg-red-500/14 disabled:cursor-not-allowed disabled:border-[#252a32] disabled:bg-[#131518] disabled:text-neutral-500"
+          >
+            <Trash2 size={13} />
+            Excluir
+          </button>
+          <button
+            type="button"
+            disabled={selectedCount === 0}
+            onClick={() => setReplaceOpen(true)}
+            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Replace
+          </button>
           <button
             type="button"
             onClick={startCreate}
@@ -546,7 +633,13 @@ export function DictionaryPage(): React.JSX.Element {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setPendingDeleteEntry(entry)}
+                      onClick={() =>
+                        setPendingDelete({
+                          ids: [entry.id],
+                          title: 'Excluir entrada?',
+                          description: `A entrada #${entry.id} sera removida do dicionario.`
+                        })
+                      }
                       className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
                     >
                       <Trash2 size={13} />
@@ -619,19 +712,22 @@ export function DictionaryPage(): React.JSX.Element {
         onSubmit={handleUpdate}
       />
 
+      <DictionaryReplaceModal
+        open={replaceOpen}
+        selectedCount={selectedCount}
+        onClose={() => setReplaceOpen(false)}
+        onSubmit={handleBatchReplace}
+      />
+
       <ConfirmDialog
-        open={Boolean(pendingDeleteEntry)}
-        title="Excluir entrada?"
-        description={
-          pendingDeleteEntry
-            ? `A entrada #${pendingDeleteEntry.id} sera removida do dicionario.`
-            : ''
-        }
+        open={Boolean(pendingDelete)}
+        title={pendingDelete?.title ?? 'Excluir entrada?'}
+        description={pendingDelete?.description ?? ''}
         confirmLabel="Excluir"
         destructive
-        onClose={() => setPendingDeleteEntry(null)}
+        onClose={() => setPendingDelete(null)}
         onConfirm={() => {
-          if (pendingDeleteEntry) void handleDelete(pendingDeleteEntry.id)
+          if (pendingDelete) void handleDeleteMany(pendingDelete.ids)
         }}
       />
 
