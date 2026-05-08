@@ -264,8 +264,6 @@ export function TranslationGrid({
         <span className="font-mono tabular-nums text-neutral-500">
           {selectedStats.selectedStrings} strings • {selectedStats.selectedCharacters} characters
         </span>
-        <span className="font-mono text-neutral-500">Ctrl</span>
-        Atalhos
       </div>
     </div>
   )

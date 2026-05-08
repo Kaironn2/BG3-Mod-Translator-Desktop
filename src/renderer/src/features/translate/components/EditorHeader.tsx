@@ -15,6 +15,14 @@ import { ExportControls } from './ExportControls'
 import { btnBase, btnGhostIcon } from './styles'
 import { TranslationStats } from './TranslationStats'
 
+function ShortcutHint({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return (
+    <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded border border-[#2a2f37] border-b-2 bg-[#181b1f] px-1 font-mono text-[10px] text-neutral-400">
+      {children}
+    </span>
+  )
+}
+
 interface EditorHeaderProps {
   session: TranslationSession
   fileName: string
@@ -118,6 +126,7 @@ export function EditorHeader({
           >
             {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save />}
             Salvar
+            <ShortcutHint>Ctrl S</ShortcutHint>
           </button>
 
           <ExportControls
