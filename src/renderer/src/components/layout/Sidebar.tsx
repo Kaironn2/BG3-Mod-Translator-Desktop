@@ -1,15 +1,16 @@
-import { BookOpen, Languages, Package, PackageOpen, Settings } from 'lucide-react'
+import { BookOpen, Languages, Merge, Package, PackageOpen, Settings } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
   { to: '/translate', icon: Languages, label: 'Translate', kbd: 'Ctrl 1' },
   { to: '/dictionary', icon: BookOpen, label: 'Dictionary', kbd: 'Ctrl 2' },
-  { to: '/extract', icon: PackageOpen, label: 'Extract Mod', kbd: 'Ctrl 3' },
-  { to: '/package', icon: Package, label: 'Create Package', kbd: 'Ctrl 4' }
+  { to: '/merge', icon: Merge, label: 'Merge Translations', kbd: 'Ctrl 3' },
+  { to: '/extract', icon: PackageOpen, label: 'Extract Mod', kbd: 'Ctrl 4' },
+  { to: '/package', icon: Package, label: 'Create Package', kbd: 'Ctrl 5' }
 ] as const
 
-const FOOTER_ITEMS = [{ to: '/settings', icon: Settings, label: 'Settings', kbd: 'Ctrl 5' }] as const
+const FOOTER_ITEMS = [{ to: '/settings', icon: Settings, label: 'Settings', kbd: 'Ctrl 6' }] as const
 
 function NavItem({
   to,
@@ -58,7 +59,7 @@ export function Sidebar(): React.JSX.Element {
   return (
     <aside
       style={{ transition: 'width 180ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}
-      className="group/sidebar fixed top-0 left-0 z-40 flex h-screen w-14 flex-col overflow-hidden border-r border-[#1f2329] bg-[#0f1114] hover:w-55"
+      className="group/sidebar fixed top-0 left-0 z-40 flex h-screen w-14 flex-col overflow-hidden border-r border-[#1f2329] bg-[#0f1114] hover:w-62"
     >
       <nav className="flex flex-1 flex-col gap-0.5 px-2 py-3">
         {NAV_ITEMS.map((item) => (

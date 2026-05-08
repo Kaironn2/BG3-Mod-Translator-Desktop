@@ -4,9 +4,10 @@ import { useNavigate } from 'react-router-dom'
 const SHORTCUTS: Record<string, string> = {
   '1': '/translate',
   '2': '/dictionary',
-  '3': '/extract',
-  '4': '/package',
-  '5': '/settings'
+  '3': '/merge',
+  '4': '/extract',
+  '5': '/package',
+  '6': '/settings'
 }
 
 export function useKeyboardShortcuts(): void {
