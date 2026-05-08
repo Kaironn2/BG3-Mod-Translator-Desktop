@@ -325,6 +325,17 @@ async function runDeepLBatchJob(ctx: BatchJobContext, summary: BatchSummary): Pr
     if (roundSuccesses === 0) {
       for (const pending of nextPending) {
         summary.failed++
+        logError(
+          'translation.batch.deepl.entry',
+          new Error(pending.error ?? 'DeepL batch entry failed'),
+          {
+            jobId: ctx.jobId,
+            uid: pending.entry.uid,
+            sourceLang: ctx.sourceLang,
+            targetLang: ctx.targetLang,
+            source: pending.entry.source
+          }
+        )
         emitBatchProgress(ctx.getWindow, {
           jobId: ctx.jobId,
           uid: pending.entry.uid,
