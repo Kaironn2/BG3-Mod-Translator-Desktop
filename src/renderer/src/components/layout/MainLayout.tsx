@@ -11,7 +11,7 @@ export function MainLayout(): React.JSX.Element {
       <Sidebar />
       <div className="ml-14 flex min-w-0 flex-1 flex-col">
         <TitleBar />
-        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <main className="icosa-scroll flex min-h-0 flex-1 flex-col overflow-y-auto">
           <Outlet />
         </main>
       </div>
