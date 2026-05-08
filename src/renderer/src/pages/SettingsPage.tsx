@@ -100,14 +100,14 @@ export function SettingsPage(): React.JSX.Element {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-neutral-300">API Keys</h2>
-        <SettingField
+        {/* <SettingField
           label="OpenAI API Key"
           configKey="openai_key"
           value={config['openai_key'] ?? ''}
           onSave={set}
           type="password"
           placeholder="sk-..."
-        />
+        /> */}
         <SettingField
           label="DeepL API Key"
           configKey="deepl_key"

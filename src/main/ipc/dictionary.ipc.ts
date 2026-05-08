@@ -12,6 +12,12 @@ interface DictionaryFilters {
   targetLang?: string
 }
 
+interface DictionaryListPayload {
+  filters: DictionaryFilters
+  page: number
+  pageSize: number
+}
+
 interface DictionaryMutationPayload {
   language1: string
   language2: string
@@ -40,8 +46,24 @@ const HEADER_ALIASES = {
 } as const
 
 export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
-  ipcMain.handle('dictionary:list', (_event, filters: DictionaryFilters) => {
-    return repos.dictionary.list(filters)
+  ipcMain.handle('dictionary:list', (_event, payload: DictionaryListPayload) => {
+    const requestedPage = Math.max(1, payload.page || 1)
+    const pageSize = Math.max(1, payload.pageSize || 1)
+    const firstPass = repos.dictionary.listPaginated(payload.filters ?? {}, requestedPage, pageSize)
+    const totalPages = Math.max(1, Math.ceil(firstPass.total / pageSize))
+    const page = Math.min(requestedPage, totalPages)
+    const result =
+      page === requestedPage
+        ? firstPass
+        : repos.dictionary.listPaginated(payload.filters ?? {}, page, pageSize)
+
+    return {
+      items: result.items,
+      total: result.total,
+      page,
+      pageSize,
+      totalPages
+    }
   })
 
   ipcMain.handle('dictionary:getAll', (_event, { lang1, lang2 }: { lang1: string; lang2: string }) =>

@@ -146,6 +146,7 @@ export type ConfigKey =
   | 'last_source_lang'
   | 'last_target_lang'
   | 'author'
+  | 'dictionary_page_size'
   | 'divine_path'
 
 export type XmlMatchType = 'none' | 'mod-text' | 'text' | 'manual'
@@ -155,6 +156,20 @@ export interface DictionaryFilters {
   modName?: string
   sourceLang?: string
   targetLang?: string
+}
+
+export interface DictionaryListParams {
+  filters: DictionaryFilters
+  page: number
+  pageSize: number
+}
+
+export interface DictionaryListResult {
+  items: DictionaryEntry[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
 }
 
 export interface DictionaryImportPreviewRow {
@@ -204,7 +219,7 @@ export interface TranslationApi {
 }
 
 export interface DictionaryApi {
-  list(filters: DictionaryFilters): Promise<DictionaryEntry[]>
+  list(params: DictionaryListParams): Promise<DictionaryListResult>
   getAll(params: { lang1: string; lang2: string }): Promise<DictionaryEntry[]>
   search(params: { text: string; lang1: string; lang2: string }): Promise<DictionaryEntry[]>
   create(entry: UpsertDictionaryPayload): Promise<{ success: boolean }>

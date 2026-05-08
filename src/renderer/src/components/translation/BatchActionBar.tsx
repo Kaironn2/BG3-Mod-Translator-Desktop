@@ -5,7 +5,7 @@ interface BatchActionBarProps {
   batchCompleted: number
   batchTotal: number
   onTranslateDeepL: () => void
-  onTranslateGPT: () => void
+  // onTranslateGPT: () => void
   onCancelTranslation: () => void
   onClearSelection: () => void
   isTranslating: boolean
@@ -16,7 +16,7 @@ export function BatchActionBar({
   batchCompleted,
   batchTotal,
   onTranslateDeepL,
-  onTranslateGPT,
+  // onTranslateGPT,
   onCancelTranslation,
   onClearSelection,
   isTranslating
@@ -53,13 +53,13 @@ export function BatchActionBar({
           >
             Traduzir via DeepL
           </button>
-          <button
+          {/* <button
             type="button"
             onClick={onTranslateGPT}
             className="cursor-pointer rounded-md bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-600"
           >
             Traduzir via GPT
-          </button>
+          </button> */}
         </>
       )}
 

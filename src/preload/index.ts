@@ -72,12 +72,16 @@ const api: AppApi = {
   },
 
   dictionary: {
-    list: (filters: {
-      text?: string
-      modName?: string
-      sourceLang?: string
-      targetLang?: string
-    }) => ipcRenderer.invoke('dictionary:list', filters),
+    list: (params: {
+      filters: {
+        text?: string
+        modName?: string
+        sourceLang?: string
+        targetLang?: string
+      }
+      page: number
+      pageSize: number
+    }) => ipcRenderer.invoke('dictionary:list', params),
 
     getAll: (params: { lang1: string; lang2: string }) =>
       ipcRenderer.invoke('dictionary:getAll', params),

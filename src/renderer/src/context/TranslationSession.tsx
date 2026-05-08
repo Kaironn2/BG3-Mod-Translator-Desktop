@@ -9,6 +9,7 @@ type Phase = 'idle' | 'loading' | 'loaded'
 
 interface State {
   phase: Phase
+  loadingLabel: string
   entries: TranslationSessionEntry[]
   selectedUids: Set<string>
   modName: string
@@ -18,7 +19,7 @@ interface State {
 }
 
 type Action =
-  | { type: 'SET_PHASE'; phase: Phase }
+  | { type: 'SET_PHASE'; phase: Phase; loadingLabel?: string }
   | { type: 'SET_ENTRIES'; entries: TranslationSessionEntry[] }
   | { type: 'UPDATE_ENTRY'; rowId: string; target: string }
   | { type: 'MARK_MANUAL'; rowId: string }
@@ -34,9 +35,19 @@ type Action =
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'SET_PHASE':
-      return { ...state, phase: action.phase }
+      return {
+        ...state,
+        phase: action.phase,
+        loadingLabel: action.phase === 'loading' ? (action.loadingLabel ?? state.loadingLabel) : ''
+      }
     case 'SET_ENTRIES':
-      return { ...state, entries: action.entries, selectedUids: new Set<string>(), phase: 'loaded' }
+      return {
+        ...state,
+        entries: action.entries,
+        selectedUids: new Set<string>(),
+        phase: 'loaded',
+        loadingLabel: ''
+      }
     case 'UPDATE_ENTRY':
       return {
         ...state,
@@ -79,6 +90,7 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         phase: 'idle',
+        loadingLabel: '',
         entries: [],
         selectedUids: new Set<string>(),
         inputPath: null
@@ -119,6 +131,7 @@ export function TranslationSessionProvider({
 }): React.JSX.Element {
   const [state, dispatch] = useReducer(reducer, {
     phase: 'idle',
+    loadingLabel: '',
     entries: [],
     selectedUids: new Set<string>(),
     modName: '',
@@ -142,12 +155,21 @@ export function TranslationSessionProvider({
       modName: string,
       options?: { storedPath?: string }
     ) => {
-      dispatch({ type: 'SET_PHASE', phase: 'loading' })
+      dispatch({
+        type: 'SET_PHASE',
+        phase: 'loading',
+        loadingLabel: 'Preparando sessao de traducao...'
+      })
       dispatch({ type: 'SET_INPUT_PATH', path: inputPath })
       dispatch({ type: 'SET_MOD_NAME', name: modName })
       const storedPath =
         options?.storedPath ??
         (await window.api.mod.storeFile({ modName, filePath: inputPath })).storedPath
+      dispatch({
+        type: 'SET_PHASE',
+        phase: 'loading',
+        loadingLabel: 'Carregando entradas do XML...'
+      })
       const entries = await window.api.xml.load({
         inputPath: storedPath,
         sourceLang,
@@ -155,6 +177,11 @@ export function TranslationSessionProvider({
         modName
       })
       if (modName) {
+        dispatch({
+          type: 'SET_PHASE',
+          phase: 'loading',
+          loadingLabel: 'Atualizando dados do mod...'
+        })
         await window.api.mod.upsert({
           name: modName,
           totalStrings: entries.length > 0 ? entries.length : undefined,
