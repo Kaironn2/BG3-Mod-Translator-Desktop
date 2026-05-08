@@ -1,5 +1,6 @@
 appId: com.icosa.bg3-mod-translator
 productName: Icosa
+copyright: Copyright © 2026 kaironn
 directories:
   buildResources: build
 files:
@@ -18,10 +19,23 @@ asarUnpack:
   - drizzle/**
 win:
   executableName: Icosa
-  icon: resources/icon.ico
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+  requestedExecutionLevel: asInvoker
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: ${productName}-${version}-windows-${arch}-setup.${ext}
+  oneClick: false
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+  runAfterFinish: false
+  deleteAppDataOnUninstall: false
 npmRebuild: true

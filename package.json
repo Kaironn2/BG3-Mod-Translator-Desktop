@@ -1,10 +1,21 @@
 {
   "name": "icosa",
   "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "private": true,
+  "description": "Desktop translator for Baldur's Gate 3 mod localization.",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": {
+    "name": "kaironn",
+    "url": "https://github.com/Kaironn2"
+  },
+  "homepage": "https://github.com/Kaironn2/BG3-Mod-Translator-Desktop#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kaironn2/BG3-Mod-Translator-Desktop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Kaironn2/BG3-Mod-Translator-Desktop/issues"
+  },
   "scripts": {
     "format": "biome format --write .",
     "lint": "biome check .",
@@ -14,7 +25,7 @@
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
-    "postinstall": "electron-rebuild -f -w better-sqlite3",
+    "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
@@ -43,7 +54,6 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.14",
     "@electron-toolkit/tsconfig": "^2.0.0",
-    "@electron/rebuild": "^4.0.4",
     "@tailwindcss/vite": "^4.2.4",
     "@types/adm-zip": "^0.5.8",
     "@types/better-sqlite3": "^7.6.13",
