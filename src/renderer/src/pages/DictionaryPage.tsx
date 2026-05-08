@@ -32,6 +32,8 @@ import {
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { ThemedSelect, type ThemedSelectOption } from '@/components/shared/ThemedSelect'
 import { useDebouncedFilter } from '@/hooks/useDebouncedFilter'
+import { getLocalizedErrorMessage } from '@/i18n/errors'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import type { DictionaryEntry, DictionaryFilters, Language } from '@/types'
 import { renderSource } from '@/utils/renderSource'
@@ -66,6 +68,7 @@ const MAX_PAGE_SIZE = 1000
 const PAGE_SIZE_OPTIONS = [50, 100, 200, 500, 1000]
 
 export function DictionaryPage(): React.JSX.Element {
+  const { t, currentLanguage } = useAppTranslation(['dictionary', 'common', 'toasts'])
   const [result, setResult] = useState<DictionaryResultState>({
     items: [],
     total: 0,
@@ -133,12 +136,12 @@ export function DictionaryPage(): React.JSX.Element {
         setResult(response)
         if (response.page !== nextPage) setPage(response.page)
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Erro ao carregar o dicionario')
+        toast.error(getLocalizedErrorMessage(error, t))
       } finally {
         if (!options?.silent) setLoading(false)
       }
     },
-    []
+    [t]
   )
 
   const loadReferenceData = useCallback(async () => {
@@ -152,11 +155,11 @@ export function DictionaryPage(): React.JSX.Element {
       setKnownMods(modRows.map((row) => row.name))
       setPageSize(normalizePageSize(config.dictionary_page_size))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao carregar referencias')
+      toast.error(getLocalizedErrorMessage(error, t))
     } finally {
       setBootstrapping(false)
     }
-  }, [normalizePageSize])
+  }, [normalizePageSize, t])
 
   useEffect(() => {
     loadReferenceData()
@@ -214,7 +217,7 @@ export function DictionaryPage(): React.JSX.Element {
 
   const modSelectOptions = useMemo<ThemedSelectOption[]>(
     () => [
-      { value: '', label: 'Todos os mods', badge: `${result.total}` },
+      { value: '', label: t('filters.allMods', { ns: 'dictionary' }), badge: `${result.total}` },
       ...modOptions.map((option) => ({
         value: option.value,
         label: option.label,
@@ -222,12 +225,12 @@ export function DictionaryPage(): React.JSX.Element {
         searchText: option.label
       }))
     ],
-    [modOptions, result.total]
+    [modOptions, result.total, t]
   )
 
   const sourceSelectOptions = useMemo<ThemedSelectOption[]>(
     () => [
-      { value: '', label: 'Todos', badge: `${result.total}` },
+      { value: '', label: t('filters.all', { ns: 'dictionary' }), badge: `${result.total}` },
       ...languages.map((language) => ({
         value: language.code,
         label: language.code.toUpperCase(),
@@ -235,12 +238,12 @@ export function DictionaryPage(): React.JSX.Element {
         searchText: `${languageNames.get(language.code) ?? language.code} ${language.code}`
       }))
     ],
-    [languageNames, languages, result.total, sourceOptions]
+    [languageNames, languages, result.total, sourceOptions, t]
   )
 
   const targetSelectOptions = useMemo<ThemedSelectOption[]>(
     () => [
-      { value: '', label: 'Todos', badge: `${result.total}` },
+      { value: '', label: t('filters.all', { ns: 'dictionary' }), badge: `${result.total}` },
       ...languages.map((language) => ({
         value: language.code,
         label: language.code.toUpperCase(),
@@ -248,7 +251,7 @@ export function DictionaryPage(): React.JSX.Element {
         searchText: `${languageNames.get(language.code) ?? language.code} ${language.code}`
       }))
     ],
-    [languageNames, languages, result.total, targetOptions]
+    [languageNames, languages, result.total, targetOptions, t]
   )
 
   const stats = useMemo(() => {
@@ -299,12 +302,12 @@ export function DictionaryPage(): React.JSX.Element {
         modName: draft.modName || null,
         uid: draft.uid || null
       })
-      toast.success('Entrada criada')
+      toast.success(t('dictionary.created', { ns: 'toasts' }))
       setCreateOpen(false)
       await Promise.all([refreshCurrentPage(), loadReferenceData()])
       return true
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao criar entrada')
+      toast.error(getLocalizedErrorMessage(error, t))
       return false
     }
   }
@@ -324,12 +327,12 @@ export function DictionaryPage(): React.JSX.Element {
           uid: draft.uid || null
         }
       })
-      toast.success('Entrada atualizada')
+      toast.success(t('dictionary.updated', { ns: 'toasts' }))
       setEditingEntry(null)
       await Promise.all([refreshCurrentPage(), loadReferenceData()])
       return true
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao atualizar entrada')
+      toast.error(getLocalizedErrorMessage(error, t))
       return false
     }
   }
@@ -339,12 +342,17 @@ export function DictionaryPage(): React.JSX.Element {
       for (const id of ids) {
         await window.api.dictionary.delete({ id })
       }
-      toast.success(ids.length === 1 ? 'Entrada removida' : `${ids.length} entradas removidas`)
+      toast.success(
+        t(ids.length === 1 ? 'dictionary.deleted_one' : 'dictionary.deleted_other', {
+          ns: 'toasts',
+          count: ids.length
+        })
+      )
       setPendingDelete(null)
       setSelectedIds(new Set())
       await refreshCurrentPage()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao remover entradas')
+      toast.error(getLocalizedErrorMessage(error, t))
     }
   }
 
@@ -378,7 +386,7 @@ export function DictionaryPage(): React.JSX.Element {
       .filter((update): update is NonNullable<typeof update> => update !== null)
 
     if (updates.length === 0) {
-      toast.info('Nenhuma ocorrencia encontrada nas entradas selecionadas')
+      toast.info(t('dictionary.replaceNone', { ns: 'toasts' }))
       return false
     }
 
@@ -386,12 +394,12 @@ export function DictionaryPage(): React.JSX.Element {
       for (const update of updates) {
         await window.api.dictionary.update(update)
       }
-      toast.success(`Replace aplicado em ${updates.length} entradas`)
+      toast.success(t('dictionary.replaceApplied', { ns: 'toasts', count: updates.length }))
       setReplaceOpen(false)
       await Promise.all([refreshCurrentPage(), loadReferenceData()])
       return true
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao aplicar replace em lote')
+      toast.error(getLocalizedErrorMessage(error, t))
       return false
     }
   }
@@ -409,9 +417,9 @@ export function DictionaryPage(): React.JSX.Element {
         format: 'csv',
         outputPath
       })
-      toast.success('CSV exportado')
+      toast.success(t('dictionary.csvExported', { ns: 'toasts' }))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao exportar CSV')
+      toast.error(getLocalizedErrorMessage(error, t))
     }
   }
 
@@ -452,20 +460,25 @@ export function DictionaryPage(): React.JSX.Element {
         <div className="flex min-w-0 items-center gap-4">
           <div className="inline-flex items-center gap-2 rounded-md border border-[#1f2329] bg-[#131518] px-2.5 py-1.5">
             <BookOpen size={14} className="text-amber-400" />
-            <span className="text-sm font-semibold text-neutral-200">dictionary</span>
+            <span className="text-sm font-semibold text-neutral-200">{t('brand', { ns: 'dictionary' })}</span>
             <span className="font-mono text-[11px] text-neutral-500">.icosa</span>
           </div>
           <div className="hidden items-center gap-3 text-xs text-neutral-400 md:flex">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-              {stats.total} entradas
+              {t('stats.entries', { ns: 'dictionary', count: stats.total })}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Box size={12} />
-              {stats.modCount} mods
+              {t('stats.mods', { ns: 'dictionary', count: stats.modCount })}
             </span>
             <span className="font-mono text-neutral-500">
-              Sync {stats.latest ? formatRelativeDate(stats.latest) : 'agora mesmo'}
+              {t('sync', {
+                ns: 'dictionary',
+                value: stats.latest
+                  ? formatRelativeDate(stats.latest, currentLanguage)
+                  : t('status.now', { ns: 'common' })
+              })}
             </span>
           </div>
         </div>
@@ -478,7 +491,7 @@ export function DictionaryPage(): React.JSX.Element {
             className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Download size={13} />
-            Exportar CSV
+            {t('actions.exportCsv', { ns: 'dictionary' })}
           </button>
           <button
             type="button"
@@ -486,7 +499,7 @@ export function DictionaryPage(): React.JSX.Element {
             className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-xs font-semibold text-neutral-950 transition-colors hover:border-amber-400 hover:bg-amber-400"
           >
             <Upload size={13} />
-            Importar CSV
+            {t('actions.importCsv', { ns: 'dictionary' })}
           </button>
         </div>
       </header>
@@ -498,7 +511,7 @@ export function DictionaryPage(): React.JSX.Element {
             ref={searchInputRef}
             value={text}
             onChange={(event) => setText(event.target.value)}
-            placeholder="Buscar termo, traducao, mod ou UID..."
+            placeholder={t('filters.searchPlaceholder', { ns: 'dictionary' })}
             className="min-w-0 flex-1 bg-transparent text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
           />
           {text && (
@@ -513,31 +526,34 @@ export function DictionaryPage(): React.JSX.Element {
         </div>
 
         <FilterSelect
-          label="Mod"
+          label={t('filters.mod', { ns: 'dictionary' })}
           value={modName}
           options={modSelectOptions}
           onChange={setModName}
           className="w-[11.5rem]"
           menuMinWidth={220}
+          t={t}
         />
         <FilterSelect
-          label="Idioma 1"
+          label={t('filters.sourceLanguage', { ns: 'dictionary' })}
           value={sourceLang}
           options={sourceSelectOptions}
           onChange={setSourceLang}
           className="w-40"
           menuMinWidth={176}
+          t={t}
         />
         <FilterSelect
-          label="Idioma 2"
+          label={t('filters.targetLanguage', { ns: 'dictionary' })}
           value={targetLang}
           options={targetSelectOptions}
           onChange={setTargetLang}
           className="w-40"
           menuMinWidth={176}
+          t={t}
         />
 
-        <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} />
+        <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} t={t} />
 
         {hasFilters && (
           <button
@@ -551,13 +567,15 @@ export function DictionaryPage(): React.JSX.Element {
             className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-md border border-dashed border-[#3a404a] px-3 text-xs text-neutral-400 transition-colors hover:bg-[#131518] hover:text-neutral-200"
           >
             <FilterX size={12} />
-            Limpar
+            {t('actions.clear', { ns: 'common' })}
           </button>
         )}
 
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[11px] font-medium text-neutral-500">
-            {selectedCount > 0 ? `${selectedCount} selecionadas` : 'Nenhuma selecao'}
+            {selectedCount > 0
+              ? t('selection.count', { ns: 'dictionary', count: selectedCount })
+              : t('selection.none', { ns: 'dictionary' })}
           </span>
           <button
             type="button"
@@ -565,14 +583,17 @@ export function DictionaryPage(): React.JSX.Element {
             onClick={() =>
               setPendingDelete({
                 ids: Array.from(selectedIds),
-                title: 'Excluir selecao?',
-                description: `${selectedCount} entradas selecionadas serao removidas do dicionario.`
+                title: t('dialogs.deleteSelectionTitle', { ns: 'dictionary' }),
+                description: t('dialogs.deleteSelectionDescription', {
+                  ns: 'dictionary',
+                  count: selectedCount
+                })
               })
             }
             className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/8 px-3 text-xs font-medium text-red-200 transition-colors hover:bg-red-500/14 disabled:cursor-not-allowed disabled:border-[#252a32] disabled:bg-[#131518] disabled:text-neutral-500"
           >
             <Trash2 size={13} />
-            Excluir
+            {t('actions.delete', { ns: 'common' })}
           </button>
           <button
             type="button"
@@ -580,7 +601,7 @@ export function DictionaryPage(): React.JSX.Element {
             onClick={() => setReplaceOpen(true)}
             className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Replace
+            {t('actions.replace', { ns: 'common' })}
           </button>
           <button
             type="button"
@@ -588,32 +609,41 @@ export function DictionaryPage(): React.JSX.Element {
             className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-xs font-semibold text-neutral-950 transition-colors hover:border-amber-400 hover:bg-amber-400"
           >
             <Plus size={13} />
-            Nova entrada
+            {t('actions.newEntry', { ns: 'dictionary' })}
           </button>
         </div>
       </div>
 
       <div className="flex items-center gap-6 border-b border-[#1f2329] bg-[#131518] px-4 py-3">
         <StatBlock
-          label="Mostrando"
+          label={t('stats.showing', { ns: 'dictionary' })}
           value={`${pageStart}-${pageEnd}`}
           detail={`/ ${stats.total}`}
           accentValue
         />
-        <StatBlock label="Pagina" value={`${result.page}`} detail={`/ ${result.totalPages}`} />
-        <StatBlock label="Mods" value={`${stats.modCount}`} />
-        <StatBlock label="Pares de idiomas" value={`${stats.pairCount}`} />
+        <StatBlock
+          label={t('stats.page', { ns: 'dictionary' })}
+          value={`${result.page}`}
+          detail={`/ ${result.totalPages}`}
+        />
+        <StatBlock label={t('stats.modsLabel', { ns: 'dictionary' })} value={`${stats.modCount}`} />
+        <StatBlock
+          label={t('stats.languagePairs', { ns: 'dictionary' })}
+          value={`${stats.pairCount}`}
+        />
         <div className="ml-auto text-right">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
-            Ultima edicao
+          <div className="text-[10px] font-semibold tracking-[0.08em] text-neutral-500 uppercase">
+            {t('stats.lastEdit', { ns: 'dictionary' })}
           </div>
           <div className="font-mono text-[11px] text-neutral-400">
-            {stats.latest ? formatRelativeDate(stats.latest) : 'sem edicoes'}
+            {stats.latest
+              ? formatRelativeDate(stats.latest, currentLanguage)
+              : t('status.empty', { ns: 'common' })}
           </div>
         </div>
       </div>
 
-      <div className="relative flex-1 min-h-0">
+      <div className="relative min-h-0 flex-1">
         <div className="icosa-scroll h-full overflow-auto">
           <table className="w-full border-collapse text-sm">
             <thead className="sticky top-0 z-10 bg-[#131518]">
@@ -626,12 +656,24 @@ export function DictionaryPage(): React.JSX.Element {
                     className="h-4 w-4 cursor-pointer accent-amber-500"
                   />
                 </th>
-                <th className={cn(TABLE_HEADER, 'w-28 px-4 py-3 text-left')}>ID</th>
-                <th className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>Texto idioma 1</th>
-                <th className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>Texto idioma 2</th>
-                <th className={cn(TABLE_HEADER, 'w-48 px-4 py-3 text-left')}>Mod</th>
-                <th className={cn(TABLE_HEADER, 'w-36 px-4 py-3 text-left')}>Idiomas</th>
-                <th className={cn(TABLE_HEADER, 'w-32 px-4 py-3 text-right')}>Acoes</th>
+                <th className={cn(TABLE_HEADER, 'w-28 px-4 py-3 text-left')}>
+                  {t('table.id', { ns: 'dictionary' })}
+                </th>
+                <th className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>
+                  {t('table.sourceText', { ns: 'dictionary' })}
+                </th>
+                <th className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>
+                  {t('table.targetText', { ns: 'dictionary' })}
+                </th>
+                <th className={cn(TABLE_HEADER, 'w-48 px-4 py-3 text-left')}>
+                  {t('table.mod', { ns: 'dictionary' })}
+                </th>
+                <th className={cn(TABLE_HEADER, 'w-36 px-4 py-3 text-left')}>
+                  {t('table.languages', { ns: 'dictionary' })}
+                </th>
+                <th className={cn(TABLE_HEADER, 'w-32 px-4 py-3 text-right')}>
+                  {t('table.actions', { ns: 'dictionary' })}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -655,12 +697,12 @@ export function DictionaryPage(): React.JSX.Element {
                     <span className="font-mono text-[11px] text-neutral-500">{entry.id}</span>
                   </td>
                   <td className="px-4 py-3 align-top">
-                    <div className="wrap-break-word whitespace-pre-wrap font-mono text-sm leading-6 text-neutral-100">
+                    <div className="wrap-break-word font-mono text-sm leading-6 text-neutral-100 whitespace-pre-wrap">
                       {entry.sourceText ? renderSource(entry.sourceText) : null}
                     </div>
                   </td>
                   <td className="px-4 py-3 align-top">
-                    <div className="wrap-break-word whitespace-pre-wrap font-mono text-sm leading-6 text-neutral-200">
+                    <div className="wrap-break-word font-mono text-sm leading-6 text-neutral-200 whitespace-pre-wrap">
                       {entry.targetText ? renderSource(entry.targetText) : null}
                     </div>
                   </td>
@@ -668,11 +710,13 @@ export function DictionaryPage(): React.JSX.Element {
                     <div className="flex flex-col gap-2">
                       <span className="inline-flex max-w-full items-center gap-2 rounded-md border border-[#252a32] bg-[#0c0d0f] px-2 py-1 text-xs text-neutral-300">
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                        <span className="truncate">{entry.modName || 'Sem mod'}</span>
+                        <span className="truncate">
+                          {entry.modName || t('table.noMod', { ns: 'dictionary' })}
+                        </span>
                       </span>
                       {entry.uid && (
                         <span className="truncate font-mono text-[11px] text-neutral-600">
-                          UID {entry.uid}
+                          {t('table.uid', { ns: 'dictionary', uid: entry.uid })}
                         </span>
                       )}
                     </div>
@@ -698,8 +742,11 @@ export function DictionaryPage(): React.JSX.Element {
                         onClick={() =>
                           setPendingDelete({
                             ids: [entry.id],
-                            title: 'Excluir entrada?',
-                            description: `A entrada #${entry.id} sera removida do dicionario.`
+                            title: t('dialogs.deleteEntryTitle', { ns: 'dictionary' }),
+                            description: t('dialogs.deleteEntryDescription', {
+                              ns: 'dictionary',
+                              id: entry.id
+                            })
                           })
                         }
                         className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
@@ -719,10 +766,10 @@ export function DictionaryPage(): React.JSX.Element {
                         <BookOpen size={20} />
                       </div>
                       <div className="text-sm font-semibold text-neutral-200">
-                        Nenhuma entrada encontrada
+                        {t('table.noEntries', { ns: 'dictionary' })}
                       </div>
                       <div className="text-xs text-neutral-500">
-                        Ajuste os filtros ou crie uma nova entrada no dicionario.
+                        {t('table.noEntriesDescription', { ns: 'dictionary' })}
                       </div>
                     </div>
                   </td>
@@ -732,7 +779,7 @@ export function DictionaryPage(): React.JSX.Element {
               {bootstrapping && (
                 <tr>
                   <td colSpan={7} className="px-6 py-16 text-center text-sm text-neutral-500">
-                    Preparando dicionario...
+                    {t('table.preparing', { ns: 'dictionary' })}
                   </td>
                 </tr>
               )}
@@ -746,10 +793,10 @@ export function DictionaryPage(): React.JSX.Element {
       <footer className="flex items-center gap-4 border-t border-[#1f2329] bg-[#0c0d0f] px-4 py-2 text-[11px] text-neutral-500">
         <span className="inline-flex items-center gap-1.5">
           <Wifi size={11} className="text-amber-400" />
-          Conectado
+          {t('status.connected', { ns: 'common' })}
         </span>
-        <span>UTF-8</span>
-        <span>dictionary.icosa</span>
+        <span>{t('footer.encoding', { ns: 'dictionary' })}</span>
+        <span>{t('footer.file', { ns: 'dictionary' })}</span>
         <span className="flex-1" />
         <div className="flex items-center gap-2">
           <button
@@ -762,10 +809,15 @@ export function DictionaryPage(): React.JSX.Element {
             className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-md border border-[#252a32] px-2.5 text-neutral-300 transition-colors hover:bg-[#131518] disabled:cursor-not-allowed disabled:opacity-30"
           >
             <ChevronLeft size={12} />
-            Anterior
+            {t('actions.previous', { ns: 'common' })}
           </button>
           <span className="font-mono">
-            {pageStart}-{pageEnd} de {stats.total}
+            {t('footer.range', {
+              ns: 'dictionary',
+              start: pageStart,
+              end: pageEnd,
+              total: stats.total
+            })}
           </span>
           <button
             type="button"
@@ -776,7 +828,7 @@ export function DictionaryPage(): React.JSX.Element {
             }}
             className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-md border border-[#252a32] px-2.5 text-neutral-300 transition-colors hover:bg-[#131518] disabled:cursor-not-allowed disabled:opacity-30"
           >
-            Proxima
+            {t('actions.next', { ns: 'common' })}
             <ChevronRight size={12} />
           </button>
         </div>
@@ -812,9 +864,9 @@ export function DictionaryPage(): React.JSX.Element {
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        title={pendingDelete?.title ?? 'Excluir entrada?'}
+        title={pendingDelete?.title ?? t('dialogs.deleteEntryTitle', { ns: 'dictionary' })}
         description={pendingDelete?.description ?? ''}
-        confirmLabel="Excluir"
+        confirmLabel={t('dialogs.deleteConfirm', { ns: 'dictionary' })}
         destructive
         onClose={() => setPendingDelete(null)}
         onConfirm={() => {
@@ -839,7 +891,8 @@ function FilterSelect({
   options,
   onChange,
   className,
-  menuMinWidth
+  menuMinWidth,
+  t
 }: {
   label: string
   value: string
@@ -847,6 +900,7 @@ function FilterSelect({
   onChange: (value: string) => void
   className?: string
   menuMinWidth?: number
+  t: (key: string, options?: Record<string, unknown>) => string
 }): React.JSX.Element {
   return (
     <ThemedSelect
@@ -855,9 +909,9 @@ function FilterSelect({
       onChange={onChange}
       options={options}
       searchable
-      placeholder="Todos"
-      searchPlaceholder="Filtrar..."
-      emptyLabel="Nenhuma opcao encontrada."
+      placeholder={t('filters.all', { ns: 'dictionary' })}
+      searchPlaceholder={t('placeholders.search', { ns: 'common' })}
+      emptyLabel={t('placeholders.noOptionFound', { ns: 'common' })}
       className={className ?? 'w-40'}
       triggerClassName="h-8 bg-[#131518] px-3 text-xs"
       menuClassName="border-[#303641]"
@@ -868,19 +922,21 @@ function FilterSelect({
 
 function PageSizeSelect({
   value,
-  onChange
+  onChange,
+  t
 }: {
   value: number
   onChange: (value: string) => void
+  t: (key: string, options?: Record<string, unknown>) => string
 }): React.JSX.Element {
   const options = PAGE_SIZE_OPTIONS.map((option) => ({
     value: String(option),
-    label: `${option} / pagina`
+    label: t('filters.pageSizeOption', { ns: 'dictionary', count: option })
   }))
 
   return (
     <ThemedSelect
-      label="Pagina"
+      label={t('filters.pageSize', { ns: 'dictionary' })}
       value={String(value)}
       onChange={onChange}
       options={options}
@@ -905,7 +961,7 @@ function StatBlock({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+      <div className="text-[10px] font-semibold tracking-[0.08em] text-neutral-500 uppercase">
         {label}
       </div>
       <div className="text-lg font-semibold">

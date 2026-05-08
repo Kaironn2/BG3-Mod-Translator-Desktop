@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { ModalShell } from '@/components/shared/ModalShell'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import { EMPTY_REPLACE_DRAFT, type ReplaceDraft } from './types'
 
@@ -19,6 +20,7 @@ export function DictionaryReplaceModal({
   onClose,
   onSubmit
 }: DictionaryReplaceModalProps): React.JSX.Element | null {
+  const { t } = useAppTranslation(['dictionary', 'common'])
   const [draft, setDraft] = useState<ReplaceDraft>(EMPTY_REPLACE_DRAFT)
   const [saving, setSaving] = useState(false)
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false)
@@ -49,7 +51,7 @@ export function DictionaryReplaceModal({
 
   const handleApply = async () => {
     if (!draft.find.trim()) {
-      toast.error('Preencha o campo Buscar')
+      toast.error(t('replaceModal.searchRequired', { ns: 'dictionary' }))
       return
     }
 
@@ -66,8 +68,11 @@ export function DictionaryReplaceModal({
     <>
       <ModalShell
         open={open}
-        title="Replace em lote"
-        description={`Aplicar buscar e substituir nas ${selectedCount} entradas selecionadas.`}
+        title={t('replaceModal.title', { ns: 'dictionary' })}
+        description={t('replaceModal.description', {
+          ns: 'dictionary',
+          count: selectedCount
+        })}
         icon={<Replace size={16} />}
         sizeClassName="max-w-2xl"
         onClose={requestClose}
@@ -78,7 +83,7 @@ export function DictionaryReplaceModal({
               onClick={requestClose}
               className="inline-flex h-8 cursor-pointer items-center rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800"
             >
-              Cancelar
+              {t('actions.cancel', { ns: 'common' })}
             </button>
             <button
               type="button"
@@ -87,46 +92,48 @@ export function DictionaryReplaceModal({
               className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-xs font-semibold text-neutral-950 transition-colors hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Search size={13} />
-              {saving ? 'Aplicando...' : 'Aplicar replace'}
+              {saving
+                ? t('replaceModal.applying', { ns: 'dictionary' })
+                : t('replaceModal.apply', { ns: 'dictionary' })}
             </button>
           </>
         }
       >
         <div className="space-y-4">
-          <Field label="Buscar">
+          <Field label={t('replaceModal.find', { ns: 'dictionary' })}>
             <input
               autoFocus
               value={draft.find}
               onChange={(event) => setDraft({ ...draft, find: event.target.value })}
               className="h-10 w-full rounded-md border border-[#252a32] bg-[#0c0d0f] px-3 text-sm text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-amber-500"
-              placeholder="Texto a procurar"
+              placeholder={t('replaceModal.findPlaceholder', { ns: 'dictionary' })}
             />
           </Field>
 
-          <Field label="Substituir por">
+          <Field label={t('replaceModal.replaceWith', { ns: 'dictionary' })}>
             <input
               value={draft.replaceWith}
               onChange={(event) => setDraft({ ...draft, replaceWith: event.target.value })}
               className="h-10 w-full rounded-md border border-[#252a32] bg-[#0c0d0f] px-3 text-sm text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-amber-500"
-              placeholder="Novo texto"
+              placeholder={t('replaceModal.replacePlaceholder', { ns: 'dictionary' })}
             />
           </Field>
 
-          <Field label="Escopo">
+          <Field label={t('replaceModal.scope', { ns: 'dictionary' })}>
             <div className="grid grid-cols-3 gap-2">
               <ScopeButton
                 active={draft.scope === 'source'}
-                label="Idioma 1"
+                label={t('replaceModal.scopeSource', { ns: 'dictionary' })}
                 onClick={() => setDraft({ ...draft, scope: 'source' })}
               />
               <ScopeButton
                 active={draft.scope === 'target'}
-                label="Idioma 2"
+                label={t('replaceModal.scopeTarget', { ns: 'dictionary' })}
                 onClick={() => setDraft({ ...draft, scope: 'target' })}
               />
               <ScopeButton
                 active={draft.scope === 'both'}
-                label="Ambos"
+                label={t('replaceModal.scopeBoth', { ns: 'dictionary' })}
                 onClick={() => setDraft({ ...draft, scope: 'both' })}
               />
             </div>
@@ -135,12 +142,12 @@ export function DictionaryReplaceModal({
           <div className="grid gap-3 sm:grid-cols-2">
             <CheckField
               checked={draft.matchCase}
-              label="Match case"
+              label={t('replaceModal.matchCase', { ns: 'dictionary' })}
               onChange={(checked) => setDraft({ ...draft, matchCase: checked })}
             />
             <CheckField
               checked={draft.matchWholeWord}
-              label="Match whole word"
+              label={t('replaceModal.matchWholeWord', { ns: 'dictionary' })}
               onChange={(checked) => setDraft({ ...draft, matchWholeWord: checked })}
             />
           </div>
@@ -149,9 +156,9 @@ export function DictionaryReplaceModal({
 
       <ConfirmDialog
         open={confirmDiscardOpen}
-        title="Descartar alteracoes?"
-        description="Existem parametros preenchidos neste replace em lote. Se continuar, eles serao perdidos."
-        confirmLabel="Descartar"
+        title={t('replaceModal.discardTitle', { ns: 'dictionary' })}
+        description={t('replaceModal.discardDescription', { ns: 'dictionary' })}
+        confirmLabel={t('actions.discard', { ns: 'common' })}
         destructive
         onClose={() => setConfirmDiscardOpen(false)}
         onConfirm={() => {
@@ -173,7 +180,7 @@ function Field({
 }): React.JSX.Element {
   return (
     <label className="flex flex-col gap-2">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+      <span className="text-[10px] font-semibold tracking-[0.08em] text-neutral-500 uppercase">
         {label}
       </span>
       {children}

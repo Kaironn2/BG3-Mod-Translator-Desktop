@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { FileInputCard } from '@/features/translate/components/FileInputCard'
 import { LanguagePicker } from '@/features/translate/components/LanguagePicker'
 import { SetupStepCard } from '@/features/translate/components/SetupStepCard'
@@ -34,17 +35,19 @@ export function MergeFileStep({
   onDragChange,
   onClear
 }: MergeFileStepProps): React.JSX.Element {
+  const { t } = useAppTranslation('merge')
+
   return (
     <SetupStepCard step={step}>
       <div>
-        <h3 className="text-[15px] font-semibold text-neutral-200 tracking-tight m-0">{title}</h3>
-        <p className="text-xs text-neutral-500 mt-1 m-0">{description}</p>
+        <h3 className="m-0 text-[15px] font-semibold tracking-tight text-neutral-200">{title}</h3>
+        <p className="mt-1 m-0 text-xs text-neutral-500">{description}</p>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto] gap-3.5 items-end">
+      <div className="grid grid-cols-[1fr_auto] items-end gap-3.5">
         <div>
-          <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500 mb-1.5">
-            Idioma
+          <span className="mb-1.5 block text-[10px] font-semibold tracking-[0.08em] text-neutral-500 uppercase">
+            {t('language')}
           </span>
           <LanguagePicker
             value={slot.lang}
@@ -81,13 +84,14 @@ export function MergeFileStep({
 }
 
 function CandidateSummary({ slot }: { slot: MergeFileSlot }): React.JSX.Element | null {
+  const { t } = useAppTranslation('merge')
   const candidate = slot.prepared?.candidates.find((item) => item.id === slot.candidateId)
   if (!candidate) return null
   return (
-    <div className="flex items-center gap-2 text-[11px] text-neutral-500 font-mono px-2">
-      <span className="text-amber-400">XML</span>
-      <span className="truncate flex-1">{candidate.relativePath}</span>
-      <span>{candidate.stringCount} entradas</span>
+    <div className="flex items-center gap-2 px-2 font-mono text-[11px] text-neutral-500">
+      <span className="text-amber-400">{t('candidateSummary.xml')}</span>
+      <span className="flex-1 truncate">{candidate.relativePath}</span>
+      <span>{t('candidateSummary.entries', { count: candidate.stringCount })}</span>
     </div>
   )
 }
