@@ -26,6 +26,9 @@ export function mergeXmls(repos: RepositoryRegistry, params: MergeXmlsParams): M
   const targetMap = new Map<string, string>()
   for (const entry of targetEntries) targetMap.set(entry.contentuid, entry.text)
 
+  // Mod must exist before dictionary entries reference it via FK (modName → mod.name).
+  repos.mod.upsert(params.modName)
+
   let matched = 0
   for (const [uid, rawSource] of sourceMap) {
     const rawTarget = targetMap.get(uid)
