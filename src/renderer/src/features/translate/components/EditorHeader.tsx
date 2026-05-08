@@ -3,7 +3,6 @@ import {
   ArrowRight,
   ChevronRight,
   Columns2,
-  Focus,
   Loader2,
   Redo2,
   Rows2,
@@ -13,14 +12,21 @@ import {
 import { cn } from '@/lib/utils'
 import type { ExportFormat, TranslationSession } from '../types'
 import { ExportControls } from './ExportControls'
-import { btnBase, btnGhostIcon, btnPrimary } from './styles'
+import { btnBase, btnGhostIcon } from './styles'
 import { TranslationStats } from './TranslationStats'
+
+function ShortcutHint({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return (
+    <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded border border-[#2a2f37] border-b-2 bg-[#181b1f] px-1 font-mono text-[10px] text-neutral-400">
+      {children}
+    </span>
+  )
+}
 
 interface EditorHeaderProps {
   session: TranslationSession
   fileName: string
   viewMode: 'side' | 'stacked'
-  focusMode: boolean
   isSaving: boolean
   translatedCount: number
   dictCount: number
@@ -31,7 +37,6 @@ interface EditorHeaderProps {
   batchTotal: number
   exportFormat: ExportFormat
   onViewModeChange: (mode: 'side' | 'stacked') => void
-  onFocusModeChange: (value: boolean) => void
   onSave: () => Promise<void>
   onExportFormatChange: (format: ExportFormat) => void
   onExport: () => Promise<void>
@@ -41,7 +46,6 @@ export function EditorHeader({
   session,
   fileName,
   viewMode,
-  focusMode,
   isSaving,
   translatedCount,
   dictCount,
@@ -52,7 +56,6 @@ export function EditorHeader({
   batchTotal,
   exportFormat,
   onViewModeChange,
-  onFocusModeChange,
   onSave,
   onExportFormatChange,
   onExport
@@ -116,24 +119,14 @@ export function EditorHeader({
 
           <button
             type="button"
-            onClick={() => onFocusModeChange(!focusMode)}
-            className={cn(focusMode ? btnPrimary : btnBase)}
-          >
-            <Focus />
-            Modo foco
-            <span className="inline-flex items-center justify-center h-4.5 min-w-4.5 px-1 rounded bg-[#1f2329] border border-[#1f2329] border-b-2 font-mono text-[10px] text-neutral-400">
-              F
-            </span>
-          </button>
-
-          <button
-            type="button"
             className={cn(btnBase, isSaving && 'opacity-60 cursor-not-allowed')}
             onClick={onSave}
             disabled={isSaving}
+            title="Salvar no dicionario (Ctrl+S)"
           >
             {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save />}
             Salvar
+            <ShortcutHint>Ctrl S</ShortcutHint>
           </button>
 
           <ExportControls

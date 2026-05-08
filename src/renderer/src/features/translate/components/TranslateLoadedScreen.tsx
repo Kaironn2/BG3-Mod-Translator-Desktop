@@ -4,6 +4,7 @@ import { TranslationGrid } from '@/components/translation/TranslationGrid'
 import type { Language } from '@/types'
 import { useBatchTranslation } from '../hooks/useBatchTranslation'
 import { useDictionarySave } from '../hooks/useDictionarySave'
+import { useLoadedEditorShortcuts } from '../hooks/useLoadedEditorShortcuts'
 import { useTranslationExport } from '../hooks/useTranslationExport'
 import type { TranslationSession } from '../types'
 import { EditorHeader } from './EditorHeader'
@@ -15,7 +16,6 @@ interface TranslateLoadedScreenProps {
 
 export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): React.JSX.Element {
   const [viewMode, setViewMode] = useState<'side' | 'stacked'>('side')
-  const [focusMode, setFocusMode] = useState(false)
   const [languages, setLanguages] = useState<Language[]>([])
   const dictionarySave = useDictionarySave(session)
   const batch = useBatchTranslation(session)
@@ -43,13 +43,18 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
     [session]
   )
 
+  useLoadedEditorShortcuts({
+    onSave: dictionarySave.saveAll,
+    onCycleExportFormat: exportFlow.cycleExportFormat,
+    onOpenExport: exportFlow.openExport
+  })
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <EditorHeader
         session={session}
         fileName={fileName}
         viewMode={viewMode}
-        focusMode={focusMode}
         isSaving={dictionarySave.isSaving}
         translatedCount={translatedCount}
         dictCount={dictCount}
@@ -60,7 +65,6 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
         batchTotal={batch.batchTotal}
         exportFormat={exportFlow.exportFormat}
         onViewModeChange={setViewMode}
-        onFocusModeChange={setFocusMode}
         onSave={dictionarySave.saveAll}
         onExportFormatChange={exportFlow.setExportFormat}
         onExport={exportFlow.openExport}

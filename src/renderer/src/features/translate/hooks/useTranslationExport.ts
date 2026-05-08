@@ -4,6 +4,8 @@ import type { Language, ModMeta } from '@/types'
 import type { ExportFormat, TranslationSession } from '../types'
 import { exportFileBaseName, languageToBg3Folder } from '../utils/exportNames'
 
+const EXPORT_FORMAT_ORDER: ExportFormat[] = ['xml', 'pak', 'zip']
+
 export function useTranslationExport(session: TranslationSession, languages: Language[]) {
   const [isExporting, setIsExporting] = useState(false)
   const [exportFormat, setExportFormat] = useState<ExportFormat>('xml')
@@ -71,12 +73,20 @@ export function useTranslationExport(session: TranslationSession, languages: Lan
     [entries, exportFormat, modName]
   )
 
+  const cycleExportFormat = useCallback(() => {
+    setExportFormat((current) => {
+      const index = EXPORT_FORMAT_ORDER.indexOf(current)
+      return EXPORT_FORMAT_ORDER[(index + 1) % EXPORT_FORMAT_ORDER.length]
+    })
+  }, [])
+
   return {
     isExporting,
     exportFormat,
     exportMeta,
     bg3LanguageFolder,
     setExportFormat,
+    cycleExportFormat,
     openExport,
     submitPackageExport,
     closeExportModal: () => setExportMeta(null)

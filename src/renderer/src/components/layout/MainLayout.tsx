@@ -7,11 +7,11 @@ export function MainLayout(): React.JSX.Element {
   useKeyboardShortcuts()
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-neutral-950">
-      <TitleBar />
-      <div className="flex flex-1 min-h-0">
-        <Sidebar />
-        <main className="flex flex-1 flex-col overflow-y-auto ml-14">
+    <div className="flex h-screen w-screen bg-neutral-950">
+      <Sidebar />
+      <div className="ml-14 flex min-w-0 flex-1 flex-col">
+        <TitleBar />
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <Outlet />
         </main>
       </div>
