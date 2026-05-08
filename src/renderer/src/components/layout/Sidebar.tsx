@@ -16,20 +16,17 @@ function NavItem({
   to,
   icon: Icon,
   label,
-  kbd,
-  onNavigate
+  kbd
 }: {
   to: string
   icon: React.ElementType
   label: string
   kbd: string
-  onNavigate?: (to: string) => void
 }) {
   return (
     <NavLink
       to={to}
       title={label}
-      onClick={() => onNavigate?.(to)}
       className={({ isActive }) =>
         cn(
           'flex h-9 w-full cursor-pointer select-none items-center gap-3 rounded-md px-2 transition-colors',
@@ -59,14 +56,6 @@ function NavItem({
 }
 
 export function Sidebar(): React.JSX.Element {
-  return <SidebarContent />
-}
-
-export function SidebarContent({
-  onNavigate
-}: {
-  onNavigate?: (to: string) => void
-} = {}): React.JSX.Element {
   return (
     <aside
       style={{ transition: 'width 180ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}
@@ -74,13 +63,13 @@ export function SidebarContent({
     >
       <nav className="flex flex-1 flex-col gap-0.5 px-2 py-3">
         {NAV_ITEMS.map((item) => (
-          <NavItem key={item.to} {...item} onNavigate={onNavigate} />
+          <NavItem key={item.to} {...item} />
         ))}
       </nav>
 
       <div className="border-t border-[#1f2329] px-2 py-3">
         {FOOTER_ITEMS.map((item) => (
-          <NavItem key={item.to} {...item} onNavigate={onNavigate} />
+          <NavItem key={item.to} {...item} />
         ))}
       </div>
     </aside>
