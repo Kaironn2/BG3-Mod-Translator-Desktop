@@ -129,6 +129,15 @@ export async function prepareTranslationInput(
   }
 }
 
+export function getStagedCandidate(
+  importId: string,
+  candidateId: string
+): TranslationXmlCandidate | undefined {
+  const staged = stagedImports.get(importId)
+  if (!staged) return undefined
+  return staged.candidates.find((candidate) => candidate.id === candidateId)
+}
+
 export function discardTranslationInput(importId: string): void {
   const staged = stagedImports.get(importId)
   if (!staged) return

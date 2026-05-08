@@ -9,6 +9,7 @@ import { registerDictionaryHandlers } from './ipc/dictionary.ipc'
 import { registerFsHandlers } from './ipc/fs.ipc'
 import { registerLanguageHandlers } from './ipc/language.ipc'
 import { registerLogHandlers } from './ipc/log.ipc'
+import { registerMergeHandlers } from './ipc/merge.ipc'
 import { registerModHandlers } from './ipc/mod.ipc'
 import { registerTranslationHandlers } from './ipc/translation.ipc'
 import { registerWindowHandlers, setupWindowEvents } from './ipc/window.ipc'
@@ -72,6 +73,7 @@ app.whenReady().then(() => {
   registerLanguageHandlers(repos)
   registerLogHandlers()
   registerModHandlers(repos)
+  registerMergeHandlers(repos)
   registerConfigHandlers()
   registerFsHandlers()
   registerXmlHandlers(repos)
