@@ -2,6 +2,7 @@ import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import icon from '../../resources/icon.png?asset'
+import iconWin from '../../resources/icon.ico?asset'
 import { closeDb, getDb } from './database/connection'
 import { createRepositoryRegistry } from './database/repositories/registry'
 import { registerConfigHandlers } from './ipc/config.ipc'
@@ -30,7 +31,7 @@ function createWindow(): void {
     frame: false,
     titleBarStyle: 'hidden',
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    icon: process.platform === 'win32' ? iconWin : icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false

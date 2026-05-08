@@ -1,10 +1,11 @@
 {
   "title": "Configurações",
+  "subtitle": "Gerencie suas chaves de API, preferências do aplicativo e ferramentas padrão.",
   "sections": {
     "apiKeys": "Chaves de API",
-    "defaults": "Padrões",
-    "language": "Idioma da aplicação",
-    "tools": "Ferramentas",
+    "defaults": "Padrões de projeto",
+    "language": "Preferências do aplicativo",
+    "tools": "Ferramentas externas",
     "debugLogs": "Logs de depuração"
   },
   "fields": {
@@ -12,8 +13,11 @@
     "defaultAuthor": "Autor padrão",
     "defaultSourceLanguage": "Idioma de origem padrão",
     "defaultTargetLanguage": "Idioma de destino padrão",
-    "appLanguage": "Idioma da aplicação",
-    "divinePath": "Caminho do Divine.exe (deixe vazio para o padrão)"
+    "appLanguage": "Idioma do aplicativo",
+    "divinePath": "Caminho do Divine.exe"
+  },
+  "descriptions": {
+    "divinePath": "Deixe em branco para usar o padrão do sistema."
   },
   "placeholders": {
     "author": "Seu nome",

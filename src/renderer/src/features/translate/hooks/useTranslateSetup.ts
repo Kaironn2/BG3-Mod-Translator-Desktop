@@ -4,6 +4,10 @@ import type { TranslationSession } from '../types'
 
 const MODS_PER_PAGE = 6
 
+function fileNameFromPath(path: string): string {
+  return path.split(/[\\/]/).pop() ?? path
+}
+
 export function useTranslateSetup(session: TranslationSession) {
   const [sourceLang, setSourceLangLocal] = useState(session.sourceLang)
   const [targetLang, setTargetLangLocal] = useState(session.targetLang)
@@ -60,7 +64,12 @@ export function useTranslateSetup(session: TranslationSession) {
     }
     setIsNewMod(false)
     if (!selectedMod || !mods.some((mod) => mod.name === selectedMod)) {
-      setSelectedMod(mods[0]?.name ?? null)
+      const defaultMod = mods[0] ?? null
+      setSelectedMod(defaultMod?.name ?? null)
+      if (defaultMod?.lastFilePath) {
+        setFilePath(defaultMod.lastFilePath)
+        setFileName(fileNameFromPath(defaultMod.lastFilePath))
+      }
     }
   }, [hasUserChosenMode, mods, selectedMod])
 
@@ -82,7 +91,7 @@ export function useTranslateSetup(session: TranslationSession) {
     setHasUserChosenMode(true)
     if (mod.lastFilePath) {
       setFilePath(mod.lastFilePath)
-      setFileName(mod.lastFilePath.split(/[\\/]/).pop() ?? mod.lastFilePath)
+      setFileName(fileNameFromPath(mod.lastFilePath))
     }
   }
 
@@ -97,7 +106,7 @@ export function useTranslateSetup(session: TranslationSession) {
     })
     if (paths.length > 0) {
       setFilePath(paths[0])
-      setFileName(paths[0].split(/[\\/]/).pop() ?? paths[0])
+      setFileName(fileNameFromPath(paths[0]))
     }
   }
 

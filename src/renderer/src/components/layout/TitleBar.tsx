@@ -12,9 +12,13 @@ function IcosaLogo() {
       stroke="white"
       strokeWidth="2"
       strokeLinejoin="round"
+      strokeLinecap="round"
     >
       <path d="M12 2L3 7v10l9 5 9-5V7L12 2z" />
-      <path d="M3 7l9 5 9-5M12 12v10" />
+      <path d="M12 2L12 12" />
+      <path d="M3 7l9 5 9-5" />
+      <path d="M3 17l9-5 9 5" />
+      <path d="M12 12v10" />
     </svg>
   )
 }
