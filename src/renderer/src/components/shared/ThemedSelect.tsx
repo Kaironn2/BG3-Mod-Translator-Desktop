@@ -30,6 +30,7 @@ interface ThemedSelectProps {
   triggerClassName?: string
   menuClassName?: string
   menuMinWidth?: number
+  triggerAdornment?: React.ReactNode
 }
 
 const MENU_GAP = 4
@@ -48,7 +49,8 @@ export function ThemedSelect({
   accent = false,
   triggerClassName,
   menuClassName,
-  menuMinWidth
+  menuMinWidth,
+  triggerAdornment
 }: ThemedSelectProps): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -234,6 +236,7 @@ export function ThemedSelect({
             {selected.badge}
           </span>
         )}
+        {triggerAdornment}
         <span className={cn('shrink-0', accent ? 'text-amber-500' : 'text-neutral-500')}>
           <ChevronDown size={16} />
         </span>
