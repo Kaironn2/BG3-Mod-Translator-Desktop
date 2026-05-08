@@ -1,10 +1,11 @@
 {
   "title": "Settings",
+  "subtitle": "Manage your API keys, application preferences and default tools.",
   "sections": {
     "apiKeys": "API keys",
     "defaults": "Defaults",
-    "language": "Application language",
-    "tools": "Tools",
+    "language": "Application preferences",
+    "tools": "External tools",
     "debugLogs": "Debug logs"
   },
   "fields": {
@@ -13,7 +14,10 @@
     "defaultSourceLanguage": "Default source language",
     "defaultTargetLanguage": "Default target language",
     "appLanguage": "Application language",
-    "divinePath": "Divine.exe path (leave empty for default)"
+    "divinePath": "Divine.exe path"
+  },
+  "descriptions": {
+    "divinePath": "Leave empty to use the system default."
   },
   "placeholders": {
     "author": "Your name",
