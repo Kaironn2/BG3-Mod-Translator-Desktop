@@ -6,7 +6,6 @@ files:
   - package.json
   - out/**
   - drizzle/**
-  - external/**
   - '!**/.vscode/*'
   - '!src/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
@@ -16,7 +15,6 @@ files:
   - '!bkp/**'
 asarUnpack:
   - resources/**
-  - external/**
   - drizzle/**
 win:
   executableName: Icosa
