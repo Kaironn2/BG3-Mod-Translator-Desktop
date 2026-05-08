@@ -9,7 +9,14 @@ export function applyTextReplace(text: string, draft: ReplaceDraft): string {
   const flags = draft.matchCase ? 'g' : 'gi'
   const matcher = new RegExp(pattern, flags)
 
-  return text.replace(matcher, () => draft.replaceWith)
+  return text
+    .split(/(<[^>]+>)/g)
+    .map((segment) =>
+      segment.startsWith('<') && segment.endsWith('>')
+        ? segment
+        : segment.replace(matcher, () => draft.replaceWith)
+    )
+    .join('')
 }
 
 function escapeRegExp(text: string): string {

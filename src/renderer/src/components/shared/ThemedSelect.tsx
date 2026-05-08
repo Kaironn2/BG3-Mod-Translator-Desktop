@@ -29,6 +29,7 @@ interface ThemedSelectProps {
   accent?: boolean
   triggerClassName?: string
   menuClassName?: string
+  menuMinWidth?: number
 }
 
 const MENU_GAP = 4
@@ -46,7 +47,8 @@ export function ThemedSelect({
   className,
   accent = false,
   triggerClassName,
-  menuClassName
+  menuClassName,
+  menuMinWidth
 }: ThemedSelectProps): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -84,7 +86,7 @@ export function ThemedSelect({
           ? Math.max(MENU_GAP, rect.top - MENU_GAP - Math.max(180, height))
           : rect.bottom + MENU_GAP,
         left: rect.left,
-        width: rect.width
+        width: Math.max(rect.width, menuMinWidth ?? rect.width)
       })
     }
 
@@ -95,7 +97,7 @@ export function ThemedSelect({
       window.removeEventListener('resize', updatePosition)
       window.removeEventListener('scroll', updatePosition, true)
     }
-  }, [open])
+  }, [menuMinWidth, open])
 
   useEffect(() => {
     if (!open) return

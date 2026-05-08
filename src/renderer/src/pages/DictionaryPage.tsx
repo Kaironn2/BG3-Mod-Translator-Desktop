@@ -399,8 +399,8 @@ export function DictionaryPage(): React.JSX.Element {
         </div>
       </header>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-[#1f2329] bg-[#0f1114] px-4 py-3">
-        <div className="flex h-8 min-w-70 flex-1 items-center gap-2 rounded-md border border-[#1f2329] bg-[#131518] px-3 focus-within:border-neutral-600">
+      <div className="flex flex-wrap items-end gap-x-2 gap-y-3 border-b border-[#1f2329] bg-[#0f1114] px-4 py-3">
+        <div className="flex h-8 min-w-70 flex-1 self-end items-center gap-2 rounded-md border border-[#1f2329] bg-[#131518] px-3 focus-within:border-neutral-600">
           <Search size={14} className="text-neutral-500" />
           <input
             ref={searchInputRef}
@@ -420,18 +420,29 @@ export function DictionaryPage(): React.JSX.Element {
           )}
         </div>
 
-        <FilterSelect label="Mod" value={modName} options={modSelectOptions} onChange={setModName} />
+        <FilterSelect
+          label="Mod"
+          value={modName}
+          options={modSelectOptions}
+          onChange={setModName}
+          className="w-[11.5rem]"
+          menuMinWidth={220}
+        />
         <FilterSelect
           label="Idioma 1"
           value={sourceLang}
           options={sourceSelectOptions}
           onChange={setSourceLang}
+          className="w-40"
+          menuMinWidth={176}
         />
         <FilterSelect
           label="Idioma 2"
           value={targetLang}
           options={targetSelectOptions}
           onChange={setTargetLang}
+          className="w-40"
+          menuMinWidth={176}
         />
 
         {hasFilters && (
@@ -696,12 +707,16 @@ function FilterSelect({
   label,
   value,
   options,
-  onChange
+  onChange,
+  className,
+  menuMinWidth
 }: {
   label: string
   value: string
   options: ThemedSelectOption[]
   onChange: (value: string) => void
+  className?: string
+  menuMinWidth?: number
 }): React.JSX.Element {
   return (
     <ThemedSelect
@@ -713,9 +728,10 @@ function FilterSelect({
       placeholder="Todos"
       searchPlaceholder="Filtrar..."
       emptyLabel="Nenhuma opcao encontrada."
-      className="w-36"
+      className={className ?? 'w-40'}
       triggerClassName="h-8 bg-[#131518] px-3 text-xs"
       menuClassName="border-[#303641]"
+      menuMinWidth={menuMinWidth}
     />
   )
 }
