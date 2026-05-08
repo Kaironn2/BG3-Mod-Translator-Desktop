@@ -1,0 +1,23 @@
+{
+  "title": "Create package",
+  "inputFolder": "Input folder",
+  "selectInputFolder": "Select folder to package...",
+  "outputFile": "Output .pak file",
+  "saveAsPak": "Save as .pak...",
+  "create": "Create package",
+  "creating": "Packing...",
+  "logs": {
+    "created": "Package created: {{path}}",
+    "error": "Error: {{message}}"
+  },
+  "exportModal": {
+    "title": "Export package",
+    "description": "Folder also defines the folder structure and XML file name.",
+    "folderHint": "Use letters, numbers, _ or - only",
+    "versionHint": "Use the format 1.2.3.4",
+    "version64": "Version64 {{value}}",
+    "bg3LanguageFolder": "BG3 language folder",
+    "searchLanguageFolder": "Search folder...",
+    "noLanguageFolderFound": "No folder found."
+  }
+}

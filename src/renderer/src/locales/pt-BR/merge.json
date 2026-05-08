@@ -1,0 +1,32 @@
+{
+  "title": "Nova ferramenta de merge",
+  "steps": {
+    "source": "Origem",
+    "translated": "Traduzido",
+    "mod": "Mod"
+  },
+  "sourceFile": {
+    "title": "Arquivo de origem",
+    "description": "Forneça o arquivo com os textos originais que servirão de base."
+  },
+  "translatedFile": {
+    "title": "Arquivo traduzido",
+    "description": "Forneça o arquivo que já contém os textos traduzidos."
+  },
+  "language": "Idioma",
+  "candidateSummary": {
+    "xml": "XML",
+    "entries": "{{count}} entradas"
+  },
+  "nameStep": {
+    "title": "Detalhes do merge",
+    "description": "Escolha o nome do mod de destino para a saída mesclada.",
+    "label": "Nome do mod",
+    "placeholder": "ex: Shared Translation Pack"
+  },
+  "bottomBar": {
+    "ready": "Pronto para mesclar os arquivos",
+    "idle": "Complete os três passos para iniciar a fusão",
+    "running": "Mesclando..."
+  }
+}

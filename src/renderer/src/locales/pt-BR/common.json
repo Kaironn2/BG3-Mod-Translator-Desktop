@@ -1,0 +1,78 @@
+{
+  "appName": "ICOSA",
+  "loading": "Carregando...",
+  "actions": {
+    "save": "Salvar",
+    "saving": "Salvando...",
+    "cancel": "Cancelar",
+    "close": "Fechar",
+    "clear": "Limpar",
+    "browse": "Buscar",
+    "export": "Exportar",
+    "import": "Importar",
+    "open": "Abrir",
+    "copyPath": "Copiar caminho",
+    "delete": "Excluir",
+    "discard": "Descartar",
+    "replace": "Replace",
+    "select": "Selecionar",
+    "back": "Voltar",
+    "next": "Próxima",
+    "previous": "Anterior",
+    "run": "Executar",
+    "reset": "Resetar"
+  },
+  "status": {
+    "connected": "Conectado",
+    "selected": "Selecionado",
+    "noneSelected": "Nenhuma seleção",
+    "empty": "Vazio",
+    "now": "agora mesmo",
+    "updating": "atualizando..."
+  },
+  "fields": {
+    "sourceLanguage": "Idioma de origem",
+    "targetLanguage": "Idioma de destino",
+    "language": "Idioma",
+    "mod": "Mod",
+    "uid": "UID",
+    "author": "Autor",
+    "description": "Descrição",
+    "name": "Nome",
+    "folder": "Pasta",
+    "version": "Versão",
+    "sourceText": "Texto de origem",
+    "targetText": "Texto traduzido",
+    "outputFolder": "Pasta de saída",
+    "inputFolder": "Pasta de entrada",
+    "outputFile": "Arquivo de saída",
+    "search": "Buscar"
+  },
+  "placeholders": {
+    "select": "Selecionar",
+    "search": "Buscar...",
+    "searchLanguage": "Buscar idioma...",
+    "noLanguageFound": "Nenhum idioma encontrado.",
+    "noOptionFound": "Nenhuma opção encontrada."
+  },
+  "dragDrop": {
+    "defaultLabel": "Arraste e solte seu arquivo aqui",
+    "acceptedFormats": "Formatos aceitos: .{{formats}}"
+  },
+  "window": {
+    "minimize": "Minimizar",
+    "maximize": "Maximizar",
+    "restore": "Restaurar",
+    "close": "Fechar"
+  },
+  "relativeTime": {
+    "hour_one": "há {{count}}h",
+    "hour_other": "há {{count}}h",
+    "day_one": "há {{count}} dia",
+    "day_other": "há {{count}} dias",
+    "week_one": "há {{count}} semana",
+    "week_other": "há {{count}} semanas",
+    "month_one": "há {{count}} mês",
+    "month_other": "há {{count}} meses"
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "newProject": "Novo projeto de tradução",
+  "editor": {
+    "back": "Voltar",
+    "sideBySide": "Lado a lado",
+    "stacked": "Empilhado",
+    "undo": "Desfazer",
+    "redo": "Refazer",
+    "saveDictionary": "Salvar no dicionário (Ctrl+S)",
+    "remainingStrings": "{{count}} strings restantes",
+    "dictionaryMatches": "{{count}} correspondências do dicionário disponíveis",
+    "batch": "lote {{completed}}/{{total}}"
+  },
+  "setup": {
+    "steps": {
+      "languages": "Idiomas",
+      "mod": "Mod",
+      "file": "Arquivo"
+    },
+    "languagePair": {
+      "title": "Par de idiomas",
+      "description": "Escolha a direção da tradução.",
+      "source": "Origem",
+      "target": "Destino"
+    },
+    "modSelection": {
+      "title": "Mod",
+      "description": "Selecione um mod existente ou crie um novo.",
+      "existing": "Existente",
+      "new": "+ Novo",
+      "searchPlaceholder": "Buscar mod...",
+      "noMods": "Nenhum mod encontrado. Crie um novo.",
+      "noSearchResults": "Nenhum resultado para a busca.",
+      "modName": "Nome do mod",
+      "modNamePlaceholder": "ex: Order of the Dracolich"
+    },
+    "fileCard": {
+      "title": "Arquivo do mod",
+      "description": "Solte aqui ou procure. Aceita .xml, .pak, .zip.",
+      "dropZone": "Área de drop de arquivo",
+      "dropPrompt": "Arraste o arquivo do mod aqui",
+      "browseFile": "Buscar arquivo",
+      "fileSelected": "Arquivo selecionado"
+    },
+    "ready": "Pronto para iniciar: {{source}} -> {{target}}",
+    "idle": "Complete os 3 passos para começar a traduzir",
+    "openEditor": "Abrir editor",
+    "loadingPreparingSession": "Preparando sessão de tradução...",
+    "loadingEntries": "Carregando entradas do XML...",
+    "loadingModData": "Atualizando dados do mod...",
+    "loadingPreparingFile": "Preparando arquivo para abrir o editor...",
+    "loadingEditor": "Carregando editor de tradução..."
+  },
+  "routeSkeleton": {
+    "header": "Carregando área de tradução"
+  },
+  "grid": {
+    "searchPlaceholder": "Buscar em strings...",
+    "all": "Todas",
+    "untranslated": "Não traduzidas",
+    "translated": "Traduzidas",
+    "dictionary": "Com dicionário",
+    "tags": "Com tags XML",
+    "selectedStats": "{{strings}} strings • {{characters}} caracteres",
+    "sourceHeader": "Origem · {{language}}",
+    "translationHeader": "Tradução · {{language}}",
+    "emptySource": "vazio",
+    "charCount": "{{count}} caracteres",
+    "wordAndCharCount": "{{chars}} caracteres · {{words}} palavras",
+    "translationPlaceholder": "Tradução...",
+    "startTyping": "Comece a digitar a tradução...",
+    "applyDictionary": "Aplicar dicionário",
+    "markTranslated": "Marcar como traduzida",
+    "next": "próxima",
+    "newLine": "nova linha",
+    "entries": "{{count}} entradas",
+    "containsTags": "contém tags",
+    "dictionarySuggestion": "Dicionário sugere:",
+    "dictionaryTagMod": "1 termo (mod)",
+    "dictionaryTag": "1 termo"
+  },
+  "batchBar": {
+    "selectedCount_one": "{{count}} entrada selecionada",
+    "selectedCount_other": "{{count}} entradas selecionadas",
+    "translating": "Traduzindo {{completed}} / {{total}}",
+    "stop": "Parar",
+    "translateWithDeepL": "Traduzir com DeepL",
+    "clearSelection": "Limpar seleção",
+    "noSelection": "Nenhuma entrada selecionada",
+    "cancelled": "{{translated}} de {{total}} entradas traduzidas antes do cancelamento",
+    "partial": "{{translated}} de {{total}} entradas traduzidas; {{failed}} permanecem pendentes",
+    "partialWithError": "{{translated}} de {{total}} entradas traduzidas; {{failed}} permanecem pendentes. Primeiro erro: {{error}}",
+    "completed_one": "{{count}} entrada traduzida",
+    "completed_other": "{{count}} entradas traduzidas"
+  },
+  "entryEdit": {
+    "originalText": "Texto original ({{language}})",
+    "translation": "Tradução ({{language}})",
+    "empty": "vazio",
+    "translateWithDeepL": "Traduzir com DeepL"
+  },
+  "xmlSelection": {
+    "title": "Selecionar XML",
+    "description": "Arquivos sem tags de conteúdo aparecem como Formato inválido.",
+    "useXml": "Usar XML",
+    "strings": "{{count}} strings"
+  },
+  "loaded": {
+    "defaultFileName": "traducao.xml"
+  },
+  "export": {
+    "searchLanguageFolder": "Buscar pasta...",
+    "noLanguageFolderFound": "Nenhuma pasta encontrada."
+  }
+}

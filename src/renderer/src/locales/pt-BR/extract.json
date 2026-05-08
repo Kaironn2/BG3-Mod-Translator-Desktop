@@ -1,0 +1,13 @@
+{
+  "title": "Extrair mod",
+  "dropLabel": "Solte seu arquivo .zip ou .pak aqui",
+  "outputFolder": "Pasta de saída",
+  "selectOutputFolder": "Selecionar pasta de saída...",
+  "extract": "Extrair",
+  "extracting": "Extraindo...",
+  "logs": {
+    "success": "Extração concluída com sucesso.",
+    "foundXml": "{{count}} XML(s) de localização encontrados:",
+    "error": "Erro: {{message}}"
+  }
+}

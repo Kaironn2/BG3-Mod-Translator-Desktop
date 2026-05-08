@@ -1,0 +1,115 @@
+{
+  "newProject": "New translation project",
+  "editor": {
+    "back": "Back",
+    "sideBySide": "Side by side",
+    "stacked": "Stacked",
+    "undo": "Undo",
+    "redo": "Redo",
+    "saveDictionary": "Save to dictionary (Ctrl+S)",
+    "remainingStrings": "{{count}} strings remaining",
+    "dictionaryMatches": "{{count}} dictionary matches available",
+    "batch": "batch {{completed}}/{{total}}"
+  },
+  "setup": {
+    "steps": {
+      "languages": "Languages",
+      "mod": "Mod",
+      "file": "File"
+    },
+    "languagePair": {
+      "title": "Language pair",
+      "description": "Choose the translation direction.",
+      "source": "Source",
+      "target": "Target"
+    },
+    "modSelection": {
+      "title": "Mod",
+      "description": "Select an existing mod or create a new one.",
+      "existing": "Existing",
+      "new": "+ New",
+      "searchPlaceholder": "Search mod...",
+      "noMods": "No mods found. Create a new one.",
+      "noSearchResults": "No results for this search.",
+      "modName": "Mod name",
+      "modNamePlaceholder": "ex: Order of the Dracolich"
+    },
+    "fileCard": {
+      "title": "Mod file",
+      "description": "Drop here or browse. Accepts .xml, .pak, .zip.",
+      "dropZone": "File drop area",
+      "dropPrompt": "Drag the mod file here",
+      "browseFile": "Browse file",
+      "fileSelected": "File selected"
+    },
+    "ready": "Ready to start: {{source}} -> {{target}}",
+    "idle": "Complete the 3 steps to start translating",
+    "openEditor": "Open editor",
+    "loadingPreparingSession": "Preparing translation session...",
+    "loadingEntries": "Loading XML entries...",
+    "loadingModData": "Updating mod data...",
+    "loadingPreparingFile": "Preparing file to open the editor...",
+    "loadingEditor": "Loading translation editor..."
+  },
+  "routeSkeleton": {
+    "header": "Loading translation workspace"
+  },
+  "grid": {
+    "searchPlaceholder": "Search strings...",
+    "all": "All",
+    "untranslated": "Untranslated",
+    "translated": "Translated",
+    "dictionary": "Dictionary matches",
+    "tags": "With XML tags",
+    "selectedStats": "{{strings}} strings • {{characters}} characters",
+    "sourceHeader": "Source · {{language}}",
+    "translationHeader": "Translation · {{language}}",
+    "emptySource": "empty",
+    "charCount": "{{count}} characters",
+    "wordAndCharCount": "{{chars}} characters · {{words}} words",
+    "translationPlaceholder": "Translation...",
+    "startTyping": "Start typing the translation...",
+    "applyDictionary": "Apply dictionary",
+    "markTranslated": "Mark as translated",
+    "next": "next",
+    "newLine": "new line",
+    "entries": "{{count}} entries",
+    "containsTags": "contains tags",
+    "dictionarySuggestion": "Dictionary suggests:",
+    "dictionaryTagMod": "1 term (mod)",
+    "dictionaryTag": "1 term"
+  },
+  "batchBar": {
+    "selectedCount_one": "{{count}} entry selected",
+    "selectedCount_other": "{{count}} entries selected",
+    "translating": "Translating {{completed}} / {{total}}",
+    "stop": "Stop",
+    "translateWithDeepL": "Translate with DeepL",
+    "clearSelection": "Clear selection",
+    "noSelection": "No entries selected",
+    "cancelled": "{{translated}} of {{total}} entries translated before cancellation",
+    "partial": "{{translated}} of {{total}} entries translated; {{failed}} remain pending",
+    "partialWithError": "{{translated}} of {{total}} entries translated; {{failed}} remain pending. First error: {{error}}",
+    "completed_one": "{{count}} entry translated",
+    "completed_other": "{{count}} entries translated"
+  },
+  "entryEdit": {
+    "originalText": "Original text ({{language}})",
+    "translation": "Translation ({{language}})",
+    "empty": "empty",
+    "translateWithDeepL": "Translate with DeepL"
+  },
+  "xmlSelection": {
+    "title": "Select XML",
+    "description": "Files without content tags appear as Invalid format.",
+    "useXml": "Use XML",
+    "strings": "{{count}} strings"
+  },
+  "loaded": {
+    "defaultFileName": "translation.xml"
+  },
+  "export": {
+    "searchLanguageFolder": "Search folder...",
+    "noLanguageFolderFound": "No folder found."
+  }
+}

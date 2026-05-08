@@ -1,0 +1,114 @@
+{
+  "brand": "dictionary",
+  "sync": "Sync {{value}}",
+  "stats": {
+    "entries": "{{count}} entries",
+    "mods": "{{count}} mods",
+    "modsLabel": "Mods",
+    "showing": "Showing",
+    "page": "Page",
+    "languagePairs": "Language pairs",
+    "lastEdit": "Last edit"
+  },
+  "filters": {
+    "searchPlaceholder": "Search term, translation, mod or UID...",
+    "allMods": "All mods",
+    "all": "All",
+    "mod": "Mod",
+    "sourceLanguage": "Language 1",
+    "targetLanguage": "Language 2",
+    "pageSize": "Page",
+    "pageSizeOption": "{{count}} / page"
+  },
+  "table": {
+    "id": "ID",
+    "sourceText": "Language 1 text",
+    "targetText": "Language 2 text",
+    "mod": "Mod",
+    "languages": "Languages",
+    "actions": "Actions",
+    "noMod": "No mod",
+    "uid": "UID {{uid}}",
+    "noEntries": "No entries found",
+    "noEntriesDescription": "Adjust the filters or create a new dictionary entry.",
+    "preparing": "Preparing dictionary..."
+  },
+  "footer": {
+    "file": "dictionary.icosa",
+    "encoding": "UTF-8",
+    "range": "{{start}}-{{end}} of {{total}}"
+  },
+  "selection": {
+    "none": "No selection",
+    "count": "{{count}} selected"
+  },
+  "actions": {
+    "exportCsv": "Export CSV",
+    "importCsv": "Import CSV",
+    "newEntry": "New entry"
+  },
+  "dialogs": {
+    "deleteSelectionTitle": "Delete selection?",
+    "deleteSelectionDescription": "{{count}} selected entries will be removed from the dictionary.",
+    "deleteEntryTitle": "Delete entry?",
+    "deleteEntryDescription": "Entry #{{id}} will be removed from the dictionary.",
+    "deleteConfirm": "Delete"
+  },
+  "entryModal": {
+    "createTitle": "New entry",
+    "editTitle": "Edit entry #{{id}}",
+    "createDescription": "Create a new dictionary entry for the current language pair.",
+    "editDescription": "Update texts, languages and metadata for this entry.",
+    "textLanguage1": "Language 1 text",
+    "textLanguage2": "Language 2 text",
+    "language1": "Language 1",
+    "language2": "Language 2",
+    "mod": "Mod",
+    "uid": "UID",
+    "textLanguage1Placeholder": "Language 1 text...",
+    "textLanguage2Placeholder": "Language 2 text...",
+    "selectLanguage": "Select language",
+    "searchLanguage": "Search language...",
+    "noLanguageFound": "No language found.",
+    "modPlaceholder": "Mod name",
+    "uidPlaceholder": "Optional UID",
+    "discardTitle": "Discard changes?",
+    "discardDescription": "There are unsaved changes in this entry. If you continue, they will be lost.",
+    "validationRequired": "Fill in language 1, language 2, and both text fields."
+  },
+  "importModal": {
+    "title": "Import dictionary",
+    "description": "Compatible with `language1/...` and `src/tgt/src_lang/tgt_lang`.",
+    "chooseFile": "Choose CSV file",
+    "chooseFileDescription": "Open a CSV to preview detected headers before importing.",
+    "reading": "Reading file...",
+    "detectedRows": "{{count}} rows detected",
+    "headers": "Headers: {{headers}}",
+    "preview": "Preview of the first {{count}} rows",
+    "mod": "Mod",
+    "languages": "Languages",
+    "noMod": "No mod",
+    "format": "UTF-8 · CSV",
+    "importCount": "Import {{count}} entries",
+    "importing": "Importing..."
+  },
+  "replaceModal": {
+    "title": "Batch replace",
+    "description": "Apply search and replace to {{count}} selected entries.",
+    "find": "Find",
+    "findPlaceholder": "Text to search for",
+    "replaceWith": "Replace with",
+    "replacePlaceholder": "New text",
+    "scope": "Scope",
+    "scopeSource": "Language 1",
+    "scopeTarget": "Language 2",
+    "scopeBoth": "Both",
+    "matchCase": "Match case",
+    "matchWholeWord": "Match whole word",
+    "apply": "Apply replace",
+    "applying": "Applying...",
+    "discardTitle": "Discard changes?",
+    "discardDescription": "There are pending parameters in this batch replace. If you continue, they will be lost.",
+    "searchRequired": "Fill in the Find field"
+  }
+}

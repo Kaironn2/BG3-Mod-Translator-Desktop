@@ -1,0 +1,32 @@
+{
+  "title": "New merge tool",
+  "steps": {
+    "source": "Source",
+    "translated": "Translated",
+    "mod": "Mod"
+  },
+  "sourceFile": {
+    "title": "Source file",
+    "description": "Provide the file with the original texts to use as the base."
+  },
+  "translatedFile": {
+    "title": "Translated file",
+    "description": "Provide the file that already contains the translated texts."
+  },
+  "language": "Language",
+  "candidateSummary": {
+    "xml": "XML",
+    "entries": "{{count}} entries"
+  },
+  "nameStep": {
+    "title": "Merged mod",
+    "description": "Choose the destination mod name for the merged output.",
+    "label": "Mod name",
+    "placeholder": "ex: Shared Translation Pack"
+  },
+  "bottomBar": {
+    "ready": "Ready to merge files",
+    "idle": "Complete the three steps to run merge",
+    "running": "Merging..."
+  }
+}
