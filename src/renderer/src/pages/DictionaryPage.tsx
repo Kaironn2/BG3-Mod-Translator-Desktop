@@ -4,7 +4,6 @@ import {
   Check,
   ChevronDown,
   Download,
-  FileSpreadsheet,
   FilterX,
   Pencil,
   Plus,
@@ -16,32 +15,20 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { HighlightedTextarea } from '@/components/shared/HighlightedTextarea'
+import { DictionaryEntryModal } from '@/components/dictionary/DictionaryEntryModal'
+import { DictionaryImportModal } from '@/components/dictionary/DictionaryImportModal'
+import {
+  EMPTY_ENTRY_DRAFT,
+  type DisplayEntry,
+  type EntryDraft
+} from '@/components/dictionary/types'
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { useDebouncedFilter } from '@/hooks/useDebouncedFilter'
 import { cn } from '@/lib/utils'
-import type {
-  DictionaryEntry,
-  DictionaryFilters,
-  DictionaryImportPreview,
-  Language
-} from '@/types'
+import type { DictionaryEntry, DictionaryFilters, Language } from '@/types'
 import { formatRelativeDate } from '../features/translate/utils/relativeDate'
 
 type FilterMenuKey = 'mod' | 'source' | 'target' | null
-
-interface EntryDraft {
-  sourceLang: string
-  targetLang: string
-  sourceText: string
-  targetText: string
-  modName: string
-  uid: string
-}
-
-interface DisplayEntry extends EntryDraft {
-  id: number
-  updatedAt: string | null
-}
 
 interface FilterOption {
   value: string
@@ -51,22 +38,7 @@ interface FilterOption {
 }
 
 const TABLE_HEADER =
-  'text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500 select-none'
-
-const FIELD_SELECT =
-  'rounded-md border border-neutral-700 bg-[#0c0d0f] px-3 py-2 text-sm text-neutral-100 outline-none focus:border-amber-500'
-
-const META_INPUT =
-  'h-8 w-full rounded-md border border-[#252a32] bg-[#0c0d0f] px-2.5 text-[12px] text-neutral-200 outline-none transition-colors placeholder:text-neutral-600 focus:border-amber-500'
-
-const EMPTY_DRAFT: EntryDraft = {
-  sourceLang: '',
-  targetLang: '',
-  sourceText: '',
-  targetText: '',
-  modName: '',
-  uid: ''
-}
+  'select-none text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500'
 
 export function DictionaryPage(): React.JSX.Element {
   const [entries, setEntries] = useState<DictionaryEntry[]>([])
@@ -78,13 +50,12 @@ export function DictionaryPage(): React.JSX.Element {
   const [sourceLang, setSourceLang] = useState('')
   const [targetLang, setTargetLang] = useState('')
   const [openMenu, setOpenMenu] = useState<FilterMenuKey>(null)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [draft, setDraft] = useState<EntryDraft>(EMPTY_DRAFT)
-  const [creating, setCreating] = useState(false)
-  const [newDraft, setNewDraft] = useState<EntryDraft>(EMPTY_DRAFT)
-  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [importOpen, setImportOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createSeed, setCreateSeed] = useState<EntryDraft>(EMPTY_ENTRY_DRAFT)
+  const [editingEntry, setEditingEntry] = useState<DisplayEntry | null>(null)
+  const [pendingDeleteEntry, setPendingDeleteEntry] = useState<DisplayEntry | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const modAnchorRef = useRef<HTMLButtonElement>(null)
   const sourceAnchorRef = useRef<HTMLButtonElement>(null)
@@ -231,10 +202,7 @@ export function DictionaryPage(): React.JSX.Element {
   )
 
   const startCreate = () => {
-    setCreating(true)
-    setEditingId(null)
-    setPendingDeleteId(null)
-    setNewDraft({
+    setCreateSeed({
       sourceLang: sourceLang || 'en',
       targetLang: targetLang || 'pt-BR',
       sourceText: '',
@@ -242,64 +210,39 @@ export function DictionaryPage(): React.JSX.Element {
       modName,
       uid: ''
     })
+    setCreateOpen(true)
   }
 
   const startEdit = (entry: DisplayEntry) => {
-    setCreating(false)
-    setPendingDeleteId(null)
-    setEditingId(entry.id)
-    setDraft({
-      sourceLang: entry.sourceLang,
-      targetLang: entry.targetLang,
-      sourceText: entry.sourceText,
-      targetText: entry.targetText,
-      modName: entry.modName,
-      uid: entry.uid
-    })
+    setEditingEntry(entry)
   }
 
-  const resetEditing = () => {
-    setEditingId(null)
-    setDraft(EMPTY_DRAFT)
-  }
-
-  const resetCreate = () => {
-    setCreating(false)
-    setNewDraft(EMPTY_DRAFT)
-  }
-
-  const handleCreate = async () => {
-    if (!isDraftValid(newDraft)) {
-      toast.error('Preencha origem, destino e os dois idiomas')
-      return
-    }
-
+  const handleCreate = async (draft: EntryDraft): Promise<boolean> => {
     try {
       await window.api.dictionary.create({
-        language1: newDraft.sourceLang,
-        language2: newDraft.targetLang,
-        textLanguage1: newDraft.sourceText,
-        textLanguage2: newDraft.targetText,
-        modName: newDraft.modName || null,
-        uid: newDraft.uid || null
+        language1: draft.sourceLang,
+        language2: draft.targetLang,
+        textLanguage1: draft.sourceText,
+        textLanguage2: draft.targetText,
+        modName: draft.modName || null,
+        uid: draft.uid || null
       })
       toast.success('Entrada criada')
-      resetCreate()
+      setCreateOpen(false)
       await Promise.all([loadEntries(filters), loadReferenceData()])
+      return true
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao criar entrada')
+      return false
     }
   }
 
-  const handleUpdate = async (id: number) => {
-    if (!isDraftValid(draft)) {
-      toast.error('Preencha origem, destino e os dois idiomas')
-      return
-    }
+  const handleUpdate = async (draft: EntryDraft): Promise<boolean> => {
+    if (!editingEntry) return false
 
     try {
       await window.api.dictionary.update({
-        id,
+        id: editingEntry.id,
         entry: {
           language1: draft.sourceLang,
           language2: draft.targetLang,
@@ -310,10 +253,12 @@ export function DictionaryPage(): React.JSX.Element {
         }
       })
       toast.success('Entrada atualizada')
-      resetEditing()
+      setEditingEntry(null)
       await Promise.all([loadEntries(filters), loadReferenceData()])
+      return true
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao atualizar entrada')
+      return false
     }
   }
 
@@ -321,8 +266,7 @@ export function DictionaryPage(): React.JSX.Element {
     try {
       await window.api.dictionary.delete({ id })
       toast.success('Entrada removida')
-      setPendingDeleteId(null)
-      if (editingId === id) resetEditing()
+      setPendingDeleteEntry(null)
       setSelectedIds((previous) => {
         const next = new Set(previous)
         next.delete(id)
@@ -406,7 +350,7 @@ export function DictionaryPage(): React.JSX.Element {
             type="button"
             onClick={handleExport}
             disabled={loading || displayEntries.length === 0}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Download size={13} />
             Exportar CSV
@@ -414,7 +358,7 @@ export function DictionaryPage(): React.JSX.Element {
           <button
             type="button"
             onClick={() => setImportOpen(true)}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-xs font-semibold text-neutral-950 transition-colors hover:border-amber-400 hover:bg-amber-400"
+            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-xs font-semibold text-neutral-950 transition-colors hover:border-amber-400 hover:bg-amber-400"
           >
             <Upload size={13} />
             Importar CSV
@@ -433,7 +377,11 @@ export function DictionaryPage(): React.JSX.Element {
             className="min-w-0 flex-1 bg-transparent text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
           />
           {text && (
-            <button type="button" onClick={() => setText('')} className="text-neutral-500">
+            <button
+              type="button"
+              onClick={() => setText('')}
+              className="cursor-pointer text-neutral-500"
+            >
               <X size={13} />
             </button>
           )}
@@ -482,7 +430,7 @@ export function DictionaryPage(): React.JSX.Element {
               setSourceLang('')
               setTargetLang('')
             }}
-            className="inline-flex h-8 items-center gap-1 rounded-md border border-dashed border-[#3a404a] px-3 text-xs text-neutral-400 transition-colors hover:bg-[#131518] hover:text-neutral-200"
+            className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-md border border-dashed border-[#3a404a] px-3 text-xs text-neutral-400 transition-colors hover:bg-[#131518] hover:text-neutral-200"
           >
             <FilterX size={12} />
             Limpar
@@ -493,7 +441,7 @@ export function DictionaryPage(): React.JSX.Element {
           <button
             type="button"
             onClick={startCreate}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-xs font-semibold text-neutral-950 transition-colors hover:border-amber-400 hover:bg-amber-400"
+            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-xs font-semibold text-neutral-950 transition-colors hover:border-amber-400 hover:bg-amber-400"
           >
             <Plus size={13} />
             Nova entrada
@@ -536,127 +484,79 @@ export function DictionaryPage(): React.JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {creating && (
-              <EditableRow
-                draft={newDraft}
-                languages={languages}
-                mods={knownMods}
-                highlight="new"
-                onChange={setNewDraft}
-                onCancel={resetCreate}
-                onSave={handleCreate}
-              />
-            )}
-
-            {displayEntries.map((entry) =>
-              editingId === entry.id ? (
-                <EditableRow
-                  key={entry.id}
-                  id={entry.id}
-                  draft={draft}
-                  languages={languages}
-                  mods={knownMods}
-                  highlight="editing"
-                  onChange={setDraft}
-                  onCancel={resetEditing}
-                  onSave={() => handleUpdate(entry.id)}
-                />
-              ) : (
-                <tr
-                  key={entry.id}
-                  className={cn(
-                    'border-b border-[#1f2329] transition-colors hover:bg-[#131518]',
-                    selectedIds.has(entry.id) && 'bg-[#131518]'
-                  )}
-                >
-                  <td className="px-4 py-3 align-top text-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(entry.id)}
-                      onChange={(event) => toggleSelected(entry.id, event.target.checked)}
-                      className="mt-1 h-4 w-4 cursor-pointer accent-amber-500"
-                    />
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <span className="font-mono text-[11px] text-neutral-500">
-                      DCT-{String(entry.id).padStart(4, '0')}
+            {displayEntries.map((entry) => (
+              <tr
+                key={entry.id}
+                className={cn(
+                  'border-b border-[#1f2329] transition-colors hover:bg-[#131518]',
+                  selectedIds.has(entry.id) && 'bg-[#131518]'
+                )}
+              >
+                <td className="px-4 py-3 align-top text-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(entry.id)}
+                    onChange={(event) => toggleSelected(entry.id, event.target.checked)}
+                    className="mt-1 h-4 w-4 cursor-pointer accent-amber-500"
+                  />
+                </td>
+                <td className="px-4 py-3 align-top">
+                  <span className="font-mono text-[11px] text-neutral-500">
+                    DCT-{String(entry.id).padStart(4, '0')}
+                  </span>
+                </td>
+                <td className="px-4 py-3 align-top">
+                  <div className="whitespace-pre-wrap font-mono text-sm leading-6 text-neutral-100">
+                    {entry.sourceText}
+                  </div>
+                </td>
+                <td className="px-4 py-3 align-top">
+                  <div className="whitespace-pre-wrap font-mono text-sm leading-6 text-neutral-200">
+                    {entry.targetText}
+                  </div>
+                </td>
+                <td className="px-4 py-3 align-top">
+                  <div className="flex flex-col gap-2">
+                    <span className="inline-flex max-w-full items-center gap-2 rounded-md border border-[#252a32] bg-[#0c0d0f] px-2 py-1 text-xs text-neutral-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      <span className="truncate">{entry.modName || 'Sem mod'}</span>
                     </span>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="font-mono text-sm leading-6 text-neutral-100 whitespace-pre-wrap">
-                      {entry.sourceText}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="font-mono text-sm leading-6 text-neutral-200 whitespace-pre-wrap">
-                      {entry.targetText}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex flex-col gap-2">
-                      <span className="inline-flex max-w-full items-center gap-2 rounded-md border border-[#252a32] bg-[#0c0d0f] px-2 py-1 text-xs text-neutral-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                        <span className="truncate">{entry.modName || 'Sem mod'}</span>
+                    {entry.uid && (
+                      <span className="truncate font-mono text-[11px] text-neutral-600">
+                        UID {entry.uid}
                       </span>
-                      {entry.uid && (
-                        <span className="truncate font-mono text-[11px] text-neutral-600">
-                          UID {entry.uid}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <span className="inline-flex items-center gap-1 font-mono text-[11px] text-neutral-400">
-                      <span>{entry.sourceLang}</span>
-                      <span className="text-neutral-600">-&gt;</span>
-                      <span className="text-amber-400">{entry.targetLang}</span>
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex justify-end gap-1">
-                      {pendingDeleteId === entry.id ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => setPendingDeleteId(null)}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#252a32] text-neutral-400 transition-colors hover:bg-[#131518] hover:text-neutral-200"
-                          >
-                            <X size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(entry.id)}
-                            className="inline-flex h-7 items-center gap-1 rounded-md border border-red-500/40 bg-red-500/10 px-2 text-[11px] font-semibold text-red-300 transition-colors hover:bg-red-500/20"
-                          >
-                            <Trash2 size={12} />
-                            Confirmar
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => startEdit(entry)}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-[#252a32] hover:bg-[#131518] hover:text-neutral-200"
-                          >
-                            <Pencil size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPendingDeleteId(entry.id)}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )
-            )}
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3 align-top">
+                  <span className="inline-flex items-center gap-1 font-mono text-[11px] text-neutral-400">
+                    <span>{entry.sourceLang}</span>
+                    <span className="text-neutral-600">-&gt;</span>
+                    <span className="text-amber-400">{entry.targetLang}</span>
+                  </span>
+                </td>
+                <td className="px-4 py-3 align-top">
+                  <div className="flex justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(entry)}
+                      className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-[#252a32] hover:bg-[#131518] hover:text-neutral-200"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingDeleteEntry(entry)}
+                      className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
 
-            {!creating && !loading && displayEntries.length === 0 && (
+            {!loading && displayEntries.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-6 py-20">
                   <div className="flex flex-col items-center gap-3 text-center">
@@ -698,7 +598,44 @@ export function DictionaryPage(): React.JSX.Element {
         </span>
       </footer>
 
-      <ImportModal
+      <DictionaryEntryModal
+        open={createOpen}
+        mode="create"
+        initialDraft={createSeed}
+        languages={languages}
+        mods={knownMods}
+        onClose={() => setCreateOpen(false)}
+        onSubmit={handleCreate}
+      />
+
+      <DictionaryEntryModal
+        open={Boolean(editingEntry)}
+        mode="edit"
+        entryId={editingEntry?.id}
+        initialDraft={editingEntry ? toEntryDraft(editingEntry) : EMPTY_ENTRY_DRAFT}
+        languages={languages}
+        mods={knownMods}
+        onClose={() => setEditingEntry(null)}
+        onSubmit={handleUpdate}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDeleteEntry)}
+        title="Excluir entrada?"
+        description={
+          pendingDeleteEntry
+            ? `A entrada #${pendingDeleteEntry.id} sera removida do dicionario.`
+            : ''
+        }
+        confirmLabel="Excluir"
+        destructive
+        onClose={() => setPendingDeleteEntry(null)}
+        onConfirm={() => {
+          if (pendingDeleteEntry) void handleDelete(pendingDeleteEntry.id)
+        }}
+      />
+
+      <DictionaryImportModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
         onImported={async () => {
@@ -735,7 +672,7 @@ function FilterControl({
         type="button"
         onClick={() => onOpenChange(!open)}
         className={cn(
-          'inline-flex h-8 items-center gap-2 rounded-md border px-3 text-xs transition-colors',
+          'inline-flex h-8 cursor-pointer items-center gap-2 rounded-md border px-3 text-xs transition-colors',
           open
             ? 'border-amber-500 bg-[#181b1f] text-neutral-100 shadow-[0_0_0_3px_rgba(245,158,11,0.18)]'
             : 'border-[#1f2329] bg-[#131518] text-neutral-200 hover:border-[#303641]'
@@ -829,7 +766,7 @@ function FilterMenu({
         type="button"
         onClick={() => onSelect('')}
         className={cn(
-          'flex h-8 w-full items-center rounded-md px-2 text-left text-xs transition-colors',
+          'flex h-8 w-full cursor-pointer items-center rounded-md px-2 text-left text-xs transition-colors',
           !value ? 'bg-amber-500/12 text-amber-400' : 'text-neutral-200 hover:bg-[#181b1f]'
         )}
       >
@@ -843,7 +780,7 @@ function FilterMenu({
           type="button"
           onClick={() => onSelect(option.value)}
           className={cn(
-            'flex min-h-8 w-full items-center gap-2 rounded-md px-2 text-left text-xs transition-colors',
+            'flex min-h-8 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left text-xs transition-colors',
             value === option.value
               ? 'bg-amber-500/12 text-amber-400'
               : 'text-neutral-200 hover:bg-[#181b1f]'
@@ -884,326 +821,6 @@ function StatBlock({
         {detail && <span className="ml-1 text-sm font-normal text-neutral-500">{detail}</span>}
       </div>
     </div>
-  )
-}
-
-function EditableRow({
-  id,
-  draft,
-  languages,
-  mods,
-  highlight,
-  onChange,
-  onCancel,
-  onSave
-}: {
-  id?: number
-  draft: EntryDraft
-  languages: Language[]
-  mods: string[]
-  highlight: 'new' | 'editing'
-  onChange: (draft: EntryDraft) => void
-  onCancel: () => void
-  onSave: () => void
-}) {
-  return (
-    <tr
-      className={cn(
-        'border-b border-[#1f2329]',
-        highlight === 'new'
-          ? 'bg-amber-500/10 shadow-[inset_3px_0_0_#f59e0b]'
-          : 'bg-[#131518] shadow-[inset_3px_0_0_#f59e0b]'
-      )}
-    >
-      <td className="px-4 py-3 align-top text-center">
-        <input
-          type="checkbox"
-          disabled
-          className="mt-1 h-4 w-4 cursor-not-allowed accent-amber-500 opacity-60"
-        />
-      </td>
-      <td className="px-4 py-3 align-top">
-        <span className="font-mono text-[11px] text-neutral-500">
-          {id ? `DCT-${String(id).padStart(4, '0')}` : 'nova'}
-        </span>
-      </td>
-      <td className="px-4 py-3 align-top">
-        <HighlightedTextarea
-          autoFocus
-          value={draft.sourceText}
-          onChange={(event) => onChange({ ...draft, sourceText: event.target.value })}
-          rows={1}
-          containerClassName="rounded-lg border-[#2a2f37] bg-[#0c0d0f] focus-within:border-amber-500 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.22)]"
-          overlayClassName="px-3 py-2 text-[13px] leading-[1.6]"
-          className="field-sizing-content min-h-0 px-3 py-2 text-[13px] leading-[1.6]"
-          placeholder="Texto origem..."
-        />
-      </td>
-      <td className="px-4 py-3 align-top">
-        <HighlightedTextarea
-          value={draft.targetText}
-          onChange={(event) => onChange({ ...draft, targetText: event.target.value })}
-          rows={1}
-          containerClassName="rounded-lg border-[#2a2f37] bg-[#0c0d0f] focus-within:border-amber-500 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.22)]"
-          overlayClassName="px-3 py-2 text-[13px] leading-[1.6]"
-          className="field-sizing-content min-h-0 px-3 py-2 text-[13px] leading-[1.6]"
-          placeholder="Texto destino..."
-        />
-      </td>
-      <td className="px-4 py-3 align-top">
-        <div className="flex flex-col gap-2">
-          <input
-            list="dictionary-mod-options"
-            value={draft.modName}
-            onChange={(event) => onChange({ ...draft, modName: event.target.value })}
-            className={META_INPUT}
-            placeholder="Nome do mod"
-          />
-          <input
-            value={draft.uid}
-            onChange={(event) => onChange({ ...draft, uid: event.target.value })}
-            className={META_INPUT}
-            placeholder="UID opcional"
-          />
-          <datalist id="dictionary-mod-options">
-            {mods.map((modName) => (
-              <option key={modName} value={modName} />
-            ))}
-          </datalist>
-        </div>
-      </td>
-      <td className="px-4 py-3 align-top">
-        <div className="flex items-center gap-2">
-          <select
-            value={draft.sourceLang}
-            onChange={(event) => onChange({ ...draft, sourceLang: event.target.value })}
-            className={cn(FIELD_SELECT, 'h-8 w-24 px-2.5 py-0 text-[12px]')}
-          >
-            <option value="">Origem</option>
-            {languages.map((language) => (
-              <option key={language.code} value={language.code}>
-                {language.code}
-              </option>
-            ))}
-          </select>
-          <span className="font-mono text-neutral-600">-&gt;</span>
-          <select
-            value={draft.targetLang}
-            onChange={(event) => onChange({ ...draft, targetLang: event.target.value })}
-            className={cn(FIELD_SELECT, 'h-8 w-24 px-2.5 py-0 text-[12px]')}
-          >
-            <option value="">Destino</option>
-            {languages.map((language) => (
-              <option key={language.code} value={language.code}>
-                {language.code}
-              </option>
-            ))}
-          </select>
-        </div>
-      </td>
-      <td className="px-4 py-3 align-top">
-        <div className="flex justify-end gap-1">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#252a32] text-neutral-400 transition-colors hover:bg-[#181b1f] hover:text-neutral-200"
-          >
-            <X size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            className="inline-flex h-8 items-center gap-1 rounded-md border border-amber-500 bg-amber-500 px-3 text-xs font-semibold text-neutral-950 transition-colors hover:border-amber-400 hover:bg-amber-400"
-          >
-            <Check size={13} />
-            Salvar
-          </button>
-        </div>
-      </td>
-    </tr>
-  )
-}
-
-function ImportModal({
-  open,
-  onClose,
-  onImported
-}: {
-  open: boolean
-  onClose: () => void
-  onImported: () => Promise<void>
-}) {
-  const [filePath, setFilePath] = useState('')
-  const [preview, setPreview] = useState<DictionaryImportPreview | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [importing, setImporting] = useState(false)
-
-  useEffect(() => {
-    if (!open) {
-      setFilePath('')
-      setPreview(null)
-      setLoading(false)
-      setImporting(false)
-    }
-  }, [open])
-
-  if (!open) return null
-
-  const handleSelectFile = async () => {
-    const paths = await window.api.fs.openDialog({
-      filters: [{ name: 'CSV', extensions: ['csv'] }]
-    })
-    if (!paths[0]) return
-
-    setLoading(true)
-    try {
-      const nextPreview = await window.api.dictionary.previewImport({
-        filePath: paths[0],
-        format: 'csv'
-      })
-      setFilePath(paths[0])
-      setPreview(nextPreview)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao ler CSV')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleImport = async () => {
-    if (!filePath) return
-    setImporting(true)
-    try {
-      const result = await window.api.dictionary.import({ filePath, format: 'csv' })
-      toast.success(`${result.count} entradas importadas`)
-      await onImported()
-      onClose()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao importar CSV')
-    } finally {
-      setImporting(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-[#303641] bg-[#131518] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-        <div className="flex items-center gap-3 border-b border-[#1f2329] px-5 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/12 text-amber-400">
-            <FileSpreadsheet size={16} />
-          </div>
-          <div>
-            <div className="text-sm font-semibold text-neutral-100">Importar dicionario</div>
-            <div className="text-xs text-neutral-500">
-              Compatibilidade com `language1/...` e `src/tgt/src_lang/tgt_lang`
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-[#181b1f] hover:text-neutral-200"
-          >
-            <X size={14} />
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-4 px-5 py-5">
-          <button
-            type="button"
-            onClick={handleSelectFile}
-            className="flex min-h-36 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#3a404a] bg-[#0f1114] px-6 py-6 text-center transition-colors hover:border-amber-500 hover:bg-amber-500/6"
-          >
-            <Upload size={18} className="text-neutral-300" />
-            <div className="text-sm font-semibold text-neutral-100">
-              {filePath ? filePath.split(/[\\/]/).pop() : 'Escolher arquivo CSV'}
-            </div>
-            <div className="text-xs text-neutral-500">
-              Abra um CSV para visualizar headers detectados e uma previa antes de importar.
-            </div>
-          </button>
-
-          {loading && <p className="text-sm text-neutral-500">Lendo arquivo...</p>}
-
-          {preview && (
-            <>
-              <div className="rounded-lg border border-[#1f2329] bg-[#0f1114] p-3 text-xs text-neutral-400">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span>{preview.totalRows} linhas detectadas</span>
-                  <span className="font-mono text-neutral-500">
-                    Headers: {preview.headers.join(', ')}
-                  </span>
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-lg border border-[#1f2329] bg-[#0f1114]">
-                <div className="flex items-center justify-between border-b border-[#1f2329] px-3 py-2 text-[11px] text-neutral-500">
-                  <span>Previa das primeiras {preview.rows.length} linhas</span>
-                  <span className="font-mono">UTF-8 . CSV</span>
-                </div>
-                <table className="w-full border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-[#131518]">
-                      <th className="px-3 py-2 text-left font-semibold uppercase tracking-[0.06em] text-neutral-500">
-                        Origem
-                      </th>
-                      <th className="px-3 py-2 text-left font-semibold uppercase tracking-[0.06em] text-neutral-500">
-                        Destino
-                      </th>
-                      <th className="px-3 py-2 text-left font-semibold uppercase tracking-[0.06em] text-neutral-500">
-                        Mod
-                      </th>
-                      <th className="px-3 py-2 text-left font-semibold uppercase tracking-[0.06em] text-neutral-500">
-                        Idiomas
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {preview.rows.map((row, index) => (
-                      <tr key={`${row.uid ?? 'row'}-${index}`} className="border-t border-[#1f2329]">
-                        <td className="px-3 py-2 font-mono text-neutral-200">{row.sourceText}</td>
-                        <td className="px-3 py-2 font-mono text-neutral-200">{row.targetText}</td>
-                        <td className="px-3 py-2 text-neutral-300">{row.modName || 'Sem mod'}</td>
-                        <td className="px-3 py-2 font-mono text-neutral-400">
-                          {row.sourceLang || '—'} -&gt; {row.targetLang || '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="flex items-center justify-end gap-2 border-t border-[#1f2329] bg-[#0f1114] px-5 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-8 items-center rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            disabled={!preview || importing}
-            onClick={handleImport}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-xs font-semibold text-neutral-950 transition-colors hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <Upload size={13} />
-            {importing ? 'Importando...' : `Importar ${preview?.totalRows ?? 0} entradas`}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function isDraftValid(draft: EntryDraft): boolean {
-  return Boolean(
-    draft.sourceLang.trim() &&
-      draft.targetLang.trim() &&
-      draft.sourceText.trim() &&
-      draft.targetText.trim()
   )
 }
 
@@ -1262,6 +879,17 @@ function toDisplayEntry(entry: DictionaryEntry, filters: DictionaryFilters): Dis
     modName: entry.modName ?? '',
     uid: entry.uid ?? '',
     updatedAt: entry.updatedAt
+  }
+}
+
+function toEntryDraft(entry: DisplayEntry): EntryDraft {
+  return {
+    sourceLang: entry.sourceLang,
+    targetLang: entry.targetLang,
+    sourceText: entry.sourceText,
+    targetText: entry.targetText,
+    modName: entry.modName,
+    uid: entry.uid
   }
 }
 
