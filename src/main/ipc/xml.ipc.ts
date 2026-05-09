@@ -58,7 +58,8 @@ async function loadXml(repos: RepositoryRegistry, payload: LoadPayload): Promise
       await unpackMod(inputPath, tempDir)
       const sourceFolder = languageFolder(repos, sourceLang)
       const xmlFiles = findLocalizationXmls(tempDir, sourceFolder)
-      if (xmlFiles.length === 0) throw new Error(`No XML found for language "${sourceFolder}" in pak`)
+      if (xmlFiles.length === 0)
+        throw new Error(`No XML found for language "${sourceFolder}" in pak`)
       xmlPath = xmlFiles[0]
     } else if (ext === '.zip') {
       const archiveDir = createTempDir('icosa_zip')
@@ -72,7 +73,8 @@ async function loadXml(repos: RepositoryRegistry, payload: LoadPayload): Promise
       await unpackMod(pakFiles[0], unpackedDir)
       const sourceFolder = languageFolder(repos, sourceLang)
       const xmlFiles = findLocalizationXmls(unpackedDir, sourceFolder)
-      if (xmlFiles.length === 0) throw new Error(`No XML found for language "${sourceFolder}" in pak`)
+      if (xmlFiles.length === 0)
+        throw new Error(`No XML found for language "${sourceFolder}" in pak`)
       xmlPath = xmlFiles[0]
     } else {
       throw new Error(`Unsupported file type: ${ext}. Use .xml, .pak, or .zip`)
@@ -84,6 +86,7 @@ async function loadXml(repos: RepositoryRegistry, payload: LoadPayload): Promise
       const uiEntry = toUiEntry(entry)
       const match = repos.dictionary.resolveMatch({
         modName: modName ?? null,
+        uid: entry.contentuid,
         sourceLang,
         targetLang,
         sourceText: entry.text
