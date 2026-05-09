@@ -1,6 +1,6 @@
-import type { BrowserWindow } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
+import type { BrowserWindow } from 'electron'
 import { getDb } from '../database/connection'
 import type { SimilarityRow } from '../database/repositories/dictionary.repo'
 import {
@@ -119,12 +119,7 @@ export abstract class BasePipeline {
           this.emitProgress(current, total, entry.text, targetText)
         }
 
-        const outXmlPath = path.join(
-          modRoot,
-          'Localization',
-          targetFolder,
-          path.basename(xmlPath)
-        )
+        const outXmlPath = path.join(modRoot, 'Localization', targetFolder, path.basename(xmlPath))
         writeLocalizationXml(translated, outXmlPath)
       }
 
@@ -202,6 +197,7 @@ export abstract class BasePipeline {
 
     const match = this.dictRepo.resolveMatch({
       modName,
+      uid: entry.contentuid || null,
       sourceLang,
       targetLang,
       sourceText: entry.text
@@ -305,4 +301,3 @@ function findMetaLsx(dir: string): string | null {
   }
   return null
 }
-
