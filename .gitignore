@@ -11,3 +11,5 @@ PLANNING.md
 .env
 *.md
 data/
+*.txt
+*.xml

@@ -1,6 +1,6 @@
 appId: com.icosa.bg3-mod-translator
 productName: Icosa
-buildVersion: 1.0.0.1
+buildVersion: 1.1.1
 copyright: Copyright © 2026 kaironn
 directories:
   buildResources: build
