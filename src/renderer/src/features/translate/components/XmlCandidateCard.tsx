@@ -5,6 +5,7 @@ import type { TranslationXmlCandidate } from '@/types'
 interface XmlCandidateCardProps {
   candidate: TranslationXmlCandidate
   index: number
+  selectionMode?: 'single' | 'multi'
   selected: boolean
   onSelect: () => void
 }
@@ -12,6 +13,7 @@ interface XmlCandidateCardProps {
 export function XmlCandidateCard({
   candidate,
   index,
+  selectionMode = 'single',
   selected,
   onSelect
 }: XmlCandidateCardProps): React.JSX.Element {
@@ -52,11 +54,19 @@ export function XmlCandidateCard({
         </div>
         <div
           className={cn(
-            'w-4.5 h-4.5 rounded-full border flex items-center justify-center shrink-0',
+            'w-4.5 h-4.5 border flex items-center justify-center shrink-0',
+            selectionMode === 'multi' ? 'rounded-[4px]' : 'rounded-full',
             selected ? 'border-amber-400' : 'border-neutral-600'
           )}
         >
-          {selected && <div className="w-2 h-2 rounded-full bg-amber-400" />}
+          {selected && (
+            <div
+              className={cn(
+                'bg-amber-400',
+                selectionMode === 'multi' ? 'h-2.5 w-2.5 rounded-[2px]' : 'h-2 w-2 rounded-full'
+              )}
+            />
+          )}
         </div>
       </div>
     </button>

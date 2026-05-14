@@ -149,7 +149,7 @@ export function completeTranslationImport(
   repos: RepositoryRegistry,
   params: {
     importId: string
-    candidateId: string
+    candidateIds: string[]
     modName: string
     targetLang: string
   }
@@ -157,20 +157,24 @@ export function completeTranslationImport(
   const staged = stagedImports.get(params.importId)
   if (!staged) throw new Error('Import session expired. Select the file again.')
 
-  const candidate = staged.candidates.find((item) => item.id === params.candidateId)
-  if (!candidate) throw new Error('Selected XML was not found')
-  if (!candidate.valid) throw new Error('Selected XML has an invalid format')
+  const requestedIds = new Set(params.candidateIds)
+  if (requestedIds.size === 0) throw new Error('No valid XML found')
+
+  const candidates = staged.candidates.filter((candidate) => requestedIds.has(candidate.id))
+  if (candidates.length !== requestedIds.size) throw new Error('Selected XML was not found')
+  if (candidates.some((candidate) => !candidate.valid)) {
+    throw new Error('Selected XML has an invalid format')
+  }
 
   const modDir = getStoredModDir(params.modName)
   fs.mkdirSync(modDir, { recursive: true })
 
-  const xmlPath = path.join(modDir, path.basename(candidate.absolutePath))
-  if (path.resolve(candidate.absolutePath) !== path.resolve(xmlPath)) {
-    fs.copyFileSync(candidate.absolutePath, xmlPath)
-  }
+  const mergedEntries = candidates.flatMap((candidate) => parseLocalizationXml(candidate.absolutePath))
+  const xmlPath = path.join(modDir, 'translation_merged.xml')
+  writeLocalizationXml(mergedEntries, xmlPath)
 
   repos.mod.upsert(params.modName, {
-    totalStrings: candidate.stringCount,
+    totalStrings: mergedEntries.length,
     lastFilePath: xmlPath
   })
 

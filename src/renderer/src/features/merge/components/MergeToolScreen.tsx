@@ -118,7 +118,8 @@ function PendingSelectionModal({
     <XmlSelectionModal
       prepared={prepared}
       onCancel={onCancel}
-      onSelect={async (candidateId) => {
+      onSelect={async ([candidateId]) => {
+        if (!candidateId) return
         onSelect(slotKey, candidateId)
       }}
     />

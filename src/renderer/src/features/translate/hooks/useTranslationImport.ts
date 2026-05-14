@@ -22,10 +22,10 @@ export function useTranslationImport({
   const [isPreparing, setIsPreparing] = useState(false)
   const [preparedImport, setPreparedImport] = useState<PreparedTranslationInput | null>(null)
 
-  const completeImport = async (importId: string, candidateId: string) => {
+  const completeImport = async (importId: string, candidateIds: string[]) => {
     const result = await window.api.mod.completeTranslationImport({
       importId,
-      candidateId,
+      candidateIds,
       modName,
       targetLang
     })
@@ -57,7 +57,7 @@ export function useTranslationImport({
         return
       }
 
-      await completeImport(prepared.importId, candidate.id)
+      await completeImport(prepared.importId, [candidate.id])
     } catch (err) {
       toast.error(getLocalizedErrorMessage(err, t))
     } finally {
