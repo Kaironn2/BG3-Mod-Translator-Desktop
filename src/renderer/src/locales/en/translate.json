@@ -102,7 +102,10 @@
   "xmlSelection": {
     "title": "Select XML",
     "description": "Files without content tags appear as Invalid format.",
+    "selectAll": "Select all XMLs",
     "useXml": "Use XML",
+    "selectedCount_one": "{{count}} XML selected",
+    "selectedCount_other": "{{count}} XMLs selected",
     "strings": "{{count}} strings"
   },
   "loaded": {

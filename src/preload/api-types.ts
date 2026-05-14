@@ -291,7 +291,7 @@ export interface ModApi {
   discardTranslationInput(params: { importId: string }): Promise<{ success: boolean }>
   completeTranslationImport(params: {
     importId: string
-    candidateId: string
+    candidateIds: string[]
     modName: string
     targetLang: string
   }): Promise<CompleteTranslationImportResult>

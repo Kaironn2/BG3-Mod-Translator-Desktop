@@ -192,7 +192,7 @@ const api: AppApi = {
 
     completeTranslationImport: (params: {
       importId: string
-      candidateId: string
+      candidateIds: string[]
       modName: string
       targetLang: string
     }) => ipcRenderer.invoke('mod:completeTranslationImport', params),

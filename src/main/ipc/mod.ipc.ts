@@ -89,7 +89,7 @@ export function registerModHandlers(repos: RepositoryRegistry): void {
     'mod:completeTranslationImport',
     (
       _event,
-      params: { importId: string; candidateId: string; modName: string; targetLang: string }
+      params: { importId: string; candidateIds: string[]; modName: string; targetLang: string }
     ) => {
       return completeImport(repos, params)
     }

@@ -189,10 +189,11 @@ export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): Reac
       {importFlow.preparedImport && (
         <XmlSelectionModal
           prepared={importFlow.preparedImport}
+          selectionMode="multi"
           onCancel={importFlow.closeImportModal}
-          onSelect={(candidateId) =>
+          onSelect={(candidateIds) =>
             importFlow.preparedImport
-              ? importFlow.completeImport(importFlow.preparedImport.importId, candidateId)
+              ? importFlow.completeImport(importFlow.preparedImport.importId, candidateIds)
               : Promise.resolve()
           }
         />

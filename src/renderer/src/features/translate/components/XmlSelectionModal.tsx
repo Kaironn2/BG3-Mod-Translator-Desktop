@@ -10,27 +10,53 @@ import { XmlCandidateCard } from './XmlCandidateCard'
 
 interface XmlSelectionModalProps {
   prepared: PreparedTranslationInput
+  selectionMode?: 'single' | 'multi'
   onCancel: () => Promise<void>
-  onSelect: (candidateId: string) => Promise<void>
+  onSelect: (candidateIds: string[]) => Promise<void>
 }
 
 export function XmlSelectionModal({
   prepared,
+  selectionMode = 'single',
   onCancel,
   onSelect
 }: XmlSelectionModalProps): React.JSX.Element {
   const { t } = useAppTranslation(['translate', 'common'])
-  const [selectedId, setSelectedId] = useState(
-    prepared.candidates.find((candidate) => candidate.valid)?.id ?? ''
+  const firstValidId = prepared.candidates.find((candidate) => candidate.valid)?.id ?? ''
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    () => new Set(firstValidId ? [firstValidId] : [])
   )
   const [loading, setLoading] = useState(false)
-  const selected = prepared.candidates.find((candidate) => candidate.id === selectedId)
+  const validCandidateIds = prepared.candidates
+    .filter((candidate) => candidate.valid)
+    .map((candidate) => candidate.id)
+  const selectedValidIds = validCandidateIds.filter((id) => selectedIds.has(id))
+  const allValidSelected =
+    validCandidateIds.length > 0 && validCandidateIds.every((id) => selectedIds.has(id))
+
+  const selectCandidate = (candidateId: string) => {
+    if (selectionMode === 'single') {
+      setSelectedIds(new Set([candidateId]))
+      return
+    }
+
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(candidateId)) next.delete(candidateId)
+      else next.add(candidateId)
+      return next
+    })
+  }
+
+  const selectAllValid = () => {
+    setSelectedIds(new Set(validCandidateIds))
+  }
 
   const handleSelect = async () => {
-    if (!selected?.valid) return
+    if (selectedValidIds.length === 0) return
     setLoading(true)
     try {
-      await onSelect(selected.id)
+      await onSelect(selectedValidIds)
     } catch (err) {
       toast.error(getLocalizedErrorMessage(err, t))
     } finally {
@@ -57,14 +83,37 @@ export function XmlSelectionModal({
         </div>
 
         <div className="flex-1 overflow-y-auto icosa-scroll p-5">
+          {selectionMode === 'multi' && (
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="font-mono text-[11px] text-neutral-500">
+                {t('xmlSelection.selectedCount', {
+                  ns: 'translate',
+                  count: selectedValidIds.length
+                })}
+              </span>
+              <button
+                type="button"
+                className={cn(
+                  btnBase,
+                  (allValidSelected || loading || validCandidateIds.length === 0) &&
+                    'opacity-40 cursor-not-allowed'
+                )}
+                disabled={allValidSelected || loading || validCandidateIds.length === 0}
+                onClick={selectAllValid}
+              >
+                {t('xmlSelection.selectAll', { ns: 'translate' })}
+              </button>
+            </div>
+          )}
           <div className="flex flex-col gap-2.5">
             {prepared.candidates.map((candidate, index) => (
               <XmlCandidateCard
                 key={candidate.id}
                 candidate={candidate}
                 index={index}
-                selected={candidate.id === selectedId}
-                onSelect={() => setSelectedId(candidate.id)}
+                selectionMode={selectionMode}
+                selected={selectedIds.has(candidate.id)}
+                onSelect={() => selectCandidate(candidate.id)}
               />
             ))}
           </div>
@@ -78,9 +127,9 @@ export function XmlSelectionModal({
             type="button"
             className={cn(
               btnPrimary,
-              (!selected?.valid || loading) && 'opacity-40 cursor-not-allowed'
+              (selectedValidIds.length === 0 || loading) && 'opacity-40 cursor-not-allowed'
             )}
-            disabled={!selected?.valid || loading}
+            disabled={selectedValidIds.length === 0 || loading}
             onClick={handleSelect}
           >
             {loading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
