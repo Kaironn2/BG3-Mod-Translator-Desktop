@@ -11,11 +11,13 @@ import { registerFsHandlers } from './ipc/fs.ipc'
 import { registerLanguageHandlers } from './ipc/language.ipc'
 import { registerLogHandlers } from './ipc/log.ipc'
 import { registerMergeHandlers } from './ipc/merge.ipc'
+import { registerMetricsHandlers } from './ipc/metrics.ipc'
 import { registerModHandlers } from './ipc/mod.ipc'
 import { registerTranslationHandlers } from './ipc/translation.ipc'
 import { registerWindowHandlers, setupWindowEvents } from './ipc/window.ipc'
 import { registerXmlHandlers } from './ipc/xml.ipc'
 import { logError } from './services/log.service'
+import { createUsageService } from './services/usage.service'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -68,6 +70,8 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  const usageService = createUsageService(repos)
+
   registerWindowHandlers(getWindow)
   registerTranslationHandlers(getWindow)
   registerDictionaryHandlers(repos)
@@ -75,6 +79,7 @@ app.whenReady().then(() => {
   registerLogHandlers()
   registerModHandlers(repos)
   registerMergeHandlers(repos)
+  registerMetricsHandlers(repos, usageService)
   registerConfigHandlers()
   registerFsHandlers()
   registerXmlHandlers(repos)
