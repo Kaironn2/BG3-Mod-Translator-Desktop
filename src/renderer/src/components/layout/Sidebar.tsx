@@ -1,4 +1,4 @@
-import { BookOpen, Boxes, Languages, Merge, Package, PackageOpen, Settings } from 'lucide-react'
+import { BarChart3, BookOpen, Boxes, Languages, Merge, Package, PackageOpen, Settings } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
@@ -9,7 +9,8 @@ const NAV_ITEMS = [
   { to: '/mods', icon: Boxes, labelKey: 'mods', kbd: 'Ctrl 3' },
   { to: '/merge', icon: Merge, labelKey: 'merge', kbd: 'Ctrl 4' },
   { to: '/extract', icon: PackageOpen, labelKey: 'extract', kbd: 'Ctrl 5' },
-  { to: '/package', icon: Package, labelKey: 'package', kbd: 'Ctrl 6' }
+  { to: '/package', icon: Package, labelKey: 'package', kbd: 'Ctrl 6' },
+  { to: '/metrics', icon: BarChart3, labelKey: 'metrics', kbd: 'Ctrl 8' }
 ] as const
 
 const FOOTER_ITEMS = [

@@ -7,6 +7,7 @@ import { EntryEditPage } from './pages/EntryEditPage'
 import { ExtractPage } from './pages/ExtractPage'
 import { ManageModsPage } from './pages/ManageModsPage'
 import { MergeToolPage } from './pages/MergeToolPage'
+import { MetricsPage } from './pages/MetricsPage'
 import { PackagePage } from './pages/PackagePage'
 import { SettingsPage } from './pages/SettingsPage'
 import { TranslatePage } from './pages/TranslatePage'
@@ -33,6 +34,7 @@ function App(): React.JSX.Element {
           <Route path="/extract" element={<ExtractPage />} />
           <Route path="/package" element={<PackagePage />} />
           <Route path="/merge" element={<MergeToolPage />} />
+          <Route path="/metrics" element={<MetricsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
