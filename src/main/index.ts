@@ -73,7 +73,7 @@ app.whenReady().then(() => {
   const usageService = createUsageService(repos)
 
   registerWindowHandlers(getWindow)
-  registerTranslationHandlers(getWindow)
+  registerTranslationHandlers(getWindow, repos, usageService)
   registerDictionaryHandlers(repos)
   registerLanguageHandlers(repos)
   registerLogHandlers()

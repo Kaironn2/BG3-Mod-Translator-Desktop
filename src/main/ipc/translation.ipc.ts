@@ -1,7 +1,8 @@
-import { randomUUID } from 'crypto'
+import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { type BrowserWindow, ipcMain } from 'electron'
 import { getDb } from '../database/connection'
+import type { RepositoryRegistry } from '../database/repositories/registry'
 import { config } from '../database/schema'
 import type { PipelineOptions } from '../pipelines/base.pipeline'
 import {
@@ -15,6 +16,7 @@ import {
 import { logError } from '../services/log.service'
 import { translateText as translateOpenAI } from '../services/openai.service'
 import { runTranslatePipeline, type TranslatePipelineParams } from '../services/translate.service'
+import type { UsageService } from '../services/usage.service'
 import { decodeEntities } from '../services/xml-entities.service'
 import { getActiveWindow } from '../utils/window'
 
@@ -44,12 +46,50 @@ interface BatchJobContext extends BatchPayload {
   apiKey: string
   signal: AbortSignal
   getWindow: () => BrowserWindow | null
+  charAcc: { value: number }
 }
 
 // Active jobs keyed by jobId - cancel() sends cancel message to the worker
 const activeJobs = new Map<string, { cancel: () => void }>()
 
-export function registerTranslationHandlers(getWindow: () => BrowserWindow | null): void {
+class QuotaExceededError extends Error {
+  constructor(
+    public readonly service: 'deepl' | 'google',
+    public readonly remaining: number,
+    public readonly requested: number,
+    public readonly allowedEntries?: number
+  ) {
+    super(JSON.stringify({ code: 'QUOTA_EXCEEDED', service, remaining, requested, allowedEntries }))
+    this.name = 'QuotaExceededError'
+  }
+}
+
+function gateQuota(
+  service: 'deepl' | 'google',
+  requestedChars: number,
+  usage: UsageService,
+  entries?: { source: string }[]
+): void {
+  const remaining = usage.getRemaining(service)
+  if (requestedChars <= remaining) return
+  let allowedEntries: number | undefined
+  if (entries) {
+    let acc = 0
+    allowedEntries = 0
+    for (const e of entries) {
+      if (acc + e.source.length > remaining) break
+      acc += e.source.length
+      allowedEntries++
+    }
+  }
+  throw new QuotaExceededError(service, remaining, requestedChars, allowedEntries)
+}
+
+export function registerTranslationHandlers(
+  getWindow: () => BrowserWindow | null,
+  repos: RepositoryRegistry,
+  usage: UsageService
+): void {
   ipcMain.handle('translation:start', async (_event, payload: TranslationStartPayload) => {
     try {
       requirePayloadApiKey(payload)
@@ -63,6 +103,7 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
       throw err
     }
     const jobId = randomUUID()
+    const startedAt = new Date().toISOString()
 
     const { cancel } = runTranslatePipeline({
       jobId,
@@ -76,6 +117,26 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
       },
       onDone: ({ outputPath }) => {
         activeJobs.delete(jobId)
+        const finishedAt = new Date().toISOString()
+        const service = payload.provider
+        if (service === 'deepl' || service === 'google') {
+          try {
+            repos.translationRun.create({
+              jobId,
+              service,
+              modName: payload.modName ?? null,
+              sourceLang: payload.sourceLang,
+              targetLang: payload.targetLang,
+              entriesTotal: 0,
+              entriesTranslated: 0,
+              charsConsumed: 0,
+              startedAt,
+              finishedAt
+            })
+          } catch (runErr) {
+            logError('translation.start.recordRun', runErr, { jobId, service })
+          }
+        }
         const win = getActiveWindow(getWindow)
         if (win) {
           win.webContents.send('translation:done', { jobId, outputPath })
@@ -121,13 +182,24 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
         const { provider, text, sourceLang, targetLang } = payload
         const apiKey = requireStoredApiKey(provider)
         if (provider === 'deepl') {
-          return decodeEntities(await translateDeepL(text, sourceLang, targetLang, apiKey))
+          gateQuota('deepl', text.length, usage)
+          return decodeEntities(
+            await translateDeepL(text, sourceLang, targetLang, apiKey, undefined, undefined, (n) =>
+              usage.consume('deepl', n)
+            )
+          )
         }
         if (provider === 'google') {
-          return decodeEntities(await translateGoogle(text, sourceLang, targetLang, apiKey))
+          gateQuota('google', text.length, usage)
+          return decodeEntities(
+            await translateGoogle(text, sourceLang, targetLang, apiKey, undefined, (n) =>
+              usage.consume('google', n)
+            )
+          )
         }
         return decodeEntities(await translateOpenAI(text, sourceLang, targetLang, apiKey))
       } catch (err) {
+        if (err instanceof QuotaExceededError) throw err
         logError('translation.single', err, {
           provider: payload.provider,
           sourceLang: payload.sourceLang,
@@ -141,7 +213,7 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
   ipcMain.handle(
     'translation:batch',
     async (_event, payload: BatchPayload): Promise<{ jobId: string }> => {
-      const { provider, sourceLang, targetLang } = payload
+      const { provider, sourceLang, targetLang, entries } = payload
       let apiKey: string
       try {
         apiKey = requireStoredApiKey(provider)
@@ -150,17 +222,33 @@ export function registerTranslationHandlers(getWindow: () => BrowserWindow | nul
         throw err
       }
 
+      if (provider === 'deepl' || provider === 'google') {
+        const totalChars = entries.reduce((s, e) => s + e.source.length, 0)
+        try {
+          gateQuota(provider, totalChars, usage, entries)
+        } catch (err) {
+          if (err instanceof QuotaExceededError) throw err
+          throw err
+        }
+      }
+
       const jobId = randomUUID()
       const controller = new AbortController()
+      const charAcc = { value: 0 }
       activeJobs.set(jobId, { cancel: () => controller.abort() })
 
-      void runBatchJob({
-        ...payload,
-        jobId,
-        apiKey,
-        signal: controller.signal,
-        getWindow
-      }).finally(() => {
+      void runBatchJob(
+        {
+          ...payload,
+          jobId,
+          apiKey,
+          signal: controller.signal,
+          getWindow,
+          charAcc
+        },
+        repos,
+        usage
+      ).finally(() => {
         activeJobs.delete(jobId)
       })
 
@@ -217,24 +305,51 @@ async function runConcurrent<T>(
   await Promise.all(workers)
 }
 
-async function runBatchJob(ctx: BatchJobContext): Promise<void> {
+async function runBatchJob(
+  ctx: BatchJobContext,
+  repos: RepositoryRegistry,
+  usage: UsageService
+): Promise<void> {
   const summary: BatchSummary = {
     total: ctx.entries.length,
     translated: 0,
     failed: 0
   }
+  const startedAt = new Date().toISOString()
 
   try {
     if (ctx.provider === 'deepl') {
-      await runDeepLBatchJob(ctx, summary)
+      await runDeepLBatchJob(ctx, summary, usage)
     } else if (ctx.provider === 'google') {
-      await runGoogleBatchJob(ctx, summary)
+      await runGoogleBatchJob(ctx, summary, usage)
     } else {
       await runOpenAIBatchJob(ctx, summary)
     }
 
     if (ctx.signal.aborted) {
       summary.failed = summary.total - summary.translated
+    }
+
+    if (ctx.provider === 'deepl' || ctx.provider === 'google') {
+      try {
+        repos.translationRun.create({
+          jobId: ctx.jobId,
+          service: ctx.provider,
+          modName: null,
+          sourceLang: ctx.sourceLang,
+          targetLang: ctx.targetLang,
+          entriesTotal: summary.total,
+          entriesTranslated: summary.translated,
+          charsConsumed: ctx.charAcc.value,
+          startedAt,
+          finishedAt: new Date().toISOString()
+        })
+      } catch (runErr) {
+        logError('translation.batch.recordRun', runErr, {
+          jobId: ctx.jobId,
+          provider: ctx.provider
+        })
+      }
     }
 
     emitBatchDone(ctx.getWindow, {
@@ -245,6 +360,29 @@ async function runBatchJob(ctx: BatchJobContext): Promise<void> {
   } catch (err) {
     if (isAbortError(err) || ctx.signal.aborted) {
       summary.failed = summary.total - summary.translated
+
+      if (ctx.provider === 'deepl' || ctx.provider === 'google') {
+        try {
+          repos.translationRun.create({
+            jobId: ctx.jobId,
+            service: ctx.provider,
+            modName: null,
+            sourceLang: ctx.sourceLang,
+            targetLang: ctx.targetLang,
+            entriesTotal: summary.total,
+            entriesTranslated: summary.translated,
+            charsConsumed: ctx.charAcc.value,
+            startedAt,
+            finishedAt: new Date().toISOString()
+          })
+        } catch (runErr) {
+          logError('translation.batch.recordRun.cancelled', runErr, {
+            jobId: ctx.jobId,
+            provider: ctx.provider
+          })
+        }
+      }
+
       emitBatchDone(ctx.getWindow, {
         jobId: ctx.jobId,
         ...summary,
@@ -267,7 +405,11 @@ async function runBatchJob(ctx: BatchJobContext): Promise<void> {
   }
 }
 
-async function runDeepLBatchJob(ctx: BatchJobContext, summary: BatchSummary): Promise<void> {
+async function runDeepLBatchJob(
+  ctx: BatchJobContext,
+  summary: BatchSummary,
+  usage: UsageService
+): Promise<void> {
   let pendingEntries = [...ctx.entries]
 
   while (pendingEntries.length > 0) {
@@ -278,7 +420,11 @@ async function runDeepLBatchJob(ctx: BatchJobContext, summary: BatchSummary): Pr
       ctx.sourceLang,
       ctx.targetLang,
       ctx.apiKey,
-      ctx.signal
+      ctx.signal,
+      (n) => {
+        ctx.charAcc.value += n
+        usage.consume('deepl', n)
+      }
     )
 
     let roundSuccesses = 0
@@ -339,7 +485,11 @@ async function runDeepLBatchJob(ctx: BatchJobContext, summary: BatchSummary): Pr
   }
 }
 
-async function runGoogleBatchJob(ctx: BatchJobContext, summary: BatchSummary): Promise<void> {
+async function runGoogleBatchJob(
+  ctx: BatchJobContext,
+  summary: BatchSummary,
+  usage: UsageService
+): Promise<void> {
   let pendingEntries = [...ctx.entries]
 
   while (pendingEntries.length > 0) {
@@ -350,7 +500,11 @@ async function runGoogleBatchJob(ctx: BatchJobContext, summary: BatchSummary): P
       ctx.sourceLang,
       ctx.targetLang,
       ctx.apiKey,
-      ctx.signal
+      ctx.signal,
+      (n) => {
+        ctx.charAcc.value += n
+        usage.consume('google', n)
+      }
     )
 
     let roundSuccesses = 0
