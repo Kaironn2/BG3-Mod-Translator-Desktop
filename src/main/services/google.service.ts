@@ -26,8 +26,10 @@ export async function translateText(
   sourceLang: string,
   targetLang: string,
   apiKey: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onChars?: (count: number) => void
 ): Promise<string> {
+  onChars?.(text.length)
   const translated = await requestGoogle([text], sourceLang, targetLang, apiKey, signal)
   const first = translated[0]
   if (first == null) {
@@ -41,22 +43,26 @@ export async function translateBatchDetailed(
   sourceLang: string,
   targetLang: string,
   apiKey: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onChars?: (count: number) => void
 ): Promise<BatchTranslationResult[]> {
   const results: BatchTranslationResult[] = []
 
   for (let offset = 0; offset < texts.length; offset += GOOGLE_CHUNK_SIZE) {
     const chunk = texts.slice(offset, offset + GOOGLE_CHUNK_SIZE)
     try {
+      const chars = chunk.reduce((s, t) => s + t.length, 0)
+      onChars?.(chars)
       const translated = await requestGoogle(chunk, sourceLang, targetLang, apiKey, signal)
       translated.forEach((value, i) => {
         results.push({ index: offset + i, translated: decodeEntities(value) })
       })
     } catch (err) {
+      const chars = chunk.reduce((s, t) => s + t.length, 0)
       logError('google.batch.chunk', err, {
         offset,
         size: chunk.length,
-        chars: chunk.reduce((s, t) => s + t.length, 0)
+        chars
       })
       if (isFatalBatchError(err)) {
         throw err
@@ -64,6 +70,7 @@ export async function translateBatchDetailed(
 
       for (let i = 0; i < chunk.length; i++) {
         try {
+          onChars?.(chunk[i].length)
           const translated = await translateText(chunk[i], sourceLang, targetLang, apiKey, signal)
           results.push({ index: offset + i, translated })
         } catch (entryErr) {

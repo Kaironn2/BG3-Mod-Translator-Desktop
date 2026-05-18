@@ -122,13 +122,16 @@ export async function translateBatchDetailed(
   sourceLang: string,
   targetLang: string,
   apiKey: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onChars?: (count: number) => void
 ): Promise<BatchTranslationResult[]> {
   const results: BatchTranslationResult[] = []
 
   for (let offset = 0; offset < texts.length; offset += DEEPL_CHUNK_SIZE) {
     const chunk = texts.slice(offset, offset + DEEPL_CHUNK_SIZE)
     try {
+      const chars = chunk.reduce((s, t) => s + t.length, 0)
+      onChars?.(chars)
       const translated = await translateProtectedChunkDetailed(
         chunk,
         sourceLang,
@@ -145,6 +148,7 @@ export async function translateBatchDetailed(
 
       for (let i = 0; i < chunk.length; i++) {
         try {
+          onChars?.(chunk[i].length)
           const translated = await translateText(
             chunk[i],
             sourceLang,
@@ -176,8 +180,10 @@ export async function translateText(
   targetLang: string,
   apiKey: string,
   context?: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onChars?: (count: number) => void
 ): Promise<string> {
+  onChars?.(text.length)
   const { protectedText, tags } = protectTags(text)
   const translated = await requestDeepL(
     [protectedText],
