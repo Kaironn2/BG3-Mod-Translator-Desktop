@@ -91,9 +91,47 @@ export const config = sqliteTable('config', {
   value: text('value')
 })
 
+export const translationUsage = sqliteTable('translation_usage', {
+  service: text('service').primaryKey(),
+  consumedChars: integer('consumed_chars').notNull().default(0),
+  charLimit: integer('char_limit').notNull().default(500000),
+  renewalAt: text('renewal_at').notNull(),
+  ...timestamps
+})
+
+export const translationRun = sqliteTable(
+  'translation_run',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    jobId: text('job_id'),
+    service: text('service').notNull(),
+    modName: text('mod_name').references(() => mod.name),
+    sourceLang: text('source_lang').notNull(),
+    targetLang: text('target_lang').notNull(),
+    entriesTotal: integer('entries_total').notNull().default(0),
+    entriesTranslated: integer('entries_translated').notNull().default(0),
+    charsConsumed: integer('chars_consumed').notNull().default(0),
+    startedAt: text('started_at').notNull(),
+    finishedAt: text('finished_at').notNull(),
+    ...timestamps
+  },
+  (table) => ({
+    translation_run_finished_idx: index('translation_run_finished_idx').on(table.finishedAt),
+    translation_run_service_finished_idx: index('translation_run_service_finished_idx').on(
+      table.service,
+      table.finishedAt
+    ),
+    translation_run_mod_idx: index('translation_run_mod_idx').on(table.modName)
+  })
+)
+
 export type Language = typeof language.$inferSelect
 export type Mod = typeof mod.$inferSelect
 export type ModMeta = typeof modMeta.$inferSelect
 export type NewModMeta = typeof modMeta.$inferInsert
 export type DictionaryEntry = typeof dictionary.$inferSelect
 export type NewDictionaryEntry = typeof dictionary.$inferInsert
+export type TranslationUsage = typeof translationUsage.$inferSelect
+export type NewTranslationUsage = typeof translationUsage.$inferInsert
+export type TranslationRun = typeof translationRun.$inferSelect
+export type NewTranslationRun = typeof translationRun.$inferInsert

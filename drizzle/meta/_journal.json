@@ -57,6 +57,13 @@
       "when": 1779052024100,
       "tag": "0007_ordinary_rafael_vega",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1779133579328,
+      "tag": "0008_clean_princess_powerful",
+      "breakpoints": true
     }
   ]
 }
