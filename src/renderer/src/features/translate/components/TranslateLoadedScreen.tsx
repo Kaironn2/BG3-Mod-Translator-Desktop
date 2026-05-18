@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
+import { AlreadyTranslatedDialog } from '@/components/translation/AlreadyTranslatedDialog'
 import { BatchActionBar } from '@/components/translation/BatchActionBar'
-import { useAppTranslation } from '@/i18n/useAppTranslation'
+import { QuotaExceededDialog } from '@/components/translation/QuotaExceededDialog'
 import { TranslationGrid } from '@/components/translation/TranslationGrid'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import type { Language } from '@/types'
 import { useBatchTranslation } from '../hooks/useBatchTranslation'
 import { useDictionarySave } from '../hooks/useDictionarySave'
 import { useLoadedEditorShortcuts } from '../hooks/useLoadedEditorShortcuts'
 import { useTranslationExport } from '../hooks/useTranslationExport'
 import type { TranslationSession } from '../types'
-import { AlreadyTranslatedDialog } from '@/components/translation/AlreadyTranslatedDialog'
 import { EditorHeader } from './EditorHeader'
 import { PackageExportModal } from './PackageExportModal'
 
@@ -114,6 +115,21 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
           onSubmit={exportFlow.submitPackageExport}
         />
       )}
+
+      <QuotaExceededDialog
+        open={batch.quotaExceeded !== null}
+        service={batch.quotaExceeded?.service ?? ''}
+        remaining={batch.quotaExceeded?.remaining ?? 0}
+        requested={batch.quotaExceeded?.requested ?? 0}
+        allowedEntries={batch.quotaExceeded?.allowedEntries}
+        renewalAt={batch.quotaExceeded?.renewalAt}
+        onConfirmPartial={
+          batch.quotaExceeded && batch.quotaExceeded.allowedEntries > 0
+            ? batch.confirmPartialBatch
+            : undefined
+        }
+        onClose={batch.dismissQuotaExceeded}
+      />
     </div>
   )
 }

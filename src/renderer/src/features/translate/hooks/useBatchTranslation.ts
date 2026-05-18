@@ -12,6 +12,16 @@ import type { TranslationSession } from '../types'
 
 type BatchEntry = { uid: string; source: string }
 
+export interface QuotaExceededState {
+  service: string
+  remaining: number
+  requested: number
+  allowedEntries: number
+  renewalAt: string
+  allowedEntriesList: BatchEntry[]
+  provider: 'deepl' | 'google'
+}
+
 export function useBatchTranslation(session: TranslationSession) {
   const { t } = useAppTranslation(['translate', 'toasts', 'common', 'errors'])
   const [isBatchTranslating, setIsBatchTranslating] = useState(false)
@@ -21,6 +31,7 @@ export function useBatchTranslation(session: TranslationSession) {
   const [pendingDecision, setPendingDecision] = useState(false)
   const [pendingTranslatedCount, setPendingTranslatedCount] = useState(0)
   const [pendingUntranslatedCount, setPendingUntranslatedCount] = useState(0)
+  const [quotaExceeded, setQuotaExceeded] = useState<QuotaExceededState | null>(null)
   const batchCleanupRef = useRef<(() => void) | null>(null)
   const activeJobIdRef = useRef<string | null>(null)
   const pendingUidsRef = useRef<Set<string>>(new Set())
@@ -181,6 +192,40 @@ export function useBatchTranslation(session: TranslationSession) {
         activeJobIdRef.current = jobId
         setActiveJobId(jobId)
       } catch (err) {
+        // check for server-side QUOTA_EXCEEDED backstop
+        const rawMessage = err instanceof Error ? err.message : String(err)
+        if (rawMessage.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(rawMessage) as {
+              code?: string
+              service?: string
+              remaining?: number
+              requested?: number
+              renewalAt?: string
+            }
+            if (parsed.code === 'QUOTA_EXCEEDED') {
+              clearListeners()
+              activeJobIdRef.current = null
+              setActiveJobId(null)
+              setBatchCompleted(0)
+              setBatchTotal(0)
+              setIsBatchTranslating(false)
+              setQuotaExceeded({
+                service: parsed.service ?? provider,
+                remaining: parsed.remaining ?? 0,
+                requested: parsed.requested ?? 0,
+                allowedEntries: 0,
+                renewalAt: parsed.renewalAt ?? '',
+                allowedEntriesList: [],
+                provider: provider === 'google' ? 'google' : 'deepl'
+              })
+              return
+            }
+          } catch {
+            // not JSON - fall through to default error handling
+          }
+        }
+
         const message = getLocalizedErrorMessage(err, t)
         clearListeners()
         activeJobIdRef.current = null
@@ -191,7 +236,7 @@ export function useBatchTranslation(session: TranslationSession) {
         toast.error(message)
         void window.api.log.write({
           scope: 'renderer.batchTranslation',
-          message: err instanceof Error ? err.message : String(err),
+          message: rawMessage,
           stack: err instanceof Error ? err.stack : undefined,
           meta: { provider, sourceLang, targetLang, total: entriesToSend.length }
         })
@@ -207,6 +252,56 @@ export function useBatchTranslation(session: TranslationSession) {
       updateEntry
     ]
   )
+
+  const checkQuotaAndDispatch = useCallback(
+    async (entriesToSend: BatchEntry[], provider: 'openai' | 'deepl' | 'google') => {
+      if (provider === 'deepl' || provider === 'google') {
+        try {
+          const usage = await window.api.metrics.getUsage({ service: provider })
+          const remaining = usage.charLimit - usage.consumedChars
+          const requestedChars = entriesToSend.reduce((sum, e) => sum + e.source.length, 0)
+
+          if (requestedChars > remaining) {
+            // find the longest prefix that fits within the remaining quota
+            let accumulated = 0
+            let allowedCount = 0
+            for (const entry of entriesToSend) {
+              if (accumulated + entry.source.length > remaining) break
+              accumulated += entry.source.length
+              allowedCount++
+            }
+
+            setQuotaExceeded({
+              service: provider === 'deepl' ? 'DeepL' : 'Google',
+              remaining,
+              requested: requestedChars,
+              allowedEntries: allowedCount,
+              renewalAt: usage.renewalAt,
+              allowedEntriesList: entriesToSend.slice(0, allowedCount),
+              provider
+            })
+            return
+          }
+        } catch {
+          // if quota check fails, proceed anyway - server will enforce
+        }
+      }
+
+      await dispatchBatchEntries(entriesToSend, provider)
+    },
+    [dispatchBatchEntries]
+  )
+
+  const dismissQuotaExceeded = useCallback(() => {
+    setQuotaExceeded(null)
+  }, [])
+
+  const confirmPartialBatch = useCallback(async () => {
+    if (!quotaExceeded) return
+    const { allowedEntriesList, provider } = quotaExceeded
+    setQuotaExceeded(null)
+    await dispatchBatchEntries(allowedEntriesList, provider)
+  }, [quotaExceeded, dispatchBatchEntries])
 
   const clearPending = useCallback(() => {
     setPendingDecision(false)
@@ -235,7 +330,7 @@ export function useBatchTranslation(session: TranslationSession) {
       const untranslated = materialized.filter((e) => e.target.trim() === '')
 
       if (translated.length === 0) {
-        await dispatchBatchEntries(materialized.map(toEntry), provider)
+        await checkQuotaAndDispatch(materialized.map(toEntry), provider)
         return
       }
 
@@ -247,15 +342,15 @@ export function useBatchTranslation(session: TranslationSession) {
       setPendingUntranslatedCount(untranslated.length)
       setPendingDecision(true)
     },
-    [isBatchTranslating, session, dispatchBatchEntries]
+    [isBatchTranslating, session, checkQuotaAndDispatch]
   )
 
   const confirmProceedAll = useCallback(async () => {
     const entriesToSend = pendingAllEntriesRef.current
     const provider = pendingProviderRef.current
     clearPending()
-    await dispatchBatchEntries(entriesToSend, provider)
-  }, [clearPending, dispatchBatchEntries])
+    await checkQuotaAndDispatch(entriesToSend, provider)
+  }, [clearPending, checkQuotaAndDispatch])
 
   const confirmSendOnlyUntranslated = useCallback(async () => {
     const entriesToSend = pendingUntranslatedEntriesRef.current
@@ -265,8 +360,8 @@ export function useBatchTranslation(session: TranslationSession) {
       toast.info(t('batchBar.noSelection', { ns: 'translate' }))
       return
     }
-    await dispatchBatchEntries(entriesToSend, provider)
-  }, [clearPending, dispatchBatchEntries])
+    await checkQuotaAndDispatch(entriesToSend, provider)
+  }, [clearPending, checkQuotaAndDispatch])
 
   const cancelPending = useCallback(() => {
     clearPending()
@@ -289,6 +384,9 @@ export function useBatchTranslation(session: TranslationSession) {
     pendingUntranslatedCount,
     confirmProceedAll,
     confirmSendOnlyUntranslated,
-    cancelPending
+    cancelPending,
+    quotaExceeded,
+    dismissQuotaExceeded,
+    confirmPartialBatch
   }
 }
