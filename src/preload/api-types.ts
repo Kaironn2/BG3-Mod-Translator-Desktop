@@ -420,6 +420,69 @@ export interface LogApi {
   write(payload: LogPayload): Promise<{ success: boolean }>
 }
 
+export type MetricsService = 'deepl' | 'google'
+export type MetricsRunService = 'deepl' | 'google' | 'openai' | 'manual'
+
+export interface MetricsUsage {
+  service: MetricsService
+  consumedChars: number
+  charLimit: number
+  renewalAt: string
+  createdAt: string | null
+  updatedAt: string | null
+}
+
+export interface MetricsRun {
+  id: number
+  jobId: string | null
+  service: MetricsRunService
+  modName: string | null
+  sourceLang: string
+  targetLang: string
+  entriesTotal: number
+  entriesTranslated: number
+  charsConsumed: number
+  startedAt: string
+  finishedAt: string
+}
+
+export interface MetricsDailyBucket {
+  date: string
+  entries: number
+  chars: number
+  runs: number
+}
+
+export interface MetricsModBucket {
+  modName: string | null
+  entries: number
+  runs: number
+}
+
+export interface MetricsApi {
+  getUsage(payload: { service: MetricsService }): Promise<MetricsUsage>
+  getAllUsage(): Promise<MetricsUsage[]>
+  setLimit(payload: { service: MetricsService; charLimit: number }): Promise<MetricsUsage>
+  setRenewalAt(payload: { service: MetricsService; renewalAt: string }): Promise<MetricsUsage>
+  setConsumed(payload: { service: MetricsService; consumedChars: number }): Promise<MetricsUsage>
+  listRuns(payload?: {
+    limit?: number
+    service?: MetricsRunService
+    from?: string
+    to?: string
+  }): Promise<MetricsRun[]>
+  aggregateByDay(payload: {
+    from: string
+    to: string
+    service?: MetricsRunService
+  }): Promise<MetricsDailyBucket[]>
+  aggregateByMod(payload: {
+    from: string
+    to: string
+    service?: MetricsRunService
+  }): Promise<MetricsModBucket[]>
+}
+
 export interface AppApi {
   translation: TranslationApi
   dictionary: DictionaryApi
@@ -431,6 +494,7 @@ export interface AppApi {
   xml: XmlApi
   merge: MergeApi
   window: WindowApi
+  metrics: MetricsApi
 }
 
 export interface AppWindow {

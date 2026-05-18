@@ -370,6 +370,40 @@ const api: AppApi = {
       stack?: string
       meta?: unknown
     }): Promise<{ success: boolean }> => ipcRenderer.invoke('log:write', payload)
+  },
+
+  metrics: {
+    getUsage: (payload: { service: import('./api-types').MetricsService }) =>
+      ipcRenderer.invoke('metrics:getUsage', payload),
+    getAllUsage: () => ipcRenderer.invoke('metrics:getAllUsage'),
+    setLimit: (payload: {
+      service: import('./api-types').MetricsService
+      charLimit: number
+    }) => ipcRenderer.invoke('metrics:setLimit', payload),
+    setRenewalAt: (payload: {
+      service: import('./api-types').MetricsService
+      renewalAt: string
+    }) => ipcRenderer.invoke('metrics:setRenewalAt', payload),
+    setConsumed: (payload: {
+      service: import('./api-types').MetricsService
+      consumedChars: number
+    }) => ipcRenderer.invoke('metrics:setConsumed', payload),
+    listRuns: (payload?: {
+      limit?: number
+      service?: import('./api-types').MetricsRunService
+      from?: string
+      to?: string
+    }) => ipcRenderer.invoke('metrics:listRuns', payload),
+    aggregateByDay: (payload: {
+      from: string
+      to: string
+      service?: import('./api-types').MetricsRunService
+    }) => ipcRenderer.invoke('metrics:aggregateByDay', payload),
+    aggregateByMod: (payload: {
+      from: string
+      to: string
+      service?: import('./api-types').MetricsRunService
+    }) => ipcRenderer.invoke('metrics:aggregateByMod', payload)
   }
 }
 
