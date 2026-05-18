@@ -5,5 +5,6 @@
   "merge": "Merge translations",
   "extract": "Extract mod",
   "package": "Create package",
-  "settings": "Settings"
+  "settings": "Settings",
+  "metrics": "Metrics"
 }

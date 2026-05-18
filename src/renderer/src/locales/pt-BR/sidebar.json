@@ -5,5 +5,6 @@
   "merge": "Mesclar traduções",
   "extract": "Extrair mod",
   "package": "Criar pacote",
-  "settings": "Configurações"
+  "settings": "Configurações",
+  "metrics": "Métricas"
 }

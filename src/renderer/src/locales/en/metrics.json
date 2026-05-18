@@ -1,0 +1,65 @@
+{
+  "page": {
+    "title": "Metrics",
+    "subtitle": "Track your translation usage and activity over time."
+  },
+  "usage": {
+    "card": {
+      "title": "{{service}} Usage",
+      "consumedOfLimit": "{{consumed}} / {{limit}}",
+      "remaining": "{{remaining}} remaining",
+      "renewsOn": "Renews on {{date}}",
+      "editButton": "Edit"
+    },
+    "editDialog": {
+      "title": "Edit {{service}} Usage",
+      "limitLabel": "Monthly character limit",
+      "consumedLabel": "Consumed characters",
+      "renewalLabel": "Renewal date and time",
+      "save": "Save",
+      "cancel": "Cancel",
+      "invalidNumber": "Must be a positive number",
+      "invalidDate": "Pick a valid future date and time"
+    }
+  },
+  "quotaModal": {
+    "title": "{{service}} quota would be exceeded",
+    "body": "This batch needs {{requested}} chars but only {{remaining}} are available. You can translate the first {{allowedEntries}} entries that fit within the limit.",
+    "fullBlockBody": "{{service}} has no characters remaining. Update the limit or wait until {{renewalAt}}.",
+    "confirm": "Translate within limit",
+    "dismiss": "Cancel"
+  },
+  "runs": {
+    "section": {
+      "title": "Recent Translations"
+    },
+    "column": {
+      "date": "Date",
+      "service": "Service",
+      "mod": "Mod",
+      "entries": "Entries",
+      "chars": "Chars"
+    },
+    "empty": "No translations recorded yet."
+  },
+  "charts": {
+    "dailyChars": {
+      "title": "Characters per Day"
+    },
+    "dailyEntries": {
+      "title": "Entries per Day"
+    },
+    "modsTranslated": {
+      "title": "Mods Translated"
+    },
+    "range": {
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "90d": "Last 90 days"
+    }
+  },
+  "errors": {
+    "loadFailed": "Failed to load metrics.",
+    "saveFailed": "Failed to save changes."
+  }
+}

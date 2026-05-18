@@ -1,0 +1,65 @@
+{
+  "page": {
+    "title": "Métricas",
+    "subtitle": "Acompanhe o uso de tradução e a atividade ao longo do tempo."
+  },
+  "usage": {
+    "card": {
+      "title": "Uso {{service}}",
+      "consumedOfLimit": "{{consumed}} / {{limit}}",
+      "remaining": "{{remaining}} restantes",
+      "renewsOn": "Renova em {{date}}",
+      "editButton": "Editar"
+    },
+    "editDialog": {
+      "title": "Editar uso {{service}}",
+      "limitLabel": "Limite mensal de caracteres",
+      "consumedLabel": "Caracteres consumidos",
+      "renewalLabel": "Data e hora de renovação",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "invalidNumber": "Deve ser um número positivo",
+      "invalidDate": "Escolha uma data e hora futura válida"
+    }
+  },
+  "quotaModal": {
+    "title": "Cota do {{service}} seria excedida",
+    "body": "Este lote precisa de {{requested}} caracteres, mas apenas {{remaining}} estão disponíveis. Você pode traduzir as primeiras {{allowedEntries}} entradas que cabem no limite.",
+    "fullBlockBody": "O {{service}} não tem caracteres restantes. Atualize o limite ou aguarde até {{renewalAt}}.",
+    "confirm": "Traduzir dentro do limite",
+    "dismiss": "Cancelar"
+  },
+  "runs": {
+    "section": {
+      "title": "Traduções Recentes"
+    },
+    "column": {
+      "date": "Data",
+      "service": "Serviço",
+      "mod": "Mod",
+      "entries": "Entradas",
+      "chars": "Chars"
+    },
+    "empty": "Nenhuma tradução registrada ainda."
+  },
+  "charts": {
+    "dailyChars": {
+      "title": "Caracteres por Dia"
+    },
+    "dailyEntries": {
+      "title": "Entradas por Dia"
+    },
+    "modsTranslated": {
+      "title": "Mods Traduzidos"
+    },
+    "range": {
+      "7d": "Últimos 7 dias",
+      "30d": "Últimos 30 dias",
+      "90d": "Últimos 90 dias"
+    }
+  },
+  "errors": {
+    "loadFailed": "Falha ao carregar métricas.",
+    "saveFailed": "Falha ao salvar alterações."
+  }
+}
