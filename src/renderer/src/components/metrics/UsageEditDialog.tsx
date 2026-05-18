@@ -111,7 +111,7 @@ export function UsageEditDialog({
               setLimitDraft(e.target.value)
               setErrors((prev) => ({ ...prev, limit: undefined }))
             }}
-            className="rounded-md border border-neutral-800 bg-[#0a0a0c] px-3 py-2 text-sm text-neutral-200 placeholder-neutral-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 focus:outline-none transition-all"
+            className="rounded-md border border-neutral-800 bg-[#0a0a0c] px-3 py-2 text-sm text-neutral-200 placeholder-neutral-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 focus:outline-none transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           {errors.limit && <p className="text-xs text-red-400">{errors.limit}</p>}
         </div>
@@ -129,7 +129,7 @@ export function UsageEditDialog({
               setConsumedDraft(e.target.value)
               setErrors((prev) => ({ ...prev, consumed: undefined }))
             }}
-            className="rounded-md border border-neutral-800 bg-[#0a0a0c] px-3 py-2 text-sm text-neutral-200 placeholder-neutral-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 focus:outline-none transition-all"
+            className="rounded-md border border-neutral-800 bg-[#0a0a0c] px-3 py-2 text-sm text-neutral-200 placeholder-neutral-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 focus:outline-none transition-all [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           {errors.consumed && <p className="text-xs text-red-400">{errors.consumed}</p>}
         </div>
