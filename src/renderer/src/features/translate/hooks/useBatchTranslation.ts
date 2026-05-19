@@ -17,6 +17,7 @@ export interface QuotaExceededState {
   remaining: number
   requested: number
   allowedEntries: number
+  totalEntries: number
   renewalAt: string
   allowedEntriesList: BatchEntry[]
   provider: 'deepl' | 'google'
@@ -215,6 +216,7 @@ export function useBatchTranslation(session: TranslationSession) {
                 remaining: parsed.remaining ?? 0,
                 requested: parsed.requested ?? 0,
                 allowedEntries: 0,
+                totalEntries: 0,
                 renewalAt: parsed.renewalAt ?? '',
                 allowedEntriesList: [],
                 provider: provider === 'google' ? 'google' : 'deepl'
@@ -276,6 +278,7 @@ export function useBatchTranslation(session: TranslationSession) {
               remaining,
               requested: requestedChars,
               allowedEntries: allowedCount,
+              totalEntries: entriesToSend.length,
               renewalAt: usage.renewalAt,
               allowedEntriesList: entriesToSend.slice(0, allowedCount),
               provider

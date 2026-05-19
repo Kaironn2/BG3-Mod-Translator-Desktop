@@ -122,6 +122,7 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
         remaining={batch.quotaExceeded?.remaining ?? 0}
         requested={batch.quotaExceeded?.requested ?? 0}
         allowedEntries={batch.quotaExceeded?.allowedEntries}
+        totalEntries={batch.quotaExceeded?.totalEntries}
         renewalAt={batch.quotaExceeded?.renewalAt}
         onConfirmPartial={
           batch.quotaExceeded && batch.quotaExceeded.allowedEntries > 0

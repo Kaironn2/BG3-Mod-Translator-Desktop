@@ -24,7 +24,7 @@
   },
   "quotaModal": {
     "title": "Cota do {{service}} seria excedida",
-    "body": "Este lote precisa de {{requested}} caracteres, mas apenas {{remaining}} estão disponíveis. Você pode traduzir as primeiras {{allowedEntries}} entradas que cabem no limite.",
+    "body": "Este lote precisa de {{requested}} caracteres, mas apenas {{remaining}} estão disponíveis. Você pode traduzir {{allowedEntries}} / {{totalEntries}} entradas que cabem no limite.",
     "fullBlockBody": "O {{service}} não tem caracteres restantes. Atualize o limite ou aguarde até {{renewalAt}}.",
     "confirm": "Traduzir dentro do limite",
     "dismiss": "Cancelar"

@@ -24,7 +24,7 @@
   },
   "quotaModal": {
     "title": "{{service}} quota would be exceeded",
-    "body": "This batch needs {{requested}} chars but only {{remaining}} are available. You can translate the first {{allowedEntries}} entries that fit within the limit.",
+    "body": "This batch needs {{requested}} chars but only {{remaining}} are available. You can translate {{allowedEntries}} / {{totalEntries}} entries that fit within the limit.",
     "fullBlockBody": "{{service}} has no characters remaining. Update the limit or wait until {{renewalAt}}.",
     "confirm": "Translate within limit",
     "dismiss": "Cancel"

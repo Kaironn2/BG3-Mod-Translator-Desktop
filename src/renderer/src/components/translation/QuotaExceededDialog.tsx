@@ -8,6 +8,7 @@ interface QuotaExceededDialogProps {
   remaining: number
   requested: number
   allowedEntries?: number
+  totalEntries?: number
   renewalAt?: string
   onConfirmPartial?: () => void
   onClose: () => void
@@ -19,6 +20,7 @@ export function QuotaExceededDialog({
   remaining,
   requested,
   allowedEntries,
+  totalEntries,
   renewalAt,
   onConfirmPartial,
   onClose
@@ -57,7 +59,7 @@ export function QuotaExceededDialog({
     >
       <p className="text-sm leading-6 text-neutral-300">
         {hasPartialOption
-          ? t('quotaModal.body', { requested, remaining, allowedEntries })
+          ? t('quotaModal.body', { requested, remaining, allowedEntries, totalEntries })
           : t('quotaModal.fullBlockBody', { service, renewalAt: renewalAt ?? '' })}
       </p>
     </ModalShell>
