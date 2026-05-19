@@ -77,9 +77,10 @@ function gateQuota(
     let acc = 0
     allowedEntries = 0
     for (const e of entries) {
-      if (acc + e.source.length > remaining) break
-      acc += e.source.length
-      allowedEntries++
+      if (acc + e.source.length <= remaining) {
+        acc += e.source.length
+        allowedEntries++
+      }
     }
   }
   throw new QuotaExceededError(service, remaining, requestedChars, allowedEntries)

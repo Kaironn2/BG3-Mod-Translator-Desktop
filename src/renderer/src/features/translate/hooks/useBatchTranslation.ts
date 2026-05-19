@@ -264,23 +264,24 @@ export function useBatchTranslation(session: TranslationSession) {
           const requestedChars = entriesToSend.reduce((sum, e) => sum + e.source.length, 0)
 
           if (requestedChars > remaining) {
-            // find the longest prefix that fits within the remaining quota
+            // collect all entries that fit within the remaining quota (greedy, preserves order)
             let accumulated = 0
-            let allowedCount = 0
+            const allowedEntriesList: BatchEntry[] = []
             for (const entry of entriesToSend) {
-              if (accumulated + entry.source.length > remaining) break
-              accumulated += entry.source.length
-              allowedCount++
+              if (accumulated + entry.source.length <= remaining) {
+                accumulated += entry.source.length
+                allowedEntriesList.push(entry)
+              }
             }
 
             setQuotaExceeded({
               service: provider === 'deepl' ? 'DeepL' : 'Google',
               remaining,
               requested: requestedChars,
-              allowedEntries: allowedCount,
+              allowedEntries: allowedEntriesList.length,
               totalEntries: entriesToSend.length,
               renewalAt: usage.renewalAt,
-              allowedEntriesList: entriesToSend.slice(0, allowedCount),
+              allowedEntriesList,
               provider
             })
             return
