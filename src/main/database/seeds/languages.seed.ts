@@ -1,10 +1,11 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3'
+import type { drizzle } from 'drizzle-orm/better-sqlite3'
 import { language } from '../schema'
 
 type AppDb = ReturnType<typeof drizzle>
 
-// Display name also becomes the BG3 Localization folder after stripping non-alphanumerics
-// (e.g. Latin Spanish -> LatinSpanish, Chinese Traditional -> ChineseTraditional).
+// Display names are for UI and AI prompts. Official BG3 Localization folders are mapped
+// by ISO code in toBg3LanguageFolder (zh-CN -> Chinese). Other languages still strip
+// non-alphanumerics from the name (Vietnamese -> Vietnamese).
 const LANGUAGES = [
   { code: 'ar', name: 'Arabic' },
   { code: 'bg', name: 'Bulgarian' },

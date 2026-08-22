@@ -17,6 +17,7 @@ import {
 import { findLocalizationXmls } from '../services/xml-parser.service'
 import { extract } from '../services/zip.service'
 import { findPakFiles } from '../utils/findPakFiles'
+import { toBg3LanguageFolder } from '../utils/languages'
 
 interface ExtractPayload {
   inputPath: string
@@ -43,7 +44,7 @@ function sanitizeModName(name: string): string {
 
 function languageFolder(repos: RepositoryRegistry, languageCode: string): string {
   const language = repos.language.findByCode(languageCode)
-  return (language?.name ?? languageCode).replace(/[^a-zA-Z0-9]/g, '')
+  return toBg3LanguageFolder(languageCode, language?.name)
 }
 
 export function registerModHandlers(repos: RepositoryRegistry): void {
