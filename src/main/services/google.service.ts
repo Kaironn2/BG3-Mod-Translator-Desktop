@@ -17,8 +17,12 @@ class GoogleApiError extends Error {
   }
 }
 
+const GOOGLE_LANG_ALIASES: Record<string, string> = {
+  'es-419': 'es'
+}
+
 function toGoogleLang(code: string): string {
-  return code.toLowerCase()
+  return GOOGLE_LANG_ALIASES[code] ?? code.toLowerCase()
 }
 
 export async function translateText(

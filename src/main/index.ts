@@ -10,6 +10,7 @@ import { registerDictionaryHandlers } from './ipc/dictionary.ipc'
 import { registerFsHandlers } from './ipc/fs.ipc'
 import { registerLanguageHandlers } from './ipc/language.ipc'
 import { registerLogHandlers } from './ipc/log.ipc'
+import { patchIpcLogging } from './ipc/logged-handle'
 import { registerMergeHandlers } from './ipc/merge.ipc'
 import { registerMetricsHandlers } from './ipc/metrics.ipc'
 import { registerModHandlers } from './ipc/mod.ipc'
@@ -75,6 +76,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.icosa.bg3-mod-translator')
+  patchIpcLogging()
   const repos = createRepositoryRegistry(getDb())
 
   app.on('browser-window-created', (_, window) => {

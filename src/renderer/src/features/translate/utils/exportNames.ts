@@ -1,7 +1,7 @@
-import type { Language } from '@/types'
+import { type Language, toBg3LanguageFolder } from '@/types'
 
 export function languageToBg3Folder(language: Language | undefined, fallback: string): string {
-  return (language?.name ?? fallback).replace(/[^a-zA-Z0-9]/g, '')
+  return toBg3LanguageFolder(language?.code ?? fallback, language?.name)
 }
 
 export function exportFileBaseName(modName: string, targetLang: string): string {

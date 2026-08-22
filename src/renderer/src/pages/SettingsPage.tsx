@@ -1,6 +1,7 @@
 import { Copy, FolderOpen, Settings, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { LanguageSelect } from '@/components/shared/LanguageSelect'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import { AiProvidersCard } from '@/features/settings/AiProvidersCard'
 import { PromptSlotsCard } from '@/features/settings/PromptSlotsCard'
@@ -126,6 +127,11 @@ export function SettingsPage(): React.JSX.Element {
     await i18n.changeLanguage(language)
   }
 
+  const handleDefaultLanguageChange = async (key: ConfigKey, code: string, label: string) => {
+    await set(key, code)
+    toast.success(t('settings.saved', { ns: 'toasts', label }))
+  }
+
   if (loading) {
     return <div className="p-6 text-sm text-neutral-500">{t('loading', { ns: 'common' })}</div>
   }
@@ -218,31 +224,29 @@ export function SettingsPage(): React.JSX.Element {
                 label: t('fields.defaultAuthor')
               })}
             />
-            <SettingField
+            <LanguageSelect
               label={t('fields.defaultSourceLanguage')}
-              configKey="last_source_lang"
               value={config['last_source_lang'] ?? ''}
-              onSave={set}
-              placeholder={t('placeholders.sourceLanguage')}
-              saveLabel={t('buttons.save')}
-              savedLabel={t('buttons.saved')}
-              successMessage={t('settings.saved', {
-                ns: 'toasts',
-                label: t('fields.defaultSourceLanguage')
-              })}
+              onChange={(code) => {
+                void handleDefaultLanguageChange(
+                  'last_source_lang',
+                  code,
+                  t('fields.defaultSourceLanguage')
+                )
+              }}
+              className="max-w-sm"
             />
-            <SettingField
+            <LanguageSelect
               label={t('fields.defaultTargetLanguage')}
-              configKey="last_target_lang"
               value={config['last_target_lang'] ?? ''}
-              onSave={set}
-              placeholder={t('placeholders.targetLanguage')}
-              saveLabel={t('buttons.save')}
-              savedLabel={t('buttons.saved')}
-              successMessage={t('settings.saved', {
-                ns: 'toasts',
-                label: t('fields.defaultTargetLanguage')
-              })}
+              onChange={(code) => {
+                void handleDefaultLanguageChange(
+                  'last_target_lang',
+                  code,
+                  t('fields.defaultTargetLanguage')
+                )
+              }}
+              className="max-w-sm"
             />
           </div>
         </SettingsCard>

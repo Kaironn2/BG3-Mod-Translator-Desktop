@@ -9,6 +9,8 @@ export interface ThemedSelectOption {
   label: string
   badge?: string
   searchText?: string
+  highlight?: boolean
+  mark?: string
 }
 
 interface MenuPosition {
@@ -71,7 +73,7 @@ export function ThemedSelect({
     if (!searchable || !query.trim()) return options
     const normalized = query.toLowerCase()
     return options.filter((option) => {
-      const haystack = `${option.label} ${option.badge ?? ''} ${option.searchText ?? ''}`
+      const haystack = `${option.label} ${option.badge ?? ''} ${option.mark ?? ''} ${option.searchText ?? ''}`
       return haystack.toLowerCase().includes(normalized)
     })
   }, [options, query, searchable])
@@ -144,72 +146,80 @@ export function ThemedSelect({
     setQuery('')
   }
 
-  const menu = open && menuPosition
-    ? createPortal(
-        <div
-          ref={menuRef}
-          role="listbox"
-          id={listboxId}
-          className={cn(
-            'fixed z-[80] overflow-hidden rounded-lg border border-neutral-600 bg-[#131518] shadow-2xl',
-            menuClassName
-          )}
-          style={{
-            top: menuPosition.top,
-            left: menuPosition.left,
-            width: menuPosition.width
-          }}
-        >
-          {searchable && (
-            <div className="flex items-center gap-2 border-b border-[#1f2329] px-3 py-2.5 text-neutral-500">
-              <Search size={14} />
-              <input
-                ref={searchRef}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={resolvedSearchPlaceholder}
-                className="flex-1 bg-transparent text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
-              />
-            </div>
-          )}
-
-          <div className="icosa-scroll max-h-60 overflow-y-auto p-1">
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => {
-                const active = option.value === value
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      onChange(option.value)
-                      closeMenu()
-                    }}
-                    className={cn(
-                      'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs transition-all',
-                      active
-                        ? 'bg-amber-400/10 text-amber-400'
-                        : 'text-neutral-300 hover:bg-neutral-800'
-                    )}
-                  >
-                    <span className="flex-1 truncate">{option.label}</span>
-                    {option.badge && (
-                      <span className="font-mono text-[10px] text-neutral-500">
-                        {option.badge}
-                      </span>
-                    )}
-                    {active && <Check size={12} />}
-                  </button>
-                )
-              })
-            ) : (
-              <div className="px-2.5 py-3 text-xs text-neutral-500">{resolvedEmptyLabel}</div>
+  const menu =
+    open && menuPosition
+      ? createPortal(
+          <div
+            ref={menuRef}
+            role="listbox"
+            id={listboxId}
+            className={cn(
+              'fixed z-[80] overflow-hidden rounded-lg border border-neutral-600 bg-[#131518] shadow-2xl',
+              menuClassName
             )}
-          </div>
-        </div>,
-        document.body
-      )
-    : null
+            style={{
+              top: menuPosition.top,
+              left: menuPosition.left,
+              width: menuPosition.width
+            }}
+          >
+            {searchable && (
+              <div className="flex items-center gap-2 border-b border-[#1f2329] px-3 py-2.5 text-neutral-500">
+                <Search size={14} />
+                <input
+                  ref={searchRef}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder={resolvedSearchPlaceholder}
+                  className="flex-1 bg-transparent text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
+                />
+              </div>
+            )}
+
+            <div className="icosa-scroll max-h-60 overflow-y-auto p-1">
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => {
+                  const active = option.value === value
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        onChange(option.value)
+                        closeMenu()
+                      }}
+                      className={cn(
+                        'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs transition-all',
+                        active
+                          ? 'bg-amber-400/10 text-amber-400'
+                          : option.highlight
+                            ? 'text-amber-100/90 hover:bg-amber-400/5'
+                            : 'text-neutral-300 hover:bg-neutral-800'
+                      )}
+                    >
+                      <span className="flex-1 truncate">{option.label}</span>
+                      {option.mark && (
+                        <span className="shrink-0 rounded border border-amber-500/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-400">
+                          {option.mark}
+                        </span>
+                      )}
+                      {option.badge && (
+                        <span className="font-mono text-[10px] text-neutral-500">
+                          {option.badge}
+                        </span>
+                      )}
+                      {active && <Check size={12} />}
+                    </button>
+                  )
+                })
+              ) : (
+                <div className="px-2.5 py-3 text-xs text-neutral-500">{resolvedEmptyLabel}</div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )
+      : null
 
   return (
     <div ref={rootRef} className={cn('flex flex-col gap-1', className)}>
@@ -226,18 +236,23 @@ export function ThemedSelect({
           open
             ? 'border-amber-500 bg-[#0f1114] shadow-[0_0_0_3px_rgba(245,158,11,0.15)]'
             : 'border-[#1f2329] bg-[#0f1114] hover:border-neutral-600',
-          accent ? 'text-amber-400' : 'text-neutral-200',
+          accent || selected?.highlight ? 'text-amber-400' : 'text-neutral-200',
           triggerClassName
         )}
       >
         <span className="flex-1 truncate font-medium">
           {selected?.label ?? resolvedPlaceholder}
         </span>
+        {selected?.mark && (
+          <span className="shrink-0 rounded border border-amber-500/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-400">
+            {selected.mark}
+          </span>
+        )}
         {selected?.badge && (
           <span
             className={cn(
               'shrink-0 rounded border border-[#1f2329] bg-neutral-900 px-1.5 py-0.5 font-mono text-[10px]',
-              accent ? 'text-amber-400' : 'text-neutral-500'
+              accent || selected.highlight ? 'text-amber-400' : 'text-neutral-500'
             )}
           >
             {selected.badge}

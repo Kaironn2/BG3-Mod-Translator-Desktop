@@ -1,6 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from 'react'
 import { i18n } from '@/i18n'
-import type { XmlEntry, XmlLoadProgress } from '@/types'
+import {
+  DEFAULT_SOURCE_LANG,
+  DEFAULT_TARGET_LANG,
+  type XmlEntry,
+  type XmlLoadProgress
+} from '@/types'
 
 export interface TranslationSessionEntry extends XmlEntry {
   rowId: string
@@ -191,9 +196,6 @@ interface TranslationSessionContext extends TranslationSessionState {
 
 const Context = createContext<TranslationSessionContext | null>(null)
 
-const DEFAULT_SOURCE = 'en'
-const DEFAULT_TARGET = 'pt-BR'
-
 export function TranslationSessionProvider({
   children
 }: {
@@ -206,8 +208,8 @@ export function TranslationSessionProvider({
     entries: [],
     selection: EMPTY_EXPLICIT,
     modName: '',
-    sourceLang: DEFAULT_SOURCE,
-    targetLang: DEFAULT_TARGET,
+    sourceLang: DEFAULT_SOURCE_LANG,
+    targetLang: DEFAULT_TARGET_LANG,
     inputPath: null
   })
 

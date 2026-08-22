@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
+import { languagesToSelectOptions } from '@/lib/languageOptions'
 import type { Language } from '@/types'
 
 interface LanguagePickerProps {
@@ -18,14 +19,8 @@ export function LanguagePicker({
 }: LanguagePickerProps): React.JSX.Element {
   const { t } = useAppTranslation('common')
   const options = useMemo(
-    () =>
-      languages.map((language) => ({
-        value: language.code,
-        label: language.name,
-        badge: language.code.toUpperCase(),
-        searchText: `${language.name} ${language.code}`
-      })),
-    [languages]
+    () => languagesToSelectOptions(languages, t('badges.official')),
+    [languages, t]
   )
 
   return (

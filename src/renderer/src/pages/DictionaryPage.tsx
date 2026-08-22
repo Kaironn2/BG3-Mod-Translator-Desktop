@@ -1,3 +1,4 @@
+import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   BookOpen,
   Box,
@@ -14,7 +15,6 @@ import {
   X
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useVirtualizer } from '@tanstack/react-virtual'
 import { toast } from 'sonner'
 import { DictionaryEntryModal } from '@/components/dictionary/DictionaryEntryModal'
 import { DictionaryImportModal } from '@/components/dictionary/DictionaryImportModal'
@@ -25,8 +25,8 @@ import {
   encodeDictionaryTextForPersistence
 } from '@/components/dictionary/text'
 import {
-  EMPTY_ENTRY_DRAFT,
   type DisplayEntry,
+  EMPTY_ENTRY_DRAFT,
   type EntryDraft,
   type ReplaceDraft
 } from '@/components/dictionary/types'
@@ -35,8 +35,14 @@ import { ThemedSelect, type ThemedSelectOption } from '@/components/shared/Theme
 import { useDebouncedFilter } from '@/hooks/useDebouncedFilter'
 import { getLocalizedErrorMessage } from '@/i18n/errors'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
+import { compareLanguagesOfficialFirst } from '@/lib/languageOptions'
 import { cn } from '@/lib/utils'
-import type { DictionaryEntry, DictionaryFilters, Language } from '@/types'
+import {
+  type DictionaryEntry,
+  type DictionaryFilters,
+  isOfficialBg3Language,
+  type Language
+} from '@/types'
 import { renderSource } from '@/utils/renderSource'
 import { formatRelativeDate } from '../features/translate/utils/relativeDate'
 
@@ -212,7 +218,7 @@ export function DictionaryPage(): React.JSX.Element {
     count: displayEntries.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 44,
-    overscan: 10,
+    overscan: 10
   })
 
   const modOptions = useMemo(
@@ -243,30 +249,42 @@ export function DictionaryPage(): React.JSX.Element {
     [modOptions, result.total, t]
   )
 
+  const officialMark = t('badges.official', { ns: 'common' })
+
   const sourceSelectOptions = useMemo<ThemedSelectOption[]>(
     () => [
       { value: '', label: t('filters.all', { ns: 'dictionary' }), badge: `${result.total}` },
-      ...languages.map((language) => ({
-        value: language.code,
-        label: language.code.toUpperCase(),
-        badge: `${sourceOptions.get(language.code) ?? 0}`,
-        searchText: `${languageNames.get(language.code) ?? language.code} ${language.code}`
-      }))
+      ...[...languages].sort(compareLanguagesOfficialFirst).map((language) => {
+        const official = isOfficialBg3Language(language.code)
+        return {
+          value: language.code,
+          label: language.code.toUpperCase(),
+          badge: `${sourceOptions.get(language.code) ?? 0}`,
+          searchText: `${languageNames.get(language.code) ?? language.code} ${language.code}`,
+          highlight: official,
+          mark: official ? officialMark : undefined
+        }
+      })
     ],
-    [languageNames, languages, result.total, sourceOptions, t]
+    [languageNames, languages, officialMark, result.total, sourceOptions, t]
   )
 
   const targetSelectOptions = useMemo<ThemedSelectOption[]>(
     () => [
       { value: '', label: t('filters.all', { ns: 'dictionary' }), badge: `${result.total}` },
-      ...languages.map((language) => ({
-        value: language.code,
-        label: language.code.toUpperCase(),
-        badge: `${targetOptions.get(language.code) ?? 0}`,
-        searchText: `${languageNames.get(language.code) ?? language.code} ${language.code}`
-      }))
+      ...[...languages].sort(compareLanguagesOfficialFirst).map((language) => {
+        const official = isOfficialBg3Language(language.code)
+        return {
+          value: language.code,
+          label: language.code.toUpperCase(),
+          badge: `${targetOptions.get(language.code) ?? 0}`,
+          searchText: `${languageNames.get(language.code) ?? language.code} ${language.code}`,
+          highlight: official,
+          mark: official ? officialMark : undefined
+        }
+      })
     ],
-    [languageNames, languages, result.total, targetOptions, t]
+    [languageNames, languages, officialMark, result.total, t, targetOptions]
   )
 
   const stats = useMemo(() => {
@@ -524,7 +542,9 @@ export function DictionaryPage(): React.JSX.Element {
         <div className="flex min-w-0 items-center gap-4">
           <div className="inline-flex items-center gap-2 rounded-md border border-[#1f2329] bg-[#131518] px-2.5 py-1.5">
             <BookOpen size={14} className="text-amber-400" />
-            <span className="text-sm font-semibold text-neutral-200">{t('brand', { ns: 'dictionary' })}</span>
+            <span className="text-sm font-semibold text-neutral-200">
+              {t('brand', { ns: 'dictionary' })}
+            </span>
             <span className="font-mono text-[11px] text-neutral-500">.icosa</span>
           </div>
           <div className="hidden items-center gap-3 text-xs text-neutral-400 md:flex">
@@ -803,7 +823,7 @@ export function DictionaryPage(): React.JSX.Element {
                     left: 0,
                     width: '100%',
                     transform: `translateY(${virtualItem.start}px)`,
-                    gridTemplateColumns: GRID_COLS,
+                    gridTemplateColumns: GRID_COLS
                   }}
                 >
                   <div className="px-4 py-3 text-center self-start">
@@ -1090,11 +1110,7 @@ function StatBlock({
   )
 }
 
-function DictionaryLoadingOverlay({
-  mode
-}: {
-  mode: DictionaryLoadingMode
-}): React.JSX.Element {
+function DictionaryLoadingOverlay({ mode }: { mode: DictionaryLoadingMode }): React.JSX.Element {
   return (
     <div
       className={cn(

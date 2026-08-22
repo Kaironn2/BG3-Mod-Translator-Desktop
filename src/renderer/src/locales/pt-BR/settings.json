@@ -22,8 +22,6 @@
   },
   "placeholders": {
     "author": "Seu nome",
-    "sourceLanguage": "en",
-    "targetLanguage": "pt-BR",
     "divinePath": "C:\\path\\to\\Divine.exe"
   },
   "buttons": {

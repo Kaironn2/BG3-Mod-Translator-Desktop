@@ -19,6 +19,7 @@ import {
 } from '../services/xml-parser.service'
 import { createZip, extract } from '../services/zip.service'
 import { findPakFiles } from '../utils/findPakFiles'
+import { toBg3LanguageFolder } from '../utils/languages'
 import { cleanupTempDir, createTempDir } from '../utils/tempDir'
 
 type AppDb = ReturnType<typeof drizzle>
@@ -247,7 +248,7 @@ export abstract class BasePipeline {
 
   private languageFolder(languageCode: string): string {
     const language = this.languageRepo.findByCode(languageCode)
-    return (language?.name ?? languageCode).replace(/[^a-zA-Z0-9]/g, '')
+    return toBg3LanguageFolder(languageCode, language?.name)
   }
 
   private translatedModName(metaSrc: string | null, ctx: PipelineContext): string {

@@ -46,7 +46,7 @@ async function runMerge(
   }
 
   try {
-    return mergeXmls(repos, {
+    return await mergeXmls(repos, {
       sourceXmlPath: sourceCandidate.absolutePath,
       sourceLang: payload.sourceLang,
       targetXmlPath: targetCandidate.absolutePath,

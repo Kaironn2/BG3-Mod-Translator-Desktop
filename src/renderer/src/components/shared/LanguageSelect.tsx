@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
-import { useAppTranslation } from '@/i18n/useAppTranslation'
+import { useEffect, useMemo, useState } from 'react'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
+import { languagesToSelectOptions } from '@/lib/languageOptions'
 import type { Language } from '@/types'
 
 interface LanguageSelectProps {
@@ -18,6 +19,10 @@ export function LanguageSelect({
 }: LanguageSelectProps): React.JSX.Element {
   const [languages, setLanguages] = useState<Language[]>([])
   const { t } = useAppTranslation('common')
+  const options = useMemo(
+    () => languagesToSelectOptions(languages, t('badges.official')),
+    [languages, t]
+  )
 
   useEffect(() => {
     window.api.language.getAll().then(setLanguages)
@@ -33,12 +38,7 @@ export function LanguageSelect({
       searchable
       searchPlaceholder={t('placeholders.searchLanguage')}
       emptyLabel={t('placeholders.noLanguageFound')}
-      options={languages.map((language) => ({
-        value: language.code,
-        label: language.name,
-        badge: language.code.toUpperCase(),
-        searchText: `${language.name} ${language.code}`
-      }))}
+      options={options}
     />
   )
 }

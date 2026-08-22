@@ -48,6 +48,9 @@
     "outputFile": "Output file",
     "search": "Search"
   },
+  "badges": {
+    "official": "Official"
+  },
   "placeholders": {
     "select": "Select",
     "search": "Search...",
