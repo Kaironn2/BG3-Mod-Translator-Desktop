@@ -203,6 +203,9 @@ export function toBg3LanguageFolder(code: string, name?: string | null): string 
   return (name ?? code).replace(/[^a-zA-Z0-9]/g, '')
 }
 
+export const DEFAULT_SOURCE_LANG = 'en'
+export const DEFAULT_TARGET_LANG = 'pt-BR'
+
 export interface ModInfo {
   name: string
   totalStrings: number
