@@ -49,7 +49,7 @@ function languageFolder(repos: RepositoryRegistry, languageCode: string): string
 
 export function registerModHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle('mod:extract', async (_event, payload: ExtractPayload) => {
-    const { inputPath, outputPath, sourceLang = 'English' } = payload
+    const { inputPath, outputPath, sourceLang = 'en' } = payload
 
     const ext = path.extname(inputPath).toLowerCase()
 
