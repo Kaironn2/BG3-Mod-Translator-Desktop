@@ -12,8 +12,8 @@ interface ProviderConfig {
   baseUrl?: string
 }
 
-// Base URLs: OpenAI, Gemini (its OpenAI-compat endpoint) and Grok all speak the
-// chat-completions shape; Anthropic uses its own Messages adapter.
+// Base URLs: OpenAI, Gemini (its OpenAI-compat endpoint), Grok, Z.AI and DeepSeek
+// speak the chat-completions shape; Anthropic uses its own Messages adapter.
 export const PROVIDER_CONFIG: Record<AiProviderId, ProviderConfig> = {
   openai: {
     label: 'OpenAI',
@@ -42,6 +42,13 @@ export const PROVIDER_CONFIG: Record<AiProviderId, ProviderConfig> = {
     modelConfigName: 'zai_model',
     defaultModel: 'glm-5.3',
     baseUrl: 'https://api.z.ai/api/coding/paas/v4'
+  },
+  deepseek: {
+    label: 'DeepSeek',
+    keyConfigName: 'deepseek_key',
+    modelConfigName: 'deepseek_model',
+    defaultModel: 'deepseek-v4-flash',
+    baseUrl: 'https://api.deepseek.com'
   },
   anthropic: {
     label: 'Anthropic',

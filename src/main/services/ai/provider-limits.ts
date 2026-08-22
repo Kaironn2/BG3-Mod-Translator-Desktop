@@ -9,6 +9,7 @@ import { DEFAULT_AI_TUNING } from '../../../preload/api-types'
 // - Anthropic: https://platform.claude.com/docs/en/api/rate-limits
 // - xAI: https://docs.x.ai/developers/rate-limits
 // - Z.AI: https://docs.z.ai/devpack/usage-policy
+// - DeepSeek: https://api-docs.deepseek.com/quick_start/rate_limit
 //
 // Concurrency in this map is the default; Settings can raise/lower it per provider.
 // Successful responses that carry x-ratelimit-* / anthropic-ratelimit-* headers
@@ -49,6 +50,12 @@ export const PROVIDER_RATE_LIMITS: Record<AiProviderId, ProviderRateLimit> = {
   zai: {
     rpm: 40,
     maxConcurrent: DEFAULT_AI_TUNING.zai.concurrency,
+    maxRetries: 3,
+    maxRetryDelayMs: 60_000
+  },
+  deepseek: {
+    rpm: 60,
+    maxConcurrent: DEFAULT_AI_TUNING.deepseek.concurrency,
     maxRetries: 3,
     maxRetryDelayMs: 60_000
   }
