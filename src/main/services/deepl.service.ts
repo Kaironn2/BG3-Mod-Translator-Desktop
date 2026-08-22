@@ -43,8 +43,13 @@ interface TagToken {
 const TAG_RE = /<\/?[a-zA-Z][a-zA-Z0-9]*[^<>]*>/g
 const WRAPPER_TAG = 'icosa-root'
 
+const DEEPL_LANG_ALIASES: Record<string, string> = {
+  'zh-CN': 'ZH-HANS',
+  'zh-TW': 'ZH-HANT'
+}
+
 function toDeepLLang(code: string): string {
-  return code.toUpperCase()
+  return DEEPL_LANG_ALIASES[code] ?? code.toUpperCase()
 }
 
 function protectTags(text: string): ProtectedText {
