@@ -1,7 +1,7 @@
 import type { ElectronAPI } from '@electron-toolkit/preload'
 
 export type UnsubscribeFn = () => void
-export type AiProviderId = 'openai' | 'anthropic' | 'gemini' | 'grok' | 'zai'
+export type AiProviderId = 'openai' | 'anthropic' | 'gemini' | 'grok' | 'zai' | 'deepseek'
 export type TranslationProvider = AiProviderId | 'deepl' | 'google' | 'manual'
 
 // Paid-tier defaults for batch pacing. Gemini stays on the free-tier floor.
@@ -16,6 +16,7 @@ export const DEFAULT_AI_TUNING: Record<AiProviderId, { concurrency: number; batc
     anthropic: { concurrency: 3, batchLines: 20 },
     grok: { concurrency: 3, batchLines: 20 },
     zai: { concurrency: 2, batchLines: 20 },
+    deepseek: { concurrency: 3, batchLines: 20 },
     gemini: { concurrency: 1, batchLines: 8 }
   }
 
@@ -275,21 +276,25 @@ export type ConfigKey =
   | 'gemini_key'
   | 'grok_key'
   | 'zai_key'
+  | 'deepseek_key'
   | 'openai_model'
   | 'anthropic_model'
   | 'gemini_model'
   | 'grok_model'
   | 'zai_model'
+  | 'deepseek_model'
   | 'openai_concurrency'
   | 'anthropic_concurrency'
   | 'gemini_concurrency'
   | 'grok_concurrency'
   | 'zai_concurrency'
+  | 'deepseek_concurrency'
   | 'openai_batch_lines'
   | 'anthropic_batch_lines'
   | 'gemini_batch_lines'
   | 'grok_batch_lines'
   | 'zai_batch_lines'
+  | 'deepseek_batch_lines'
   | 'ai_provider'
   | 'ai_active_prompt_slot'
   | 'ai_similarity_enabled'

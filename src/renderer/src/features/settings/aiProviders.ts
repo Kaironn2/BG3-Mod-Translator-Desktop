@@ -7,7 +7,8 @@ export const CONCURRENCY_KEYS: Record<AiProviderId, ConfigKey> = {
   anthropic: 'anthropic_concurrency',
   gemini: 'gemini_concurrency',
   grok: 'grok_concurrency',
-  zai: 'zai_concurrency'
+  zai: 'zai_concurrency',
+  deepseek: 'deepseek_concurrency'
 }
 
 export const BATCH_LINES_KEYS: Record<AiProviderId, ConfigKey> = {
@@ -15,7 +16,8 @@ export const BATCH_LINES_KEYS: Record<AiProviderId, ConfigKey> = {
   anthropic: 'anthropic_batch_lines',
   gemini: 'gemini_batch_lines',
   grok: 'grok_batch_lines',
-  zai: 'zai_batch_lines'
+  zai: 'zai_batch_lines',
+  deepseek: 'deepseek_batch_lines'
 }
 
 export interface AiProviderMeta {
@@ -115,6 +117,17 @@ export const AI_PROVIDERS: AiProviderMeta[] = [
     keyConfigKey: 'zai_key',
     modelConfigKey: 'zai_model',
     keyPlaceholder: 'Z.AI API Key'
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    short: 'V4',
+    mark: 'DS',
+    color: '#4d6bfe',
+    models: ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-v4-flash-vision-exp'],
+    keyConfigKey: 'deepseek_key',
+    modelConfigKey: 'deepseek_model',
+    keyPlaceholder: 'sk-...'
   }
 ]
 
@@ -126,7 +139,8 @@ export const DEFAULT_MODELS: Record<AiProviderId, string> = {
   anthropic: 'claude-sonnet-5',
   gemini: 'gemini-2.5-flash',
   grok: 'grok-4',
-  zai: 'glm-5.3'
+  zai: 'glm-5.3',
+  deepseek: 'deepseek-v4-flash'
 }
 
 export function isAiProvider(value: string | undefined | null): value is AiProviderId {

@@ -35,7 +35,7 @@ function jsonResponse(
 }
 
 test('every AI provider has a conservative rate-limit entry', () => {
-  for (const id of ['openai', 'anthropic', 'gemini', 'grok', 'zai'] as const) {
+  for (const id of ['openai', 'anthropic', 'gemini', 'grok', 'zai', 'deepseek'] as const) {
     const limit = PROVIDER_RATE_LIMITS[id]
     assert.ok(limit.rpm >= 1)
     assert.ok(limit.maxConcurrent >= 1)

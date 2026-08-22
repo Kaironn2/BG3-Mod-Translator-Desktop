@@ -379,7 +379,8 @@ const DEV_ENV_KEYS: Partial<Record<AiProviderId, string>> = {
   gemini: 'GEMINI_API_KEY',
   anthropic: 'ANTHROPIC_API_KEY',
   grok: 'XAI_API_KEY',
-  zai: 'ZAI_API_KEY'
+  zai: 'ZAI_API_KEY',
+  deepseek: 'DEEPSEEK_API_KEY'
 }
 
 function resolveApiKey(providerId: AiProviderId): string {
