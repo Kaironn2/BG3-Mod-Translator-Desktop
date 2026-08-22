@@ -1,5 +1,5 @@
-import { decodeEntities, encodeEntities } from './xml-entities.service'
 import { logError } from './log.service'
+import { decodeEntities, encodeEntities } from './xml-entities.service'
 
 const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate'
 const DEEPL_CHUNK_SIZE = 50
@@ -43,13 +43,52 @@ interface TagToken {
 const TAG_RE = /<\/?[a-zA-Z][a-zA-Z0-9]*[^<>]*>/g
 const WRAPPER_TAG = 'icosa-root'
 
-const DEEPL_LANG_ALIASES: Record<string, string> = {
-  'zh-CN': 'ZH-HANS',
-  'zh-TW': 'ZH-HANT'
-}
+// App ISO codes -> DeepL v2. Variants (EN-US, PT-BR, ZH-HANS, ES-419) are target-only;
+// source uses the unspecified parent (EN, PT, ZH, ES).
+const DEEPL_LANG = {
+  ar: { source: 'AR', target: 'AR' },
+  bg: { source: 'BG', target: 'BG' },
+  cs: { source: 'CS', target: 'CS' },
+  da: { source: 'DA', target: 'DA' },
+  de: { source: 'DE', target: 'DE' },
+  el: { source: 'EL', target: 'EL' },
+  en: { source: 'EN', target: 'EN-US' },
+  es: { source: 'ES', target: 'ES' },
+  'es-419': { source: 'ES', target: 'ES-419' },
+  et: { source: 'ET', target: 'ET' },
+  fi: { source: 'FI', target: 'FI' },
+  fr: { source: 'FR', target: 'FR' },
+  hu: { source: 'HU', target: 'HU' },
+  id: { source: 'ID', target: 'ID' },
+  it: { source: 'IT', target: 'IT' },
+  ja: { source: 'JA', target: 'JA' },
+  jv: { source: 'JV', target: 'JV' },
+  ko: { source: 'KO', target: 'KO' },
+  lt: { source: 'LT', target: 'LT' },
+  lv: { source: 'LV', target: 'LV' },
+  ms: { source: 'MS', target: 'MS' },
+  nb: { source: 'NB', target: 'NB' },
+  nl: { source: 'NL', target: 'NL' },
+  pl: { source: 'PL', target: 'PL' },
+  pt: { source: 'PT', target: 'PT-PT' },
+  'pt-BR': { source: 'PT', target: 'PT-BR' },
+  ro: { source: 'RO', target: 'RO' },
+  ru: { source: 'RU', target: 'RU' },
+  sk: { source: 'SK', target: 'SK' },
+  sl: { source: 'SL', target: 'SL' },
+  su: { source: 'SU', target: 'SU' },
+  sv: { source: 'SV', target: 'SV' },
+  th: { source: 'TH', target: 'TH' },
+  tl: { source: 'TL', target: 'TL' },
+  tr: { source: 'TR', target: 'TR' },
+  uk: { source: 'UK', target: 'UK' },
+  vi: { source: 'VI', target: 'VI' },
+  'zh-CN': { source: 'ZH', target: 'ZH-HANS' },
+  'zh-TW': { source: 'ZH', target: 'ZH-HANT' }
+} as const
 
-function toDeepLLang(code: string): string {
-  return DEEPL_LANG_ALIASES[code] ?? code.toUpperCase()
+function toDeepLLang(code: string, role: 'source' | 'target'): string {
+  return DEEPL_LANG[code as keyof typeof DEEPL_LANG]?.[role] ?? code.toUpperCase()
 }
 
 function protectTags(text: string): ProtectedText {
@@ -254,8 +293,8 @@ async function requestDeepL(
 ): Promise<string[]> {
   const body = new URLSearchParams()
   for (const text of texts) body.append('text', text)
-  body.append('source_lang', toDeepLLang(sourceLang))
-  body.append('target_lang', toDeepLLang(targetLang))
+  body.append('source_lang', toDeepLLang(sourceLang, 'source'))
+  body.append('target_lang', toDeepLLang(targetLang, 'target'))
   body.append('tag_handling', 'xml')
   body.append('tag_handling_version', 'v2')
   body.append('split_sentences', 'nonewlines')
@@ -328,11 +367,7 @@ function createTagToken(raw: string, start: number): TagToken {
   }
 }
 
-function assignSelfClosingPlaceholder(
-  token: TagToken,
-  index: number,
-  tags: ProtectedTag[]
-): void {
+function assignSelfClosingPlaceholder(token: TagToken, index: number, tags: ProtectedTag[]): void {
   const placeholderName = createPlaceholderName(index)
   token.replacement = `<${placeholderName}/>`
   tags.push({ name: placeholderName, kind: 'self', original: token.raw })
@@ -347,9 +382,7 @@ function wrapXmlContent(text: string): string {
 }
 
 function unwrapXmlContent(text: string): string {
-  const match = text
-    .trim()
-    .match(new RegExp(`^<${WRAPPER_TAG}>([\\s\\S]*)</${WRAPPER_TAG}>$`))
+  const match = text.trim().match(new RegExp(`^<${WRAPPER_TAG}>([\\s\\S]*)</${WRAPPER_TAG}>$`))
   if (!match) {
     throw new Error('DeepL response did not preserve the XML wrapper')
   }
@@ -357,10 +390,7 @@ function unwrapXmlContent(text: string): string {
 }
 
 function escapeXmlText(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 function placeholderPattern(tag: ProtectedTag): RegExp {
