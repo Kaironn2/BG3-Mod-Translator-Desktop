@@ -1,9 +1,10 @@
 import { Download, Loader2, Package, X } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
+import { compareLanguagesOfficialFirst } from '@/lib/languageOptions'
 import { cn } from '@/lib/utils'
-import type { Language, ModMeta } from '@/types'
+import { isOfficialBg3Language, type Language, type ModMeta } from '@/types'
 import { languageToBg3Folder } from '../utils/exportNames'
 import { applyVersion, formatVersion, version64FromText } from '../utils/metaVersion'
 import { MetaField } from './MetaField'
@@ -35,6 +36,33 @@ export function PackageExportModal({
   const folderValid = /^[a-zA-Z0-9_-]+$/.test(draft.folder)
   const languageFolderValid = /^[a-zA-Z0-9]+$/.test(languageFolder)
   const canExport = !!version64 && folderValid && languageFolderValid && !isExporting
+  const officialMark = t('badges.official', { ns: 'common' })
+  const languageFolderOptions = useMemo(() => {
+    const mapped = [...languages].sort(compareLanguagesOfficialFirst).map((language) => {
+      const folder = languageToBg3Folder(language, language.code)
+      const official = isOfficialBg3Language(language.code)
+      return {
+        value: folder,
+        label: folder,
+        searchText: `${language.name} ${language.code} ${folder}`,
+        highlight: official,
+        mark: official ? officialMark : undefined
+      }
+    })
+    if (
+      selectedLanguageFolder &&
+      !mapped.some((option) => option.value === selectedLanguageFolder)
+    ) {
+      mapped.push({
+        value: selectedLanguageFolder,
+        label: selectedLanguageFolder,
+        searchText: selectedLanguageFolder,
+        highlight: false,
+        mark: undefined
+      })
+    }
+    return mapped
+  }, [languages, officialMark, selectedLanguageFolder])
 
   const updateDraft = (key: keyof ModMeta, value: string) => {
     setDraft((current) => ({ ...current, [key]: value }))
@@ -59,9 +87,7 @@ export function PackageExportModal({
           <Package size={15} className="text-amber-400" />
           <div className="flex-1 min-w-0">
             <h2 className="m-0 text-sm font-semibold text-neutral-200">{t('exportModal.title')}</h2>
-            <p className="m-0 text-[11px] text-neutral-500">
-              {t('exportModal.description')}
-            </p>
+            <p className="m-0 text-[11px] text-neutral-500">{t('exportModal.description')}</p>
           </div>
           <button type="button" className={btnGhostIcon} onClick={onCancel}>
             <X size={14} />
@@ -69,7 +95,11 @@ export function PackageExportModal({
         </div>
 
         <div className="p-5 grid grid-cols-2 gap-3.5">
-          <MetaField label={t('fields.name', { ns: 'common' })} value={draft.name} onChange={(value) => updateDraft('name', value)} />
+          <MetaField
+            label={t('fields.name', { ns: 'common' })}
+            value={draft.name}
+            onChange={(value) => updateDraft('name', value)}
+          />
           <MetaField
             label={t('fields.folder', { ns: 'common' })}
             value={draft.folder}
@@ -118,19 +148,7 @@ export function PackageExportModal({
                   ? ''
                   : '[&_button]:border-red-500 [&_button]:focus:border-red-400'
               )}
-              options={[
-                ...languages.map((language) => ({
-                  value: languageToBg3Folder(language, language.code),
-                  label: languageToBg3Folder(language, language.code),
-                  searchText: `${language.name} ${language.code}`
-                })),
-                ...(!languages.some(
-                  (language) =>
-                    languageToBg3Folder(language, language.code) === selectedLanguageFolder
-                ) && selectedLanguageFolder
-                  ? [{ value: selectedLanguageFolder, label: selectedLanguageFolder }]
-                  : [])
-              ]}
+              options={languageFolderOptions}
               searchable
               searchPlaceholder={t('exportModal.searchLanguageFolder')}
               emptyLabel={t('exportModal.noLanguageFolderFound')}

@@ -1,11 +1,12 @@
 import { Check, Pencil, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { HighlightedTextarea } from '@/components/shared/HighlightedTextarea'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { HighlightedTextarea } from '@/components/shared/HighlightedTextarea'
 import { ModalShell } from '@/components/shared/ModalShell'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
+import { languagesToSelectOptions } from '@/lib/languageOptions'
 import type { Language } from '@/types'
 import { EMPTY_ENTRY_DRAFT, type EntryDraft } from './types'
 
@@ -50,14 +51,8 @@ export function DictionaryEntryModal({
   }, [initialDraft, open])
 
   const languageOptions = useMemo(
-    () =>
-      languages.map((language) => ({
-        value: language.code,
-        label: language.name,
-        badge: language.code.toUpperCase(),
-        searchText: `${language.name} ${language.code}`
-      })),
-    [languages]
+    () => languagesToSelectOptions(languages, t('badges.official', { ns: 'common' })),
+    [languages, t]
   )
 
   const isDirty = isDraftDirty(draft, initialDraft)
@@ -96,9 +91,7 @@ export function DictionaryEntryModal({
             : t('entryModal.editTitle', { id: entryId ?? '' })
         }
         description={
-          mode === 'create'
-            ? t('entryModal.createDescription')
-            : t('entryModal.editDescription')
+          mode === 'create' ? t('entryModal.createDescription') : t('entryModal.editDescription')
         }
         icon={mode === 'create' ? <Plus size={16} /> : <Pencil size={16} />}
         sizeClassName="max-w-4xl"
