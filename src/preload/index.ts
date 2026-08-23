@@ -304,8 +304,11 @@ const api: AppApi = {
   },
 
   merge: {
-    prepareInput: (params: { inputPath: string }) =>
+    prepareInput: (params: { inputPath: string; requestId: string }) =>
       ipcRenderer.invoke('merge:prepareInput', params),
+
+    cancelPrepare: (params: { requestId: string }): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('merge:cancelPrepare', params),
 
     discardInput: (params: { importId: string }): Promise<{ success: boolean }> =>
       ipcRenderer.invoke('merge:discardInput', params),
@@ -321,7 +324,11 @@ const api: AppApi = {
     }) => ipcRenderer.invoke('merge:run', params),
 
     onProgress: (cb: (data: import('./api-types').MergeProgress) => void): UnsubscribeFn =>
-      on('merge:progress', cb)
+      on('merge:progress', cb),
+
+    onPrepareProgress: (
+      cb: (data: import('./api-types').MergePrepareProgress) => void
+    ): UnsubscribeFn => on('merge:prepareProgress', cb)
   },
 
   config: {

@@ -22,18 +22,27 @@ export interface UnpackedLocalizationPackage {
   metaPath: string | null
 }
 
+export type UnpackLocalizationProgress =
+  | { phase: 'extracting'; processed?: number; total?: number }
+  | { phase: 'unpacking'; processed?: number; total?: number }
+  | { phase: 'scanning'; processed?: number; total?: number }
+
 export async function unpackLocalizationPackage(
-  inputPath: string
+  inputPath: string,
+  onProgress?: (p: UnpackLocalizationProgress) => void,
+  tempDir = createTempDir('icosa_import')
 ): Promise<UnpackedLocalizationPackage> {
   const ext = path.extname(inputPath).toLowerCase()
-  const tempDir = createTempDir('icosa_import')
   fs.mkdirSync(tempDir, { recursive: true })
 
   try {
     let pakPath = inputPath
     if (ext === '.zip') {
+      onProgress?.({ phase: 'extracting' })
       const archiveDir = path.join(tempDir, 'archive')
-      extract(inputPath, archiveDir)
+      extract(inputPath, archiveDir, (processed, total) => {
+        onProgress?.({ phase: 'extracting', processed, total })
+      })
       const pak = findPakFiles(archiveDir)[0]
       if (!pak) throw new Error('No .pak file found inside zip')
       pakPath = pak
@@ -41,14 +50,25 @@ export async function unpackLocalizationPackage(
       throw new Error(`Unsupported file type: ${ext}. Use .xml, .pak, or .zip`)
     }
 
+    onProgress?.({ phase: 'unpacking' })
     const unpackedDir = path.join(tempDir, 'unpacked')
     fs.mkdirSync(unpackedDir, { recursive: true })
-    await unpackMod(pakPath, unpackedDir)
+    await unpackMod(pakPath, unpackedDir, (processed, total) => {
+      onProgress?.({ phase: 'unpacking', processed, total })
+    })
 
+    onProgress?.({ phase: 'scanning' })
     const xmlPaths = findLocalizationXmlsDeep(unpackedDir)
-    const candidates = xmlPaths.map((xmlPath, index) =>
-      inspectXmlCandidate(xmlPath, unpackedDir, `candidate-${index}`)
-    )
+    let lastScanEmit = 0
+    const candidates = xmlPaths.map((xmlPath, index) => {
+      const candidate = inspectXmlCandidate(xmlPath, unpackedDir, `candidate-${index}`)
+      const now = Date.now()
+      if (index === xmlPaths.length - 1 || now - lastScanEmit >= 100) {
+        lastScanEmit = now
+        onProgress?.({ phase: 'scanning', processed: index + 1, total: xmlPaths.length })
+      }
+      return candidate
+    })
     const metaPath = findMetaLsx(unpackedDir)
 
     if (candidates.length === 0) {

@@ -1,8 +1,8 @@
 import { ArrowRight } from 'lucide-react'
-import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { FileInputCard } from '@/features/translate/components/FileInputCard'
 import { LanguagePicker } from '@/features/translate/components/LanguagePicker'
 import { SetupStepCard } from '@/features/translate/components/SetupStepCard'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 import type { Language } from '@/types'
 import type { MergeFileSlot, SlotKey } from '../types'
 
@@ -36,6 +36,15 @@ export function MergeFileStep({
   onClear
 }: MergeFileStepProps): React.JSX.Element {
   const { t } = useAppTranslation('merge')
+  const phase = slot.prepareProgress?.phase
+  const preparingLabel =
+    phase === 'extracting'
+      ? t('preparing.extracting')
+      : phase === 'unpacking'
+        ? t('preparing.unpacking')
+        : phase === 'scanning'
+          ? t('preparing.scanning')
+          : t('preparing.file')
 
   return (
     <SetupStepCard step={step}>
@@ -64,6 +73,9 @@ export function MergeFileStep({
       <FileInputCard
         fileName={slot.fileName}
         isDragging={slot.isDragging}
+        isPreparing={slot.isPreparing}
+        preparingLabel={preparingLabel}
+        prepareProgress={slot.prepareProgress}
         onBrowse={() => onBrowse(slotKey)}
         onDragOver={(event) => {
           event.preventDefault()

@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { MainLayout } from './components/layout/MainLayout'
+import { MergeSessionProvider } from './context/MergeSession'
 import { TranslationSessionProvider } from './context/TranslationSession'
 import { DictionaryPage } from './pages/DictionaryPage'
 import { EntryEditPage } from './pages/EntryEditPage'
@@ -20,7 +21,9 @@ function App(): React.JSX.Element {
         <Route
           element={
             <TranslationSessionProvider>
-              <MainLayout />
+              <MergeSessionProvider>
+                <MainLayout />
+              </MergeSessionProvider>
             </TranslationSessionProvider>
           }
         >

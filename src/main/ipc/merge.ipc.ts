@@ -2,6 +2,7 @@ import { ipcMain, type WebContents } from 'electron'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { type MergeResult, mergeXmls } from '../services/merge.service'
 import {
+  cancelUnpackJob,
   discardTranslationInput,
   getStagedCandidate,
   type PreparedTranslationInput,
@@ -10,6 +11,7 @@ import {
 
 interface PrepareInputPayload {
   inputPath: string
+  requestId: string
 }
 
 interface DiscardInputPayload {
@@ -63,8 +65,25 @@ async function runMerge(
 export function registerMergeHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle(
     'merge:prepareInput',
-    async (_event, payload: PrepareInputPayload): Promise<PreparedTranslationInput> =>
-      prepareTranslationInput(payload.inputPath)
+    async (event, payload: PrepareInputPayload): Promise<PreparedTranslationInput> =>
+      prepareTranslationInput(
+        payload.inputPath,
+        (progress) => {
+          event.sender.send('merge:prepareProgress', {
+            requestId: payload.requestId,
+            ...progress
+          })
+        },
+        payload.requestId
+      )
+  )
+
+  ipcMain.handle(
+    'merge:cancelPrepare',
+    async (_event, payload: { requestId: string }): Promise<{ success: boolean }> => {
+      cancelUnpackJob(payload.requestId)
+      return { success: true }
+    }
   )
 
   ipcMain.handle(

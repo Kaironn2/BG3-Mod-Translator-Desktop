@@ -11,7 +11,8 @@ import type { PrepareInputProgress } from '../workers/prepare-input.worker.runti
 import {
   inspectXmlCandidate,
   type TranslationXmlCandidate,
-  type UnpackedLocalizationPackage
+  type UnpackedLocalizationPackage,
+  type UnpackLocalizationProgress
 } from './localization-package'
 import { packMod } from './lslib.service'
 import {
@@ -66,9 +67,35 @@ interface StagedImport {
 
 const stagedImports = new Map<string, StagedImport>()
 
-export async function prepareTranslationInput(
+const PREPARE_CANCELLED = 'PREPARE_CANCELLED'
+const MAX_CONCURRENT_UNPACKS = 2
+
+export function isPrepareCancelled(error: unknown): boolean {
+  return error instanceof Error && error.message === PREPARE_CANCELLED
+}
+
+interface UnpackJob {
+  jobId: string
   inputPath: string
+  tempDir: string
+  onProgress?: (p: UnpackLocalizationProgress) => void
+  resolve: (value: UnpackedLocalizationPackage) => void
+  reject: (error: Error) => void
+  worker: Worker | null
+  cancelled: boolean
+  running: boolean
+}
+
+const unpackJobs = new Map<string, UnpackJob>()
+const unpackQueue: string[] = []
+let unpackRunning = 0
+
+export async function prepareTranslationInput(
+  inputPath: string,
+  onProgress?: (p: UnpackLocalizationProgress) => void,
+  jobId?: string
 ): Promise<PreparedTranslationInput> {
+  const unpackJobId = jobId ?? randomUUID()
   const ext = path.extname(inputPath).toLowerCase()
   const importId = randomUUID()
 
@@ -83,7 +110,7 @@ export async function prepareTranslationInput(
     return { importId, requiresSelection: false, candidates: [candidate] }
   }
 
-  const unpacked = await unpackPackageViaWorker(inputPath)
+  const unpacked = await unpackPackageViaWorker(inputPath, onProgress, unpackJobId)
   stagedImports.set(importId, {
     inputPath,
     tempDirs: [unpacked.tempDir],
@@ -93,27 +120,109 @@ export async function prepareTranslationInput(
   return { importId, requiresSelection: true, candidates: unpacked.candidates }
 }
 
-function unpackPackageViaWorker(inputPath: string): Promise<UnpackedLocalizationPackage> {
+export function cancelUnpackJob(jobId: string): void {
+  const job = unpackJobs.get(jobId)
+  if (!job) return
+  job.cancelled = true
+  const queuedAt = unpackQueue.indexOf(jobId)
+  if (queuedAt >= 0) unpackQueue.splice(queuedAt, 1)
+  if (job.worker) {
+    void job.worker.terminate()
+    job.worker = null
+  }
+  cleanupTempDir(job.tempDir)
+  settleUnpackJob(job, () => job.reject(new Error(PREPARE_CANCELLED)))
+}
+
+function unpackPackageViaWorker(
+  inputPath: string,
+  onProgress: ((p: UnpackLocalizationProgress) => void) | undefined,
+  jobId: string
+): Promise<UnpackedLocalizationPackage> {
+  const tempDir = createTempDir('icosa_import')
+  fs.mkdirSync(tempDir, { recursive: true })
+
   return new Promise((resolve, reject) => {
-    const worker = new Worker(path.join(__dirname, 'prepare-input.worker.js'), {
-      workerData: { inputPath }
-    })
+    const existing = unpackJobs.get(jobId)
+    if (existing) {
+      cancelUnpackJob(jobId)
+    }
 
-    worker.on('message', (msg: PrepareInputProgress) => {
-      if (msg.phase === 'done') {
-        resolve(msg.result)
-        return
-      }
-      if (msg.phase === 'error') {
-        reject(new Error(msg.message))
-      }
-    })
-
-    worker.on('error', reject)
-    worker.on('exit', (code) => {
-      if (code !== 0) reject(new Error(`prepare-input worker exited with code ${code}`))
-    })
+    const job: UnpackJob = {
+      jobId,
+      inputPath,
+      tempDir,
+      onProgress,
+      resolve,
+      reject,
+      worker: null,
+      cancelled: false,
+      running: false
+    }
+    unpackJobs.set(jobId, job)
+    unpackQueue.push(jobId)
+    pumpUnpackQueue()
   })
+}
+
+function pumpUnpackQueue(): void {
+  while (unpackRunning < MAX_CONCURRENT_UNPACKS && unpackQueue.length > 0) {
+    const jobId = unpackQueue.shift()
+    if (!jobId) break
+    const job = unpackJobs.get(jobId)
+    if (!job || job.cancelled) continue
+    startUnpackWorker(job)
+  }
+}
+
+function startUnpackWorker(job: UnpackJob): void {
+  unpackRunning += 1
+  job.running = true
+  const worker = new Worker(path.join(__dirname, 'prepare-input.worker.js'), {
+    workerData: { inputPath: job.inputPath, tempDir: job.tempDir }
+  })
+  job.worker = worker
+
+  worker.on('message', (msg: PrepareInputProgress) => {
+    if (job.cancelled) return
+    if (msg.phase === 'done') {
+      settleUnpackJob(job, () => job.resolve(msg.result))
+      return
+    }
+    if (msg.phase === 'error') {
+      cleanupTempDir(job.tempDir)
+      settleUnpackJob(job, () => job.reject(new Error(msg.message)))
+      return
+    }
+    job.onProgress?.(msg)
+  })
+
+  worker.on('error', (error) => {
+    if (job.cancelled) return
+    cleanupTempDir(job.tempDir)
+    settleUnpackJob(job, () => job.reject(error))
+  })
+
+  worker.on('exit', (code) => {
+    if (job.cancelled || !unpackJobs.has(job.jobId)) return
+    if (code !== 0) {
+      cleanupTempDir(job.tempDir)
+      settleUnpackJob(job, () =>
+        job.reject(new Error(`prepare-input worker exited with code ${code}`))
+      )
+    }
+  })
+}
+
+function settleUnpackJob(job: UnpackJob, settle: () => void): void {
+  if (!unpackJobs.has(job.jobId)) return
+  unpackJobs.delete(job.jobId)
+  if (job.running) {
+    job.running = false
+    unpackRunning = Math.max(0, unpackRunning - 1)
+  }
+  settle()
+  pumpUnpackQueue()
 }
 
 export function getStagedCandidate(

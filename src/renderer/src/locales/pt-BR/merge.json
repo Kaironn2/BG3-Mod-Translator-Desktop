@@ -24,6 +24,13 @@
     "label": "Nome do mod",
     "placeholder": "ex: Shared Translation Pack"
   },
+  "preparing": {
+    "title": "Preparando {{fileName}}",
+    "file": "Preparando arquivo…",
+    "extracting": "Extraindo arquivo…",
+    "unpacking": "Descompactando .pak…",
+    "scanning": "Lendo arquivos de localização…"
+  },
   "bottomBar": {
     "ready": "Pronto para mesclar os arquivos",
     "idle": "Complete os três passos para iniciar a fusão",

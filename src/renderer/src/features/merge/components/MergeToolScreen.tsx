@@ -1,8 +1,8 @@
 import { Merge } from 'lucide-react'
+import { useMergeSession } from '@/context/MergeSession'
 import { XmlSelectionModal } from '@/features/translate/components/XmlSelectionModal'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import type { PreparedTranslationInput } from '@/types'
-import { useMergeSetup } from '../hooks/useMergeSetup'
 import type { SlotKey } from '../types'
 import { MergeBottomBar } from './MergeBottomBar'
 import { MergeFileStep } from './MergeFileStep'
@@ -10,7 +10,7 @@ import { MergeNameStep } from './MergeNameStep'
 
 export function MergeToolScreen(): React.JSX.Element {
   const { t } = useAppTranslation('merge')
-  const setup = useMergeSetup()
+  const setup = useMergeSession()
   const pendingSlot =
     setup.pendingSelection === 'source'
       ? setup.source
