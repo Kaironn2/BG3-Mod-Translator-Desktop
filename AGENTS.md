@@ -1,6 +1,6 @@
 # Icosa (BG3 Mod Translator Desktop)
 
-Electron + React app for localizing Baldur's Gate 3 mods. SQLite (better-sqlite3 / Drizzle) holds a translation dictionary that can exceed 200k rows. The main process must stay free: packing, XML load, import, merge, translate, and similarity search already run in `worker_threads`.
+Electron + React app for localizing Baldur's Gate 3 mods. SQLite (better-sqlite3 / Drizzle) holds a translation dictionary that can exceed 200k rows. The main process must stay free: packing, XML load, import, CSV preview, merge, translate, and similarity search already run in `worker_threads`. Long jobs keep state in a layout provider so changing tabs does not drop progress, and the UI shows a spinner or progress bar on the control that started the work.
 
 Live DB path: `%APPDATA%/Icosa/icosa.db`. Never commit `.env`, `data/`, or `scripts/bench-results/` (those can contain API keys and a full dictionary copy).
 
@@ -10,10 +10,11 @@ Read the matching skill **before** changing that area. Each skill lists checks t
 
 | Skill | Path | When |
 | --- | --- | --- |
-| UI responsiveness | `.agents/skills/ui-responsiveness/SKILL.md` | Dictionary page, virtualization, renderer lists, anything that could block paint |
+| UI responsiveness | `.agents/skills/ui-responsiveness/SKILL.md` | Dictionary page, virtualization, renderer lists, file load, freeze, tab switch |
 | SQLite / dictionary DB | `.agents/skills/sqlite-dictionary/SKILL.md` | Schema, migrations, queries, FTS, pragmas, WAL, startup `getDb()` |
 | Translation similarity | `.agents/skills/translation-similarity/SKILL.md` | TM / similar examples, AI batch, Fuse, `dictionary:similar` |
 | Electron startup | `.agents/skills/electron-startup/SKILL.md` | App boot, IPC registration, window creation, DB open |
+| Version bump | `.agents/skills/version-bump/SKILL.md` | Bump app version, GitHub draft/release, Windows portable build |
 
 ## Layout
 
