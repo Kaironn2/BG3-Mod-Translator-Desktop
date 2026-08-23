@@ -10,7 +10,7 @@ import type {
   TranslationProvider
 } from '../../preload/api-types'
 import { AI_TUNING_RANGE, DEFAULT_AI_TUNING } from '../../preload/api-types'
-import { getDb } from '../database/connection'
+import { getDb, getDbPath } from '../database/connection'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { config } from '../database/schema'
 import type { AiPipelineSimilarity } from '../pipelines/ai.pipeline'
@@ -36,7 +36,7 @@ import {
 } from '../services/google.service'
 import { logError } from '../services/log.service'
 import { translateText as translateOpenAI } from '../services/openai.service'
-import { SimilarityIndex } from '../services/similarity.service'
+import { getSimilarityClient } from '../services/similarity-client'
 import { runTranslatePipeline, type TranslatePipelineParams } from '../services/translate.service'
 import type { UsageService } from '../services/usage.service'
 import { decodeEntities } from '../services/xml-entities.service'
@@ -511,9 +511,6 @@ async function runAiBatchJob(ctx: AiBatchJobContext, repos: RepositoryRegistry):
   }
 
   try {
-    const index = similarity.enabled
-      ? new SimilarityIndex(repos.dictionary.getAllForSimilarity(ctx.sourceLang, ctx.targetLang))
-      : null
     const sourceLangName = languageName(repos, ctx.sourceLang)
     const targetLangName = languageName(repos, ctx.targetLang)
 
@@ -523,16 +520,33 @@ async function runAiBatchJob(ctx: AiBatchJobContext, repos: RepositoryRegistry):
 
     const examplesByUid = new Map<string, ReturnType<typeof filterExamples>>()
     const pendingEntries = ctx.entries.filter((entry) => entry.source.trim() !== '')
-    for (const entry of pendingEntries) {
-      examplesByUid.set(
-        entry.uid,
-        index
-          ? filterExamples(index.search(entry.source, Math.max(1, similarity.count)), {
+    if (similarity.enabled && pendingEntries.length > 0) {
+      try {
+        const hits = await getSimilarityClient(getDbPath()).searchMany({
+          queries: pendingEntries.map((entry) => ({ uid: entry.uid, text: entry.source })),
+          sourceLang: ctx.sourceLang,
+          targetLang: ctx.targetLang,
+          limit: Math.max(1, similarity.count)
+        })
+        for (const entry of pendingEntries) {
+          examplesByUid.set(
+            entry.uid,
+            filterExamples(hits[entry.uid] ?? [], {
               count: similarity.count,
               minScore: similarity.minScore
             })
-          : []
-      )
+          )
+        }
+      } catch (err) {
+        logError('translation.batch.ai.similarity', err, {
+          jobId: ctx.jobId,
+          sourceLang: ctx.sourceLang,
+          targetLang: ctx.targetLang
+        })
+        for (const entry of pendingEntries) examplesByUid.set(entry.uid, [])
+      }
+    } else {
+      for (const entry of pendingEntries) examplesByUid.set(entry.uid, [])
     }
 
     // Lines are packed into token-budgeted groups so the template is sent once per group

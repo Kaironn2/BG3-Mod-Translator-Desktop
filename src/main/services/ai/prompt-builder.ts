@@ -92,9 +92,9 @@ export interface SimilarityFilterOptions {
   minScore: number
 }
 
-// Fuse returns a *distance* (0 = best). The UI works in *similarity* (higher = best) with a
-// "ignore below X" threshold, so convert here (similarity = 1 - distance), drop low hits and
-// keep the top `count`. Input is already ordered best-first by Fuse.
+// SimilarityIndex returns a *distance* (0 = best). The UI works in *similarity* (higher = best)
+// with a "ignore below X" threshold, so convert here (similarity = 1 - distance), drop low
+// hits and keep the top `count`. Input is already ordered best-first.
 export function filterExamples(
   context: SimilarEntry[],
   { count, minScore }: SimilarityFilterOptions
