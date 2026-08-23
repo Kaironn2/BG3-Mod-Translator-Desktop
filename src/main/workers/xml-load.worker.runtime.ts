@@ -7,6 +7,7 @@ import {
 } from '../database/repositories/dictionary.repo'
 import { ModRepository } from '../database/repositories/mod.repo'
 import * as schema from '../database/schema'
+import { applySqlitePragmas } from '../database/sqlite-pragmas'
 import { unpackMod } from '../services/lslib.service'
 import { decodeEntities } from '../services/xml-entities.service'
 import {
@@ -62,12 +63,7 @@ export async function runXmlLoadWorker(
   post: (msg: XmlLoadProgress) => void
 ): Promise<void> {
   const sqlite = new Database(input.dbPath)
-  sqlite.pragma('journal_mode = WAL')
-  sqlite.pragma('foreign_keys = ON')
-  sqlite.pragma('synchronous = NORMAL')
-  sqlite.pragma('cache_size = -64000')
-  sqlite.pragma('temp_store = MEMORY')
-  sqlite.pragma('mmap_size = 268435456')
+  applySqlitePragmas(sqlite)
 
   const tempDirs: string[] = []
 

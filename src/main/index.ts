@@ -3,8 +3,8 @@ import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import iconWin from '../../resources/icon.ico?asset'
 import icon from '../../resources/icon.png?asset'
-import { closeDb, getDb } from './database/connection'
-import { createRepositoryRegistry } from './database/repositories/registry'
+import { closeDb, ensureDictionaryFts, getDb } from './database/connection'
+import { createRepositoryRegistry, type RepositoryRegistry } from './database/repositories/registry'
 import { registerConfigHandlers } from './ipc/config.ipc'
 import { registerDictionaryHandlers } from './ipc/dictionary.ipc'
 import { registerFsHandlers } from './ipc/fs.ipc'
@@ -19,6 +19,7 @@ import { registerTranslationHandlers } from './ipc/translation.ipc'
 import { registerWindowHandlers, setupWindowEvents } from './ipc/window.ipc'
 import { registerXmlHandlers } from './ipc/xml.ipc'
 import { logError } from './services/log.service'
+import { disposeSimilarityClient } from './services/similarity-client'
 import { createUsageService } from './services/usage.service'
 
 let mainWindow: BrowserWindow | null = null
@@ -77,28 +78,45 @@ function createWindow(): void {
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.icosa.bg3-mod-translator')
   patchIpcLogging()
-  const repos = createRepositoryRegistry(getDb())
+  registerLogHandlers()
+  registerWindowHandlers(getWindow)
+  registerFsHandlers()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  let repos: RepositoryRegistry
+  try {
+    repos = createRepositoryRegistry(getDb())
+  } catch (err) {
+    logError('main.getDb', err)
+    createWindow()
+    return
+  }
+
   const usageService = createUsageService(repos)
 
-  registerWindowHandlers(getWindow)
   registerTranslationHandlers(getWindow, repos, usageService)
   registerDictionaryHandlers(repos)
   registerLanguageHandlers(repos)
-  registerLogHandlers()
   registerModHandlers(repos)
   registerMergeHandlers(repos)
   registerMetricsHandlers(repos, usageService)
   registerConfigHandlers()
   registerPromptSlotHandlers(repos)
-  registerFsHandlers()
   registerXmlHandlers(repos)
 
   createWindow()
+
+  setImmediate(() => {
+    try {
+      ensureDictionaryFts()
+      repos.dictionary.refreshFtsProbe()
+    } catch (err) {
+      logError('db.ftsBackfill', err)
+    }
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -114,8 +132,10 @@ process.on('unhandledRejection', (reason) => {
 })
 
 app.on('window-all-closed', () => {
-  closeDb()
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  void disposeSimilarityClient().finally(() => {
+    closeDb()
+    if (process.platform !== 'darwin') {
+      app.quit()
+    }
+  })
 })

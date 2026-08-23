@@ -4,14 +4,12 @@ out
 .DS_Store
 .eslintcache
 *.log*
-CLAUDE.md
-PLANNING.md
 .claude/
 .env.local
 .env
-*.md
 data/
 *.txt
 *.xml
 
 design/
+scripts/bench-results/

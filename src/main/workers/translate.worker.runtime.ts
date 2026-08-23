@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import type { TranslationProvider } from '../../preload/api-types'
 import * as schema from '../database/schema'
+import { applySqlitePragmas } from '../database/sqlite-pragmas'
 import { AIPipeline, type AiPipelineSimilarity } from '../pipelines/ai.pipeline'
 import type { BasePipeline } from '../pipelines/base.pipeline'
 import { DeepLPipeline } from '../pipelines/deepl.pipeline'
@@ -70,12 +71,7 @@ export async function runTranslateWorker(
   receiveCancel(() => controller.abort())
 
   const sqlite = new Database(input.dbPath)
-  sqlite.pragma('journal_mode = WAL')
-  sqlite.pragma('foreign_keys = ON')
-  sqlite.pragma('synchronous = NORMAL')
-  sqlite.pragma('cache_size = -64000')
-  sqlite.pragma('temp_store = MEMORY')
-  sqlite.pragma('mmap_size = 268435456')
+  applySqlitePragmas(sqlite)
 
   try {
     const db = drizzle(sqlite, { schema })

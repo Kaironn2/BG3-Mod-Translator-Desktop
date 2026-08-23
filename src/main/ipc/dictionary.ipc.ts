@@ -1,9 +1,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { ipcMain } from 'electron'
+import { getDbPath } from '../database/connection'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { runImport } from '../services/import.service'
-import { findSimilar } from '../services/similarity.service'
+import { getSimilarityClient, invalidateSimilarityCache } from '../services/similarity-client'
 import { csvCell } from '../utils/csv'
 import { readImportCsv } from '../utils/dictionaryCsv'
 
@@ -28,7 +29,6 @@ interface DictionaryMutationPayload {
   modName?: string | null
   uid?: string | null
 }
-
 
 export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle('dictionary:list', (_event, payload: DictionaryListPayload) => {
@@ -66,6 +66,7 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle('dictionary:create', (_event, entry: DictionaryMutationPayload) => {
     persistMod(repos, entry.modName)
     repos.dictionary.create(toRepoPayload(entry))
+    invalidateSimilarity()
     return { success: true }
   })
 
@@ -74,6 +75,7 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
     (_event, { id, entry }: { id: number; entry: DictionaryMutationPayload }) => {
       persistMod(repos, entry.modName)
       repos.dictionary.update(id, toRepoPayload(entry))
+      invalidateSimilarity()
       return { success: true }
     }
   )
@@ -81,6 +83,7 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle('dictionary:upsert', (_event, entry: DictionaryMutationPayload) => {
     persistMod(repos, entry.modName)
     repos.dictionary.upsert(toRepoPayload(entry))
+    invalidateSimilarity()
     return { success: true }
   })
 
@@ -88,17 +91,21 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
     if (entries.length === 0) return { count: 0 }
     persistMod(repos, entries[0].modName)
     repos.dictionary.bulkUpsert(entries.map(toRepoPayload))
+    invalidateSimilarity()
     return { count: entries.length }
   })
 
   ipcMain.handle('dictionary:delete', (_event, { id }: { id: number }) => {
     repos.dictionary.delete(id)
+    invalidateSimilarity()
     return { success: true }
   })
 
-  ipcMain.handle('dictionary:deleteByFilter', (_event, filters: DictionaryFilters) =>
-    repos.dictionary.deleteByFilter(filters)
-  )
+  ipcMain.handle('dictionary:deleteByFilter', (_event, filters: DictionaryFilters) => {
+    const result = repos.dictionary.deleteByFilter(filters)
+    invalidateSimilarity()
+    return result
+  })
 
   ipcMain.handle(
     'dictionary:replaceByFilter',
@@ -111,7 +118,11 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
         filters: DictionaryFilters
         patch: { findText: string; replaceText: string; column: 'language1' | 'language2' }
       }
-    ) => repos.dictionary.updateTextByFilter(filters, patch)
+    ) => {
+      const result = repos.dictionary.updateTextByFilter(filters, patch)
+      invalidateSimilarity()
+      return result
+    }
   )
 
   ipcMain.handle(
@@ -119,10 +130,13 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
     (
       _event,
       { text, lang1, lang2, limit }: { text: string; lang1: string; lang2: string; limit?: number }
-    ) => {
-      const corpus = repos.dictionary.getAllForSimilarity(lang1, lang2)
-      return findSimilar(text, corpus, limit ?? 5)
-    }
+    ) =>
+      getSimilarityClient(getDbPath()).search({
+        text,
+        sourceLang: lang1,
+        targetLang: lang2,
+        limit: limit ?? 5
+      })
   )
 
   ipcMain.handle(
@@ -146,6 +160,7 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
         filePath,
         onProgress: (p) => event.sender.send('dictionary:import:progress', p)
       })
+      invalidateSimilarity()
       return { count }
     }
   )
@@ -199,4 +214,8 @@ function toRepoPayload(entry: DictionaryMutationPayload) {
 
 function persistMod(repos: RepositoryRegistry, modName?: string | null): void {
   if (modName?.trim()) repos.mod.upsert(modName.trim())
+}
+
+function invalidateSimilarity(): void {
+  invalidateSimilarityCache()
 }

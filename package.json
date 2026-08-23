@@ -30,7 +30,9 @@
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
     "build:linux": "electron-vite build && electron-builder --linux",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "pnpm dlx tsx --test src/main/services/similarity.service.test.ts src/main/database/fts-query.test.ts src/main/services/ai/rate-limit.test.ts",
+    "bench:similarity": "node scripts/bench-similarity.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

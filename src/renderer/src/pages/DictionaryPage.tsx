@@ -73,6 +73,7 @@ const TABLE_HEADER =
   'select-none text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500'
 // grid-based virtualization (Option B) - 7 columns matching header and rows
 const GRID_COLS = '48px 112px 1fr 1fr 192px 144px 128px'
+const PREVIEW_CHARS = 280
 const DEFAULT_PAGE_SIZE = 200
 const MAX_PAGE_SIZE = 1000
 const PAGE_SIZE_OPTIONS = [50, 100, 200, 500, 1000]
@@ -217,8 +218,8 @@ export function DictionaryPage(): React.JSX.Element {
   const rowVirtualizer = useVirtualizer({
     count: displayEntries.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 44,
-    overscan: 10
+    estimateSize: () => 56,
+    overscan: 6
   })
 
   const modOptions = useMemo(
@@ -812,9 +813,8 @@ export function DictionaryPage(): React.JSX.Element {
                 <div
                   key={entry.id}
                   data-index={virtualItem.index}
-                  ref={rowVirtualizer.measureElement}
                   className={cn(
-                    'grid border-b border-[#1f2329] transition-colors hover:bg-[#131518]',
+                    'contain-content grid h-14 border-b border-[#1f2329] transition-colors hover:bg-[#131518]',
                     selectedIds.has(entry.id) && 'bg-[#131518]'
                   )}
                   style={{
@@ -822,6 +822,7 @@ export function DictionaryPage(): React.JSX.Element {
                     top: 0,
                     left: 0,
                     width: '100%',
+                    height: `${virtualItem.size}px`,
                     transform: `translateY(${virtualItem.start}px)`,
                     gridTemplateColumns: GRID_COLS
                   }}
@@ -837,14 +838,14 @@ export function DictionaryPage(): React.JSX.Element {
                   <div className="px-4 py-3 self-start">
                     <span className="font-mono text-[11px] text-neutral-500">{entry.id}</span>
                   </div>
-                  <div className="px-4 py-3 self-start">
-                    <div className="wrap-break-word font-mono text-sm leading-6 text-neutral-100 whitespace-pre-wrap">
-                      {entry.sourceText ? renderSource(entry.sourceText) : null}
+                  <div className="min-w-0 px-4 py-3 self-start">
+                    <div className="line-clamp-2 wrap-break-word font-mono text-sm leading-5 text-neutral-100">
+                      {entry.sourceText ? renderSource(previewText(entry.sourceText)) : null}
                     </div>
                   </div>
-                  <div className="px-4 py-3 self-start">
-                    <div className="wrap-break-word font-mono text-sm leading-6 text-neutral-200 whitespace-pre-wrap">
-                      {entry.targetText ? renderSource(entry.targetText) : null}
+                  <div className="min-w-0 px-4 py-3 self-start">
+                    <div className="line-clamp-2 wrap-break-word font-mono text-sm leading-5 text-neutral-200">
+                      {entry.targetText ? renderSource(previewText(entry.targetText)) : null}
                     </div>
                   </div>
                   <div className="px-4 py-3 self-start">
@@ -1138,6 +1139,11 @@ function DictionaryLoadingOverlay({ mode }: { mode: DictionaryLoadingMode }): Re
       </div>
     </div>
   )
+}
+
+function previewText(text: string, max = PREVIEW_CHARS): string {
+  if (text.length <= max) return text
+  return `${text.slice(0, max)}…`
 }
 
 function buildExportName(filters: DictionaryFilters): string {
