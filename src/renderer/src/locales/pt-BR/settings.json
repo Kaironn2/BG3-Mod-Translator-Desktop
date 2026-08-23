@@ -1,11 +1,12 @@
 {
   "title": "Configurações",
-  "subtitle": "Gerencie suas chaves de API, preferências do aplicativo e ferramentas padrão.",
+  "subtitle": "Gerencie suas chaves de API e preferências do aplicativo.",
+  "autoSaved": "As alterações são salvas automaticamente",
   "sections": {
+    "preferences": "Preferências do aplicativo",
+    "preferencesSubtitle": "Idioma da interface, autor e idiomas padrão de tradução.",
     "apiKeys": "Chaves de API",
-    "defaults": "Padrões de projeto",
-    "language": "Preferências do aplicativo",
-    "tools": "Ferramentas externas",
+    "apiKeysSubtitle": "Chaves do DeepL e do Google Translate. Salvas automaticamente.",
     "debugLogs": "Logs de depuração"
   },
   "fields": {
@@ -14,18 +15,15 @@
     "defaultAuthor": "Autor padrão",
     "defaultSourceLanguage": "Idioma de origem padrão",
     "defaultTargetLanguage": "Idioma de destino padrão",
-    "appLanguage": "Idioma do aplicativo",
-    "divinePath": "Caminho do Divine.exe"
-  },
-  "descriptions": {
-    "divinePath": "Deixe em branco para usar o padrão do sistema."
+    "appLanguage": "Idioma do aplicativo"
   },
   "placeholders": {
-    "author": "Seu nome",
-    "divinePath": "C:\\path\\to\\Divine.exe"
+    "author": "Seu nome"
   },
-  "buttons": {
-    "save": "Salvar",
-    "saved": "Salvo"
+  "apiKeys": {
+    "connected": "conectado",
+    "noKey": "sem chave",
+    "showKey": "Mostrar",
+    "hideKey": "Ocultar"
   }
 }

@@ -12,13 +12,17 @@ import {
   LSPK_SIGNATURE,
   LSPK_VERSION_BG3,
   PackageFlags,
-  type FileEntry,
+  type FileEntry
 } from './pak-format'
 
 const DELETION_OFFSET_MASK = 0x0000ffffffffffffn
 const DELETION_MARKER = 0xbeefdeadbeefn
 
-export async function readPackage(pakPath: string, outputDir: string): Promise<void> {
+export async function readPackage(
+  pakPath: string,
+  outputDir: string,
+  onProgress?: (processed: number, total: number) => void
+): Promise<void> {
   const handle = await fs.open(pakPath, 'r')
   try {
     const stat = await handle.stat()
@@ -31,17 +35,19 @@ export async function readPackage(pakPath: string, outputDir: string): Promise<v
 
     const signature = headerBuf.readUInt32LE(0)
     if (signature !== LSPK_SIGNATURE) {
-      throw new Error(`Not a valid .pak file: ${pakPath} (bad signature 0x${signature.toString(16)})`)
+      throw new Error(
+        `Not a valid .pak file: ${pakPath} (bad signature 0x${signature.toString(16)})`
+      )
     }
     const header = readHeader(headerBuf, 4)
     if (header.version !== LSPK_VERSION_BG3) {
       throw new Error(
-        `Unsupported .pak version: ${header.version} (only V18 / BG3 Release is supported)`,
+        `Unsupported .pak version: ${header.version} (only V18 / BG3 Release is supported)`
       )
     }
     if ((header.flags & PackageFlags.Solid) !== 0) {
       throw new Error(
-        `Solid-mode .pak not supported (file: ${pakPath}). BG3 mods do not normally use solid mode.`,
+        `Solid-mode .pak not supported (file: ${pakPath}). BG3 mods do not normally use solid mode.`
       )
     }
     if (header.numParts > 1) {
@@ -51,9 +57,23 @@ export async function readPackage(pakPath: string, outputDir: string): Promise<v
     const entries = await readFileTable(handle, header.fileListOffset, header.fileListSize)
 
     await fs.mkdir(outputDir, { recursive: true })
+    const total = entries.reduce(
+      (count, entry) => (isDeletion(entry.offsetInFile) ? count : count + 1),
+      0
+    )
+    let processed = 0
+    let lastEmit = 0
     for (const entry of entries) {
       if (isDeletion(entry.offsetInFile)) continue
       await extractFile(handle, entry, outputDir)
+      processed += 1
+      if (onProgress && total > 0) {
+        const now = Date.now()
+        if (processed === total || now - lastEmit >= 100) {
+          lastEmit = now
+          onProgress(processed, total)
+        }
+      }
     }
   } finally {
     await handle.close()
@@ -63,7 +83,7 @@ export async function readPackage(pakPath: string, outputDir: string): Promise<v
 async function readFileTable(
   handle: fs.FileHandle,
   fileListOffset: bigint,
-  fileListSize: number,
+  fileListSize: number
 ): Promise<FileEntry[]> {
   const numFilesBuf = Buffer.alloc(8)
   await handle.read(numFilesBuf, 0, 8, Number(fileListOffset))
@@ -80,7 +100,7 @@ async function readFileTable(
   const tableBuf = await decompress(compressed, decompressedSize, /* LZ4 */ 0x02)
   if (tableBuf.length !== decompressedSize) {
     throw new Error(
-      `File table decompression size mismatch: expected ${decompressedSize}, got ${tableBuf.length}`,
+      `File table decompression size mismatch: expected ${decompressedSize}, got ${tableBuf.length}`
     )
   }
   return parseFileEntries(tableBuf, numFiles)
@@ -89,7 +109,7 @@ async function readFileTable(
 async function extractFile(
   handle: fs.FileHandle,
   entry: FileEntry,
-  outputDir: string,
+  outputDir: string
 ): Promise<void> {
   const compressed = Buffer.alloc(entry.sizeOnDisk)
   if (entry.sizeOnDisk > 0) {

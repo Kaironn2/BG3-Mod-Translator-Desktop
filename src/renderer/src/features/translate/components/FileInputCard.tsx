@@ -1,4 +1,4 @@
-import { Check, File, Upload, X } from 'lucide-react'
+import { Check, File, Loader2, Upload, X } from 'lucide-react'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import { btnBase, btnGhostIcon } from './styles'
@@ -6,6 +6,9 @@ import { btnBase, btnGhostIcon } from './styles'
 interface FileInputCardProps {
   fileName: string | null
   isDragging: boolean
+  isPreparing?: boolean
+  preparingLabel?: string
+  prepareProgress?: { processed?: number; total?: number } | null
   onBrowse: () => Promise<void>
   onDragOver: (event: React.DragEvent) => void
   onDragLeave: () => void
@@ -16,6 +19,9 @@ interface FileInputCardProps {
 export function FileInputCard({
   fileName,
   isDragging,
+  isPreparing = false,
+  preparingLabel,
+  prepareProgress,
   onBrowse,
   onDragOver,
   onDragLeave,
@@ -23,6 +29,10 @@ export function FileInputCard({
   onClear
 }: FileInputCardProps): React.JSX.Element {
   const { t } = useAppTranslation(['translate', 'common'])
+  const processed = prepareProgress?.processed
+  const total = prepareProgress?.total
+  const hasBar = isPreparing && total !== undefined && total > 0 && processed !== undefined
+  const pct = hasBar ? Math.min(100, Math.round((processed / total) * 100)) : 0
 
   return (
     <>
@@ -37,6 +47,7 @@ export function FileInputCard({
 
       <section
         aria-label={t('setup.fileCard.dropZone', { ns: 'translate' })}
+        aria-busy={isPreparing}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
@@ -81,22 +92,51 @@ export function FileInputCard({
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-400/10 text-amber-400 flex items-center justify-center shrink-0">
-              <File size={18} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-mono text-[13px] font-semibold text-neutral-200 truncate">
-                {fileName}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 text-amber-400">
+                {isPreparing ? <Loader2 size={18} className="animate-spin" /> : <File size={18} />}
               </div>
-              <div className="flex items-center gap-1 text-[11px] text-amber-400 mt-0.5">
-                <Check size={10} />
-                {t('setup.fileCard.fileSelected', { ns: 'translate' })}
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-mono text-[13px] font-semibold text-neutral-200">
+                  {fileName}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1 text-[11px] text-amber-400">
+                  {isPreparing ? (
+                    <>
+                      {preparingLabel ?? t('setup.fileCard.fileSelected', { ns: 'translate' })}
+                      {hasBar ? ` · ${pct}%` : null}
+                    </>
+                  ) : (
+                    <>
+                      <Check size={10} />
+                      {t('setup.fileCard.fileSelected', { ns: 'translate' })}
+                    </>
+                  )}
+                </div>
               </div>
+              <button type="button" onClick={onClear} className={btnGhostIcon}>
+                <X size={14} />
+              </button>
             </div>
-            <button type="button" onClick={onClear} className={btnGhostIcon}>
-              <X size={14} />
-            </button>
+            {isPreparing ? (
+              hasBar ? (
+                <div
+                  className="h-1.5 overflow-hidden rounded-full bg-[#1d2127]"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={pct}
+                >
+                  <div
+                    className="h-full rounded-full bg-amber-400/80 transition-[width] duration-200"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              ) : (
+                <div className="h-1.5 animate-pulse rounded-full bg-amber-400/30" />
+              )
+            ) : null}
           </div>
         )}
       </section>

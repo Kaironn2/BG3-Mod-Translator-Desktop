@@ -1,9 +1,10 @@
-import { FileSpreadsheet, Upload } from 'lucide-react'
+import { FileSpreadsheet, Loader2, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ModalShell } from '@/components/shared/ModalShell'
 import { getLocalizedErrorMessage } from '@/i18n/errors'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
+import { cn } from '@/lib/utils'
 import type { DictionaryImportPreview } from '@/types'
 
 interface DictionaryImportModalProps {
@@ -22,7 +23,10 @@ export function DictionaryImportModal({
   const [preview, setPreview] = useState<DictionaryImportPreview | null>(null)
   const [loading, setLoading] = useState(false)
   const [importing, setImporting] = useState(false)
-  const [importProgress, setImportProgress] = useState<{ processed: number; total: number } | null>(null)
+  const [importProgress, setImportProgress] = useState<{ processed: number; total: number } | null>(
+    null
+  )
+  const [isDragging, setIsDragging] = useState(false)
   const unsubRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
@@ -37,25 +41,41 @@ export function DictionaryImportModal({
     }
   }, [open])
 
-  const handleSelectFile = async () => {
-    const paths = await window.api.fs.openDialog({
-      filters: [{ name: 'CSV', extensions: ['csv'] }]
-    })
-    if (!paths[0]) return
-
+  const loadPreview = async (nextPath: string) => {
+    if (loading || importing) return
     setLoading(true)
     try {
       const nextPreview = await window.api.dictionary.previewImport({
-        filePath: paths[0],
+        filePath: nextPath,
         format: 'csv'
       })
-      setFilePath(paths[0])
+      setFilePath(nextPath)
       setPreview(nextPreview)
     } catch (error) {
       toast.error(getLocalizedErrorMessage(error, t))
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSelectFile = async () => {
+    const paths = await window.api.fs.openDialog({
+      filters: [{ name: 'CSV', extensions: ['csv'] }]
+    })
+    if (!paths[0]) return
+    await loadPreview(paths[0])
+  }
+
+  const handleDrop = async (event: React.DragEvent) => {
+    event.preventDefault()
+    setIsDragging(false)
+    const file = event.dataTransfer.files[0]
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      toast.error(t('importModal.invalidCsv', { ns: 'dictionary' }))
+      return
+    }
+    await loadPreview(window.api.fs.getPathForFile(file))
   }
 
   const handleImport = async () => {
@@ -103,7 +123,7 @@ export function DictionaryImportModal({
           </button>
           <button
             type="button"
-            disabled={!preview || importing}
+            disabled={!preview || importing || loading}
             onClick={handleImport}
             className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-xs font-semibold text-neutral-950 transition-colors hover:border-amber-400 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -124,10 +144,13 @@ export function DictionaryImportModal({
         {importing && (
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs text-neutral-500">
-              <span>{importProgress ? t('importModal.importing', { ns: 'dictionary' }) : '...'}</span>
+              <span>
+                {importProgress ? t('importModal.importing', { ns: 'dictionary' }) : '...'}
+              </span>
               {importProgress && (
                 <span className="font-mono">
-                  {importProgress.processed.toLocaleString()} / {importProgress.total.toLocaleString()}
+                  {importProgress.processed.toLocaleString()} /{' '}
+                  {importProgress.total.toLocaleString()}
                 </span>
               )}
             </div>
@@ -145,25 +168,50 @@ export function DictionaryImportModal({
         )}
         <button
           type="button"
-          onClick={handleSelectFile}
-          className="flex min-h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#3a404a] bg-[#0f1114] px-6 py-6 text-center transition-colors hover:border-amber-500 hover:bg-amber-500/6"
+          disabled={loading || importing}
+          onClick={() => {
+            void handleSelectFile()
+          }}
+          onDragOver={(event) => {
+            event.preventDefault()
+            if (!loading && !importing) setIsDragging(true)
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(event) => {
+            void handleDrop(event)
+          }}
+          className={cn(
+            'flex min-h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-[#0f1114] px-6 py-6 text-center transition-colors',
+            isDragging
+              ? 'border-amber-500 bg-amber-500/6'
+              : 'border-[#3a404a] hover:border-amber-500 hover:bg-amber-500/6',
+            (loading || importing) && 'cursor-wait opacity-70'
+          )}
         >
-          <Upload size={18} className="text-neutral-300" />
+          {loading ? (
+            <Loader2 size={18} className="animate-spin text-amber-400" />
+          ) : (
+            <Upload size={18} className="text-neutral-300" />
+          )}
           <div className="text-sm font-semibold text-neutral-100">
-            {filePath ? filePath.split(/[\\/]/).pop() : t('importModal.chooseFile', { ns: 'dictionary' })}
+            {loading
+              ? t('importModal.reading', { ns: 'dictionary' })
+              : filePath
+                ? filePath.split(/[\\/]/).pop()
+                : t('importModal.chooseFile', { ns: 'dictionary' })}
           </div>
           <div className="text-xs text-neutral-500">
             {t('importModal.chooseFileDescription', { ns: 'dictionary' })}
           </div>
         </button>
 
-        {loading && <p className="text-sm text-neutral-500">{t('importModal.reading', { ns: 'dictionary' })}</p>}
-
         {preview && (
           <>
             <div className="rounded-lg border border-[#1f2329] bg-[#0f1114] p-3 text-xs text-neutral-400">
               <div className="flex flex-wrap items-center gap-3">
-                <span>{t('importModal.detectedRows', { ns: 'dictionary', count: preview.totalRows })}</span>
+                <span>
+                  {t('importModal.detectedRows', { ns: 'dictionary', count: preview.totalRows })}
+                </span>
                 <span className="font-mono text-neutral-500">
                   {t('importModal.headers', {
                     ns: 'dictionary',
@@ -210,7 +258,9 @@ export function DictionaryImportModal({
                       </td>
                       <td className="px-3 py-2 font-mono text-neutral-400">
                         {(row.sourceLang || '-').toUpperCase()} -&gt;{' '}
-                        <span className="text-amber-400">{(row.targetLang || '-').toUpperCase()}</span>
+                        <span className="text-amber-400">
+                          {(row.targetLang || '-').toUpperCase()}
+                        </span>
                       </td>
                     </tr>
                   ))}

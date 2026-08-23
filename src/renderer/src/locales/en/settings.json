@@ -1,11 +1,12 @@
 {
   "title": "Settings",
-  "subtitle": "Manage your API keys, application preferences and default tools.",
+  "subtitle": "Manage your API keys and application preferences.",
+  "autoSaved": "Changes are saved automatically",
   "sections": {
+    "preferences": "Application preferences",
+    "preferencesSubtitle": "Interface language, author name and default translation languages.",
     "apiKeys": "API keys",
-    "defaults": "Defaults",
-    "language": "Application preferences",
-    "tools": "External tools",
+    "apiKeysSubtitle": "Keys for DeepL and Google Translate. Saved automatically.",
     "debugLogs": "Debug logs"
   },
   "fields": {
@@ -14,18 +15,15 @@
     "defaultAuthor": "Default author",
     "defaultSourceLanguage": "Default source language",
     "defaultTargetLanguage": "Default target language",
-    "appLanguage": "Application language",
-    "divinePath": "Divine.exe path"
-  },
-  "descriptions": {
-    "divinePath": "Leave empty to use the system default."
+    "appLanguage": "Application language"
   },
   "placeholders": {
-    "author": "Your name",
-    "divinePath": "C:\\path\\to\\Divine.exe"
+    "author": "Your name"
   },
-  "buttons": {
-    "save": "Save",
-    "saved": "Saved"
+  "apiKeys": {
+    "connected": "connected",
+    "noKey": "no key",
+    "showKey": "Show",
+    "hideKey": "Hide"
   }
 }

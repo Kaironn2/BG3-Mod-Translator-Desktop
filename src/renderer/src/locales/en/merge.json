@@ -24,6 +24,13 @@
     "label": "Mod name",
     "placeholder": "ex: Shared Translation Pack"
   },
+  "preparing": {
+    "title": "Preparing {{fileName}}",
+    "file": "Preparing file…",
+    "extracting": "Extracting archive…",
+    "unpacking": "Unpacking .pak…",
+    "scanning": "Reading localization files…"
+  },
   "bottomBar": {
     "ready": "Ready to merge files",
     "idle": "Complete the three steps to run merge",

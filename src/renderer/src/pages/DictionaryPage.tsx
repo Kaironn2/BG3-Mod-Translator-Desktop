@@ -72,7 +72,9 @@ type DictionaryLoadingMode = 'overlay' | 'replace'
 const TABLE_HEADER =
   'select-none text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500'
 // grid-based virtualization (Option B) - 7 columns matching header and rows
-const GRID_COLS = '48px 112px 1fr 1fr 192px 144px 128px'
+const GRID_COLS = '48px 72px 1fr 1fr 285px 112px 80px'
+// Compact enough for two clamped text lines plus mod badge + UID, without unused vertical gap.
+const ROW_HEIGHT = 60
 const PREVIEW_CHARS = 280
 const DEFAULT_PAGE_SIZE = 200
 const MAX_PAGE_SIZE = 1000
@@ -218,7 +220,7 @@ export function DictionaryPage(): React.JSX.Element {
   const rowVirtualizer = useVirtualizer({
     count: displayEntries.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 56,
+    estimateSize: () => ROW_HEIGHT,
     overscan: 6
   })
 
@@ -748,7 +750,7 @@ export function DictionaryPage(): React.JSX.Element {
             className="sticky top-0 z-10 grid border-b border-[#1f2329] bg-[#131518] pr-[var(--scrollbar-width,0px)]"
             style={{ gridTemplateColumns: GRID_COLS }}
           >
-            <div className={cn(TABLE_HEADER, 'px-4 py-3 text-center')}>
+            <div className={cn(TABLE_HEADER, 'px-3 py-2 text-center')}>
               <input
                 type="checkbox"
                 checked={allFilteredSelected}
@@ -756,22 +758,22 @@ export function DictionaryPage(): React.JSX.Element {
                 className="h-4 w-4 cursor-pointer accent-amber-500"
               />
             </div>
-            <div className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>
+            <div className={cn(TABLE_HEADER, 'px-3 py-2 text-left')}>
               {t('table.id', { ns: 'dictionary' })}
             </div>
-            <div className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>
+            <div className={cn(TABLE_HEADER, 'px-3 py-2 text-left')}>
               {t('table.sourceText', { ns: 'dictionary' })}
             </div>
-            <div className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>
+            <div className={cn(TABLE_HEADER, 'px-3 py-2 text-left')}>
               {t('table.targetText', { ns: 'dictionary' })}
             </div>
-            <div className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>
+            <div className={cn(TABLE_HEADER, 'px-3 py-2 text-left')}>
               {t('table.mod', { ns: 'dictionary' })}
             </div>
-            <div className={cn(TABLE_HEADER, 'px-4 py-3 text-left')}>
+            <div className={cn(TABLE_HEADER, 'px-3 py-2 text-left')}>
               {t('table.languages', { ns: 'dictionary' })}
             </div>
-            <div className={cn(TABLE_HEADER, 'px-4 py-3 text-right')}>
+            <div className={cn(TABLE_HEADER, 'px-3 py-2 text-right')}>
               {t('table.actions', { ns: 'dictionary' })}
             </div>
           </div>
@@ -814,7 +816,7 @@ export function DictionaryPage(): React.JSX.Element {
                   key={entry.id}
                   data-index={virtualItem.index}
                   className={cn(
-                    'contain-content grid h-14 border-b border-[#1f2329] transition-colors hover:bg-[#131518]',
+                    'contain-content grid border-b border-[#1f2329] transition-colors hover:bg-[#131518]',
                     selectedIds.has(entry.id) && 'bg-[#131518]'
                   )}
                   style={{
@@ -827,7 +829,7 @@ export function DictionaryPage(): React.JSX.Element {
                     gridTemplateColumns: GRID_COLS
                   }}
                 >
-                  <div className="px-4 py-3 text-center self-start">
+                  <div className="self-start px-3 py-1.5 text-center">
                     <input
                       type="checkbox"
                       checked={selectedIds.has(entry.id)}
@@ -835,42 +837,42 @@ export function DictionaryPage(): React.JSX.Element {
                       className="mt-1 h-4 w-4 cursor-pointer accent-amber-500"
                     />
                   </div>
-                  <div className="px-4 py-3 self-start">
+                  <div className="self-start px-3 py-1.5">
                     <span className="font-mono text-[11px] text-neutral-500">{entry.id}</span>
                   </div>
-                  <div className="min-w-0 px-4 py-3 self-start">
+                  <div className="min-w-0 self-start px-3 py-1.5">
                     <div className="line-clamp-2 wrap-break-word font-mono text-sm leading-5 text-neutral-100">
                       {entry.sourceText ? renderSource(previewText(entry.sourceText)) : null}
                     </div>
                   </div>
-                  <div className="min-w-0 px-4 py-3 self-start">
+                  <div className="min-w-0 self-start px-3 py-1.5">
                     <div className="line-clamp-2 wrap-break-word font-mono text-sm leading-5 text-neutral-200">
                       {entry.targetText ? renderSource(previewText(entry.targetText)) : null}
                     </div>
                   </div>
-                  <div className="px-4 py-3 self-start">
-                    <div className="flex flex-col gap-2">
-                      <span className="inline-flex max-w-full items-center gap-2 rounded-md border border-[#252a32] bg-[#0c0d0f] px-2 py-1 text-xs text-neutral-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                  <div className="min-w-0 self-start px-3 py-1.5">
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="inline-flex max-w-full shrink-0 items-center gap-2 rounded-md border border-[#252a32] bg-[#0c0d0f] px-2 py-0.5 text-xs text-neutral-300">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
                         <span className="truncate">
                           {entry.modName || t('table.noMod', { ns: 'dictionary' })}
                         </span>
                       </span>
                       {entry.uid && (
-                        <span className="truncate font-mono text-[11px] text-neutral-600">
+                        <span className="block font-mono text-[11px] leading-4 whitespace-nowrap text-neutral-600">
                           {t('table.uid', { ns: 'dictionary', uid: entry.uid })}
                         </span>
                       )}
                     </div>
                   </div>
-                  <div className="px-4 py-3 self-start">
+                  <div className="self-start px-3 py-1.5">
                     <span className="inline-flex items-center gap-1 font-mono text-[11px] text-neutral-400">
                       <span>{entry.sourceLang.toUpperCase()}</span>
                       <span className="text-neutral-600">-&gt;</span>
                       <span className="text-amber-400">{entry.targetLang.toUpperCase()}</span>
                     </span>
                   </div>
-                  <div className="px-4 py-3 self-start">
+                  <div className="self-start px-3 py-1.5">
                     <div className="flex justify-end gap-1">
                       <button
                         type="button"

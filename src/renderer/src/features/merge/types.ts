@@ -1,4 +1,4 @@
-import type { PreparedTranslationInput } from '@/types'
+import type { MergePrepareProgress, PreparedTranslationInput } from '@/types'
 
 export type SlotKey = 'source' | 'target'
 
@@ -11,4 +11,6 @@ export interface MergeFileSlot {
   prepared: PreparedTranslationInput | null
   isDragging: boolean
   isPreparing: boolean
+  prepareRequestId: string | null
+  prepareProgress: MergePrepareProgress | null
 }

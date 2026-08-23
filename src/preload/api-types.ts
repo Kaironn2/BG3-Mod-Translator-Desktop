@@ -305,7 +305,6 @@ export type ConfigKey =
   | 'app_language'
   | 'author'
   | 'dictionary_page_size'
-  | 'divine_path'
 
 export type UserErrorCode =
   | 'common.unknown'
@@ -498,8 +497,17 @@ export type MergeProgress =
   | { phase: 'done'; result: MergeResult }
   | { phase: 'error'; message: string }
 
+export type MergePrepareProgress = {
+  requestId: string
+} & (
+  | { phase: 'extracting'; processed?: number; total?: number }
+  | { phase: 'unpacking'; processed?: number; total?: number }
+  | { phase: 'scanning'; processed?: number; total?: number }
+)
+
 export interface MergeApi {
-  prepareInput(params: { inputPath: string }): Promise<PreparedTranslationInput>
+  prepareInput(params: { inputPath: string; requestId: string }): Promise<PreparedTranslationInput>
+  cancelPrepare(params: { requestId: string }): Promise<{ success: boolean }>
   discardInput(params: { importId: string }): Promise<{ success: boolean }>
   run(params: {
     sourceImportId: string
@@ -511,6 +519,7 @@ export interface MergeApi {
     modName: string
   }): Promise<MergeResult>
   onProgress(cb: (data: MergeProgress) => void): UnsubscribeFn
+  onPrepareProgress(cb: (data: MergePrepareProgress) => void): UnsubscribeFn
 }
 
 export type XmlLoadProgress =

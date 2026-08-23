@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { getLocalizedErrorMessage } from '@/i18n/errors'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
@@ -17,7 +17,9 @@ function emptySlot(lang: string): MergeFileSlot {
     candidateId: null,
     prepared: null,
     isDragging: false,
-    isPreparing: false
+    isPreparing: false,
+    prepareRequestId: null,
+    prepareProgress: null
   }
 }
 
@@ -30,7 +32,12 @@ function hasAcceptedExt(name: string): boolean {
   return ACCEPTED_EXT.includes(ext)
 }
 
-interface UseMergeSetupResult {
+function isPrepareCancelled(error: unknown): boolean {
+  if (error instanceof Error) return error.message === 'PREPARE_CANCELLED'
+  return String(error).includes('PREPARE_CANCELLED')
+}
+
+export interface UseMergeSetupResult {
   source: MergeFileSlot
   target: MergeFileSlot
   modName: string
@@ -64,9 +71,25 @@ export function useMergeSetup(): UseMergeSetupResult {
   const [isRunning, setIsRunning] = useState(false)
   const [progress, setProgress] = useState<MergeProgress | null>(null)
   const [pendingSelection, setPendingSelection] = useState<SlotKey | null>(null)
+  const inflightRef = useRef<{ source: string | null; target: string | null }>({
+    source: null,
+    target: null
+  })
+  const slotsRef = useRef({ source, target })
+  slotsRef.current = { source, target }
 
   useEffect(() => {
     const unsub = window.api.merge.onProgress(setProgress)
+    return unsub
+  }, [])
+
+  useEffect(() => {
+    const unsub = window.api.merge.onPrepareProgress((event) => {
+      const apply = (prev: MergeFileSlot): MergeFileSlot =>
+        prev.prepareRequestId === event.requestId ? { ...prev, prepareProgress: event } : prev
+      setSource(apply)
+      setTarget(apply)
+    })
     return unsub
   }, [])
 
@@ -90,18 +113,40 @@ export function useMergeSetup(): UseMergeSetupResult {
     []
   )
 
-  const getSlot = useCallback(
-    (key: SlotKey): MergeFileSlot => (key === 'source' ? source : target),
-    [source, target]
-  )
+  const getSlot = useCallback((key: SlotKey): MergeFileSlot => slotsRef.current[key], [])
+
+  const queueSelectionIfNeeded = useCallback((key: SlotKey) => {
+    setPendingSelection((prev) => {
+      if (prev) return prev
+      return key
+    })
+  }, [])
+
+  const advanceSelection = useCallback((cleared: SlotKey) => {
+    setPendingSelection((prev) => {
+      if (prev && prev !== cleared) return prev
+      const other: SlotKey = cleared === 'source' ? 'target' : 'source'
+      const otherSlot = slotsRef.current[other]
+      if (otherSlot.prepared && !otherSlot.candidateId) return other
+      return null
+    })
+  }, [])
 
   const prepare = useCallback(
     async (key: SlotKey, filePath: string, fileName: string) => {
       const previous = getSlot(key)
+      if (previous.prepareRequestId) {
+        inflightRef.current[key] = null
+        await window.api.merge
+          .cancelPrepare({ requestId: previous.prepareRequestId })
+          .catch(() => undefined)
+      }
       if (previous.importId) {
         await window.api.merge.discardInput({ importId: previous.importId }).catch(() => undefined)
       }
 
+      const requestId = crypto.randomUUID()
+      inflightRef.current[key] = requestId
       updateSlot(key, (prev) => ({
         ...prev,
         filePath,
@@ -109,18 +154,28 @@ export function useMergeSetup(): UseMergeSetupResult {
         importId: null,
         candidateId: null,
         prepared: null,
-        isPreparing: true
+        isPreparing: true,
+        prepareRequestId: requestId,
+        prepareProgress: null
       }))
 
       let prepared: PreparedTranslationInput
       try {
-        prepared = await window.api.merge.prepareInput({ inputPath: filePath })
+        prepared = await window.api.merge.prepareInput({ inputPath: filePath, requestId })
       } catch (error) {
+        if (isPrepareCancelled(error) || inflightRef.current[key] !== requestId) return
+        inflightRef.current[key] = null
         updateSlot(key, () => emptySlot(previous.lang))
         toast.error(getLocalizedErrorMessage(error, t))
         return
       }
 
+      if (inflightRef.current[key] !== requestId) {
+        await window.api.merge.discardInput({ importId: prepared.importId }).catch(() => undefined)
+        return
+      }
+
+      inflightRef.current[key] = null
       const validCandidates = prepared.candidates.filter((candidate) => candidate.valid)
       const autoCandidate = !prepared.requiresSelection
         ? prepared.candidates[0]
@@ -128,17 +183,22 @@ export function useMergeSetup(): UseMergeSetupResult {
           ? validCandidates[0]
           : null
 
-      updateSlot(key, (prev) => ({
-        ...prev,
-        prepared,
-        importId: prepared.importId,
-        candidateId: autoCandidate?.id ?? null,
-        isPreparing: false
-      }))
+      updateSlot(key, (prev) => {
+        if (prev.prepareRequestId !== requestId) return prev
+        return {
+          ...prev,
+          prepared,
+          importId: prepared.importId,
+          candidateId: autoCandidate?.id ?? null,
+          isPreparing: false,
+          prepareRequestId: null,
+          prepareProgress: null
+        }
+      })
 
-      if (!autoCandidate) setPendingSelection(key)
+      if (!autoCandidate) queueSelectionIfNeeded(key)
     },
-    [getSlot, t, updateSlot]
+    [getSlot, queueSelectionIfNeeded, t, updateSlot]
   )
 
   const browseFile = useCallback(
@@ -169,21 +229,27 @@ export function useMergeSetup(): UseMergeSetupResult {
   const clearFile = useCallback(
     async (key: SlotKey) => {
       const slot = getSlot(key)
+      inflightRef.current[key] = null
+      if (slot.prepareRequestId) {
+        await window.api.merge
+          .cancelPrepare({ requestId: slot.prepareRequestId })
+          .catch(() => undefined)
+      }
       if (slot.importId) {
         await window.api.merge.discardInput({ importId: slot.importId }).catch(() => undefined)
       }
       updateSlot(key, () => emptySlot(slot.lang))
-      if (pendingSelection === key) setPendingSelection(null)
+      advanceSelection(key)
     },
-    [getSlot, pendingSelection, updateSlot]
+    [advanceSelection, getSlot, updateSlot]
   )
 
   const selectCandidate = useCallback(
     (key: SlotKey, candidateId: string) => {
       updateSlot(key, (prev) => ({ ...prev, candidateId }))
-      setPendingSelection(null)
+      advanceSelection(key)
     },
-    [updateSlot]
+    [advanceSelection, updateSlot]
   )
 
   const closeSelection = useCallback(async () => {
@@ -209,17 +275,34 @@ export function useMergeSetup(): UseMergeSetupResult {
   )
 
   const reset = useCallback(async () => {
-    if (source.importId) {
-      await window.api.merge.discardInput({ importId: source.importId }).catch(() => undefined)
+    const current = slotsRef.current
+    inflightRef.current.source = null
+    inflightRef.current.target = null
+    if (current.source.prepareRequestId) {
+      await window.api.merge
+        .cancelPrepare({ requestId: current.source.prepareRequestId })
+        .catch(() => undefined)
     }
-    if (target.importId) {
-      await window.api.merge.discardInput({ importId: target.importId }).catch(() => undefined)
+    if (current.target.prepareRequestId) {
+      await window.api.merge
+        .cancelPrepare({ requestId: current.target.prepareRequestId })
+        .catch(() => undefined)
+    }
+    if (current.source.importId) {
+      await window.api.merge
+        .discardInput({ importId: current.source.importId })
+        .catch(() => undefined)
+    }
+    if (current.target.importId) {
+      await window.api.merge
+        .discardInput({ importId: current.target.importId })
+        .catch(() => undefined)
     }
     setSource((prev) => emptySlot(prev.lang))
     setTarget((prev) => emptySlot(prev.lang))
     setModName('')
     setPendingSelection(null)
-  }, [source.importId, target.importId])
+  }, [])
 
   const step1Done = !!source.lang && !!source.importId && !!source.candidateId
   const step2Done = !!target.lang && !!target.importId && !!target.candidateId
