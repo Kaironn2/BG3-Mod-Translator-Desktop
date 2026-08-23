@@ -1,92 +1,133 @@
 ---
 name: version-bump
 description: >
-  Bump Icosa's version, open a GitHub draft release, build the Windows portable,
-  attach it, and publish. Use when shipping a release, bumping the version,
-  creating a GitHub release, or the user runs /version-bump /release.
+  Bump Icosa's version, write a descriptive GitHub draft, optionally merge to
+  main, build the Windows portable, attach it, write a Nexus blurb, and publish.
+  Use when shipping a release, bumping the version, creating a GitHub release,
+  or the user runs /version-bump /release.
 ---
 
 # Version bump
 
-Windows-only release path. The published artifact is the **portable** `.exe` (README: no installer). Version lives in two files and must match.
+Windows-only. Public artifact is the **portable** `.exe`. Version lives in two files and must match: `package.json` `"version"` and `electron-builder.yml` `buildVersion`. Last tag: `git describe --tags --abbrev=0`.
 
-## Identity
-
-Run the **commit-pr** identity gate before the version commit, push, `gh release create`, upload, or publish. Same `gh` user / `user.name` / `user.email` as this repo.
+Run the **commit-pr** identity gate before the version commit, push, merge, `gh release create`, upload, or publish.
 
 ## Inputs
 
-Ask if missing:
+Ask, in the user's language, if missing:
 
-- New version: `patch` / `minor` / `major`, or an explicit `X.Y.Z`
-- Release notes: short English paragraph, or derive from `git log <last-tag>..HEAD --oneline`
+1. **Version:** `patch` / `minor` / `major`, or explicit `X.Y.Z`. Do not bump without this.
+2. **Merge to main?** After the bump commit exists, ask whether to merge the bump branch into `main` and point the draft at `main`. Default to asking; do not merge silently.
+3. **Images?** Ask if the draft should include screenshots, and **where they are**.
+   - Inside the repo: reference those paths.
+   - Outside the repo: copy into `docs/images/` (create the folder if needed), use a stable filename (`settings-ai.png`, not `IMG_2031.png`), and **commit them on the bump branch** before the draft so GitHub can serve them.
+4. **Notes source:** merged PRs and `git log <last-tag>..HEAD`. Do not invent features. Do **not** write a draft that is only a list of PR links.
 
-Do not invent a changelog. Do not bump without a confirmed version.
+## Release notes
 
-Current version: `package.json` `"version"` (keep `electron-builder.yml` `buildVersion` in lockstep). Last tag: `git describe --tags --abbrev=0`.
+Match the voice of [v1.12.0](https://github.com/Kaironn2/BG3-Mod-Translator-Desktop/releases/tag/v1.12.0): a title line, a short intro, themed sections with real explanation, then install + compare.
+
+Skeleton (English):
+
+```markdown
+# Icosa vX.Y.Z — <short theme>
+
+<2–4 sentences: what this release is for.>
+
+---
+
+## What's new
+
+### <Feature>
+
+What it does, where in the UI, and any caveat.
+
+![<caption>](https://raw.githubusercontent.com/Kaironn2/BG3-Mod-Translator-Desktop/<ref>/docs/images/<file>)
+
+## Fixes
+
+### <Bug>
+
+What broke and what changed.
+
+## Installation
+
+Download **Icosa X.Y.Z.exe** (portable) from Assets below and run it. No installer.
+
+**Full Changelog:** [vA.B.C...vX.Y.Z](https://github.com/Kaironn2/BG3-Mod-Translator-Desktop/compare/vA.B.C...vX.Y.Z)
+```
+
+Omit the image line when there is no screenshot. `<ref>` is `main` if the draft targets main, otherwise the bump branch. PRs may be cited *inside* a section (`#50`) as support, never as the whole notes.
+
+Installation always describes the **portable** exe, not the NSIS setup.
+
+## Nexus blurb
+
+After a successful `build:win`, write `dist/nexus-X.Y.Z` (plain text, no extension). `dist/` is gitignored — do not commit this file.
+
+Hard cap **255 characters** including newlines. Count before writing; drop the star line or a bullet if over.
+
+Shape:
+
+```
+New in vX.Y.Z:
+- <bullet>
+- <bullet>
+
+If useful, leave a ⭐ at https://github.com/Kaironn2/BG3-Mod-Translator-Desktop
+```
+
+Bullets are short English facts from the release, not PR URLs.
 
 ## Steps
 
-1. **Branch.** If HEAD is `main`/`master`, create `chore/release-X.Y.Z`. Otherwise use the current feature branch only if the user asked to tag it.
+1. **Branch.** If HEAD is `main`/`master`, create `chore/release-X.Y.Z`.
 
-2. **Bump.** Set both to `X.Y.Z`:
-   - `package.json` → `"version"`
-   - `electron-builder.yml` → `buildVersion`
+2. **Bump** both version files to `X.Y.Z`. Copy any external images into `docs/images/` and include them in this commit if they belong to the release.
 
-3. **Commit** (commit-pr rules, English conventional):
+3. **Commit** `chore(release): vX.Y.Z` (commit-pr rules).
 
-   ```
-   chore(release): vX.Y.Z
-   ```
+4. **Push** `git push -u origin HEAD`. Open a PR to `main` if this is a `chore/release-*` branch.
 
-4. **Push** the branch: `git push -u origin HEAD`.
+5. **Merge?** If the user said yes to merging into main: merge that PR (identity gate), `git checkout main && git pull`, and use `main` as the draft target. If no: draft targets the bump branch.
 
-5. **Draft release** (no binaries yet):
+6. **Draft** (no binaries yet). If tag `vX.Y.Z` already exists, stop.
 
    ```
-   gh release create vX.Y.Z --draft --title "Icosa X.Y.Z" --target <branch> --notes "<notes>"
+   gh release create vX.Y.Z --draft --title "Icosa X.Y.Z" --target <main-or-branch> --notes-file <notes.md>
    ```
 
-   Tag `vX.Y.Z`. If the tag already exists, stop.
+7. **Build:** `pnpm build:win` (timeout ≥ 30 minutes). Output `dist/`. NSIS is also built; **do not attach it** unless asked.
 
-6. **Build** (this machine is Windows; `build:win` is the release script):
-
-   ```
-   pnpm build:win
-   ```
-
-   Timeout: at least 30 minutes. Output is `dist/`. NSIS setup is also produced; **do not attach it** unless the user asked — public releases are portable-only.
-
-7. **Attach portable.** Pick the portable exe in `dist/`:
-   - Include: `Icosa*.exe` that is **not** `*-setup.exe`
-   - Exclude: `*.blockmap`, `*.yml`, NSIS setup
-   Typical name: `Icosa X.Y.Z.exe` (space in the name).
+8. **Attach portable** from `dist/`: `Icosa*.exe` that is not `*-setup.exe`. Skip `*.blockmap` / `*.yml`. Typical name: `Icosa X.Y.Z.exe`.
 
    ```
    gh release upload vX.Y.Z "<portable-exe>"
    ```
 
-8. **Publish** only after the upload succeeds:
+9. Write `dist/nexus-X.Y.Z` (255-char cap).
 
-   ```
-   gh release edit vX.Y.Z --draft=false
-   ```
+10. **Publish** only after upload succeeds: `gh release edit vX.Y.Z --draft=false`.
 
-9. **PR** to default if this was a `chore/release-*` branch. Do not merge unless asked.
+Do not merge the bump PR unless step 5 said yes.
 
 ## If a step cannot run
 
 | Step | When it fails | What to do |
 | --- | --- | --- |
-| `build:win` | Not Windows | Stop after draft. Tell the user to build on Windows and `gh release upload`. |
-| `build:win` | Compile / electron-builder error | Leave the draft up. Do **not** publish an empty release. |
+| `build:win` | Not Windows | Stop after draft. User builds on Windows and uploads. |
+| `build:win` | Compile / packager error | Leave the draft. Do not publish empty. |
 | Upload | File missing in `dist/` | List `dist/` and stop. |
-| Publish | `gh` lacks `repo` scope | Leave `--draft`. Report the URL. |
+| Publish | `gh` lacks `repo` scope | Leave `--draft`. Show the URL. |
+| Merge | User said no, or PR conflicts | Draft stays on the bump branch. Say so. |
 
-No code signing is configured. The portable exe is unsigned (SmartScreen may warn). That is expected.
+No code signing is configured. The portable exe is unsigned (SmartScreen may warn).
 
 ## Verify
 
 1. `package.json` and `electron-builder.yml` show the same `X.Y.Z`.
-2. `gh release view vX.Y.Z --json isDraft,url,assets` — after step 8, `isDraft` is false and the portable asset is listed.
-3. Open the release URL. The download is the portable exe, not the NSIS setup.
+2. Draft body has intro + sections, not a PR-only list. Image URLs load if screenshots were included.
+3. `gh release view vX.Y.Z --json isDraft,url,targetCommitish,assets` — after publish, `isDraft` is false, portable asset listed, `targetCommitish` is `main` if the user asked to merge.
+4. `dist/nexus-X.Y.Z` exists and is ≤ 255 characters.
+5. Assets are the portable exe, not the NSIS setup.
