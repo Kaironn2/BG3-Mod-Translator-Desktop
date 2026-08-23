@@ -3,10 +3,9 @@ import path from 'node:path'
 import { ipcMain } from 'electron'
 import { getDbPath } from '../database/connection'
 import type { RepositoryRegistry } from '../database/repositories/registry'
-import { runImport } from '../services/import.service'
+import { runImport, runPreviewImport } from '../services/import.service'
 import { getSimilarityClient, invalidateSimilarityCache } from '../services/similarity-client'
 import { csvCell } from '../utils/csv'
-import { readImportCsv } from '../utils/dictionaryCsv'
 
 interface DictionaryFilters {
   text?: string
@@ -141,14 +140,12 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
 
   ipcMain.handle(
     'dictionary:previewImport',
-    (_event, { filePath, format }: { filePath: string; format: 'csv' | 'xlsx' }) => {
+    async (event, { filePath, format }: { filePath: string; format: 'csv' | 'xlsx' }) => {
       if (format === 'xlsx') throw new Error('XLSX import not yet supported')
-      const preview = readImportCsv(filePath)
-      return {
-        headers: preview.headers,
-        totalRows: preview.rows.length,
-        rows: preview.rows.slice(0, 5)
-      }
+      return runPreviewImport({
+        filePath,
+        onProgress: (p) => event.sender.send('dictionary:import:progress', p)
+      })
     }
   )
 

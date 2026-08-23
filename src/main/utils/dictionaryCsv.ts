@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import { parseCsv, parseCsvTable } from './csv'
+import { parseCsvTable } from './csv'
 
 export interface DictionaryImportRow {
   sourceLang: string
@@ -19,11 +19,28 @@ const HEADER_ALIASES = {
   uid: ['uid']
 } as const
 
-export function readImportCsv(filePath: string): { headers: string[]; rows: DictionaryImportRow[] } {
+export function readImportCsv(filePath: string): {
+  headers: string[]
+  rows: DictionaryImportRow[]
+} {
   const content = fs.readFileSync(filePath, 'utf-8')
-  const rawRows = parseCsv(content)
-  const { headers } = parseCsvTable(content)
-  return { headers, rows: rawRows.map(normalizeRow) }
+  const table = parseCsvTable(content)
+  if (table.headers.length === 0) return { headers: [], rows: [] }
+
+  const rows = table.rows.map((row) =>
+    normalizeRow(
+      Object.fromEntries(table.headers.map((header, index) => [header, row[index]?.trim() ?? '']))
+    )
+  )
+  return { headers: table.headers, rows }
+}
+
+export function readImportCsvPreview(
+  filePath: string,
+  sampleSize = 5
+): { headers: string[]; totalRows: number; rows: DictionaryImportRow[] } {
+  const { headers, rows } = readImportCsv(filePath)
+  return { headers, totalRows: rows.length, rows: rows.slice(0, sampleSize) }
 }
 
 function normalizeRow(row: Record<string, string>): DictionaryImportRow {

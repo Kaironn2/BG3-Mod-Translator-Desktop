@@ -5,13 +5,24 @@ import { ModRepository } from '../database/repositories/mod.repo'
 import type { NewDictionaryEntry } from '../database/schema'
 import * as schema from '../database/schema'
 import { applySqlitePragmas } from '../database/sqlite-pragmas'
-import { readImportCsv } from '../utils/dictionaryCsv'
+import {
+  type DictionaryImportRow,
+  readImportCsv,
+  readImportCsvPreview
+} from '../utils/dictionaryCsv'
 import { dictionaryTextKey, normalizeDictionaryText } from '../utils/dictionaryText'
 import { normalizeLangs } from '../utils/languages'
 
 export interface ImportWorkerInput {
   filePath: string
-  dbPath: string
+  dbPath?: string
+  mode?: 'import' | 'preview'
+}
+
+export type ImportPreviewResult = {
+  headers: string[]
+  totalRows: number
+  rows: DictionaryImportRow[]
 }
 
 export type ImportProgress =
@@ -19,6 +30,7 @@ export type ImportProgress =
   | { phase: 'parsing' }
   | { phase: 'writing'; processed: number; total: number }
   | { phase: 'done'; count: number }
+  | { phase: 'preview-done'; result: ImportPreviewResult }
   | { phase: 'error'; message: string }
 
 interface PendingInsert extends NewDictionaryEntry {}
@@ -35,6 +47,15 @@ export async function runImportWorker(
   input: ImportWorkerInput,
   post: (msg: ImportProgress) => void
 ): Promise<void> {
+  if (input.mode === 'preview') {
+    post({ phase: 'reading' })
+    const result = readImportCsvPreview(input.filePath)
+    post({ phase: 'preview-done', result })
+    return
+  }
+
+  if (!input.dbPath) throw new Error('dbPath is required for dictionary import')
+
   const sqlite = new Database(input.dbPath)
   applySqlitePragmas(sqlite)
 
