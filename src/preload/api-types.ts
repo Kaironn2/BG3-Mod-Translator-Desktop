@@ -665,6 +665,48 @@ export interface MetricsApi {
   }): Promise<MetricsModBucket[]>
 }
 
+export type UpdaterChannel = 'installed' | 'portable' | 'dev' | 'unsupported'
+
+export type UpdaterStatus =
+  | 'idle'
+  | 'checking'
+  | 'up-to-date'
+  | 'available'
+  | 'backing-up'
+  | 'downloading'
+  | 'ready'
+  | 'installing'
+  | 'error'
+
+export interface UpdaterChangelog {
+  fromVersion: string
+  toVersion: string
+  url: string
+}
+
+export interface UpdaterState {
+  currentVersion: string
+  channel: UpdaterChannel
+  status: UpdaterStatus
+  latestVersion: string | null
+  releaseUrl: string | null
+  lastCheckedAt: string | null
+  downloadPercent: number
+  downloadedBytes: number
+  totalBytes: number
+  backupPercent: number
+  errorCode: string | null
+  changelog: UpdaterChangelog | null
+}
+
+export interface UpdaterApi {
+  getState(): Promise<UpdaterState>
+  check(): Promise<UpdaterState>
+  install(): Promise<void>
+  ackChangelog(): Promise<UpdaterState>
+  onState(cb: (state: UpdaterState) => void): UnsubscribeFn
+}
+
 export interface AppApi {
   translation: TranslationApi
   dictionary: DictionaryApi
@@ -679,6 +721,7 @@ export interface AppApi {
   merge: MergeApi
   window: WindowApi
   metrics: MetricsApi
+  updater: UpdaterApi
 }
 
 export interface AppWindow {

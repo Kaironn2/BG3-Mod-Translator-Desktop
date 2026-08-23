@@ -47,4 +47,8 @@ nsis:
   createDesktopShortcut: always
   runAfterFinish: false
   deleteAppDataOnUninstall: false
+publish:
+  provider: github
+  owner: Kaironn2
+  repo: BG3-Mod-Translator-Desktop
 npmRebuild: true

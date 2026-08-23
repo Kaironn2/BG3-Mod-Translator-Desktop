@@ -6,6 +6,7 @@ import { ExternalApiKeysCard } from '@/features/settings/ExternalApiKeysCard'
 import { PreferencesCard } from '@/features/settings/PreferencesCard'
 import { PromptSlotsCard } from '@/features/settings/PromptSlotsCard'
 import { SimilaritySettingsCard } from '@/features/settings/SimilaritySettingsCard'
+import { UpdatesCard } from '@/features/settings/UpdatesCard'
 import { useConfig } from '@/hooks/useConfig'
 import { getLocalizedErrorMessage } from '@/i18n/errors'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
@@ -72,6 +73,7 @@ export function SettingsPage(): React.JSX.Element {
         </div>
 
         <PreferencesCard config={config} set={set} />
+        <UpdatesCard />
         <ExternalApiKeysCard config={config} set={set} />
         <AiProvidersCard />
         <PromptSlotsCard />

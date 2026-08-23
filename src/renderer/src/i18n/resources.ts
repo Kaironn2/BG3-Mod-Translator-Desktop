@@ -11,6 +11,7 @@ import settingsEn from '@/locales/en/settings.json'
 import sidebarEn from '@/locales/en/sidebar.json'
 import toastsEn from '@/locales/en/toasts.json'
 import translateEn from '@/locales/en/translate.json'
+import updaterEn from '@/locales/en/updater.json'
 import aiPtBr from '@/locales/pt-BR/ai.json'
 import commonPtBr from '@/locales/pt-BR/common.json'
 import dictionaryPtBr from '@/locales/pt-BR/dictionary.json'
@@ -24,6 +25,7 @@ import settingsPtBr from '@/locales/pt-BR/settings.json'
 import sidebarPtBr from '@/locales/pt-BR/sidebar.json'
 import toastsPtBr from '@/locales/pt-BR/toasts.json'
 import translatePtBr from '@/locales/pt-BR/translate.json'
+import updaterPtBr from '@/locales/pt-BR/updater.json'
 
 export const translationNamespaces = [
   'ai',
@@ -38,7 +40,8 @@ export const translationNamespaces = [
   'extract',
   'errors',
   'toasts',
-  'metrics'
+  'metrics',
+  'updater'
 ] as const
 
 export const resources = {
@@ -55,7 +58,8 @@ export const resources = {
     extract: extractEn,
     errors: errorsEn,
     toasts: toastsEn,
-    metrics: metricsEn
+    metrics: metricsEn,
+    updater: updaterEn
   },
   'pt-BR': {
     ai: aiPtBr,
@@ -70,6 +74,7 @@ export const resources = {
     extract: extractPtBr,
     errors: errorsPtBr,
     toasts: toastsPtBr,
-    metrics: metricsPtBr
+    metrics: metricsPtBr,
+    updater: updaterPtBr
   }
 } as const

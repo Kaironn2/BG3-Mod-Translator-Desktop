@@ -1,0 +1,32 @@
+{
+  "title": "Updates",
+  "subtitle": "Icosa checks GitHub for a newer Windows installer. Your dictionary and settings stay in AppData.",
+  "currentVersion": "Current version",
+  "latestVersion": "Latest version",
+  "unknownLatest": "Not checked yet",
+  "check": "Check for updates",
+  "checking": "Checking for updates…",
+  "updateTo": "Update to v{{version}}",
+  "upToDate": "You are on the latest version.",
+  "updateAvailable": "Version {{version}} is available.",
+  "idle": "Icosa checks for updates on startup and every few hours.",
+  "backingUp": "Backing up your dictionary and settings…",
+  "downloading": "Downloading update…",
+  "downloadingBytes": "Downloading {{current}} / {{total}}",
+  "installing": "Installing and restarting Icosa…",
+  "unsupportedDev": "Auto-update runs in the installed Windows app, not in development.",
+  "unsupportedPortable": "Auto-update is available in the Windows installer. The portable build keeps your data but does not self-update.",
+  "unsupportedPlatform": "Auto-update is only published for the Windows installer.",
+  "seeChangelog": "See full changelog here →",
+  "updatedTitle": "Updated to v{{version}}",
+  "updatedFrom": "Icosa was updated from v{{from}} to v{{to}}.",
+  "errors": {
+    "checkFailed": "Could not check for updates. Try again later.",
+    "downloadFailed": "The update download failed. Try again.",
+    "backupFailed": "Could not back up your data. The update was not installed.",
+    "installFailed": "The update could not be installed. Try again.",
+    "untrusted": "The update file was rejected because it is not the Icosa Windows installer.",
+    "offline": "You are offline. Icosa will check again later.",
+    "unsupported": "This copy of Icosa cannot auto-update."
+  }
+}

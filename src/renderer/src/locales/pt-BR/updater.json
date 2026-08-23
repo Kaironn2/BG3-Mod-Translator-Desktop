@@ -1,0 +1,32 @@
+{
+  "title": "Atualizações",
+  "subtitle": "O Icosa consulta o GitHub por um instalador Windows mais novo. Dicionário e configurações permanecem no AppData.",
+  "currentVersion": "Versão atual",
+  "latestVersion": "Versão mais recente",
+  "unknownLatest": "Ainda não verificado",
+  "check": "Buscar atualizações",
+  "checking": "Buscando atualizações…",
+  "updateTo": "Atualizar para v{{version}}",
+  "upToDate": "Você já está na versão mais recente.",
+  "updateAvailable": "A versão {{version}} está disponível.",
+  "idle": "O Icosa verifica atualizações na inicialização e a cada algumas horas.",
+  "backingUp": "Salvando backup do dicionário e das configurações…",
+  "downloading": "Baixando atualização…",
+  "downloadingBytes": "Baixando {{current}} / {{total}}",
+  "installing": "Instalando e reabrindo o Icosa…",
+  "unsupportedDev": "A atualização automática funciona no app instalado para Windows, não no modo de desenvolvimento.",
+  "unsupportedPortable": "A atualização automática está no instalador Windows. A versão portable mantém seus dados, mas não se atualiza sozinha.",
+  "unsupportedPlatform": "A atualização automática é publicada apenas para o instalador Windows.",
+  "seeChangelog": "See full changelog here →",
+  "updatedTitle": "Atualizado para v{{version}}",
+  "updatedFrom": "O Icosa foi atualizado de v{{from}} para v{{to}}.",
+  "errors": {
+    "checkFailed": "Não foi possível buscar atualizações. Tente de novo mais tarde.",
+    "downloadFailed": "Falha ao baixar a atualização. Tente de novo.",
+    "backupFailed": "Não foi possível fazer o backup dos dados. A atualização não foi instalada.",
+    "installFailed": "Não foi possível instalar a atualização. Tente de novo.",
+    "untrusted": "O arquivo de atualização foi recusado porque não é o instalador Windows do Icosa.",
+    "offline": "Você está offline. O Icosa tenta de novo mais tarde.",
+    "unsupported": "Esta cópia do Icosa não pode se atualizar automaticamente."
+  }
+}
