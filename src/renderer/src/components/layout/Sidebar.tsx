@@ -1,5 +1,6 @@
 import { BarChart3, BookOpen, Boxes, Languages, Merge, Package, PackageOpen, Settings } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
+import { SidebarUpdateControl } from '@/features/updater/SidebarUpdateControl'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 
@@ -90,6 +91,7 @@ export function Sidebar(): React.JSX.Element {
             label={t(item.labelKey)}
           />
         ))}
+        <SidebarUpdateControl />
       </div>
     </aside>
   )

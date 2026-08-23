@@ -1,7 +1,8 @@
 import { Outlet } from 'react-router-dom'
+import { ChangelogModal } from '@/features/updater/ChangelogModal'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
-import { TitleBar } from './TitleBar'
 import { Sidebar } from './Sidebar'
+import { TitleBar } from './TitleBar'
 
 export function MainLayout(): React.JSX.Element {
   useKeyboardShortcuts()
@@ -15,6 +16,7 @@ export function MainLayout(): React.JSX.Element {
           <Outlet />
         </main>
       </div>
+      <ChangelogModal />
     </div>
   )
 }

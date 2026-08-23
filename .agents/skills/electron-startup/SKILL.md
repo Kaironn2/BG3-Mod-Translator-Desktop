@@ -19,9 +19,12 @@ A failed or slow `getDb()` used to run **before** `createWindow()` and **before*
 
 1. `patchIpcLogging()`, **`registerLogHandlers()`**, window + fs handlers
 2. `getDb()` / repos (must not hang on FTS rebuild or key backfill)
-3. Remaining IPC
+3. Remaining IPC, including `registerUpdater` / `registerUpdaterHandlers`
 4. `createWindow()`
 5. `setImmediate(ensureDictionaryFts)` — repair/rebuild FTS **after** the window exists
+6. `startBackgroundUpdateChecks()` — delayed GitHub check (20s, then every 4h). Must not run inside `getDb()` or block `whenReady`
+
+If `getDb()` throws after a pending auto-update, restore `%APPDATA%/Icosa/backups/pre-update_*/icosa.db` (Icosa userData only) and retry once before giving up.
 
 Do not create a `BrowserWindow` and `return` before step 3. The renderer calls `log:write` immediately.
 
@@ -42,3 +45,5 @@ Do not create a `BrowserWindow` and `return` before step 3. The renderer calls `
 2. Cold start against `%APPDATA%/Icosa/icosa.db` (200k+ rows): window appears without waiting for FTS rebuild.
 3. If you add IPC: register it before `createWindow`, or the first renderer invoke races.
 4. Check `%APPDATA%/Icosa/logs/icosa-errors.log` after a failed boot instead of guessing.
+5. Updater IPC must be registered before `createWindow()` so the first `updater:getState` does not race. Checks stay off the main-thread hot path (timer + `electron-updater` network I/O).
+6. Auto-update must only replace Icosa install files. Dictionary/config live in `%APPDATA%/Icosa` (`deleteAppDataOnUninstall: false`). Never write backups outside that folder.

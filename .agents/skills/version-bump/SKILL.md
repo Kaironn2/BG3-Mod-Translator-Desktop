@@ -2,14 +2,15 @@
 name: version-bump
 description: >
   Bump Icosa's version, write a descriptive GitHub draft, optionally merge to
-  main, build the Windows portable, attach it, write a Nexus blurb, and publish.
+  main, build the Windows installer + portable, attach auto-update assets,
+  write a Nexus blurb, and publish.
   Use when shipping a release, bumping the version, creating a GitHub release,
   or the user runs /version-bump /release.
 ---
 
 # Version bump
 
-Windows-only. Public artifact is the **portable** `.exe`. Version lives in two files and must match: `package.json` `"version"` and `electron-builder.yml` `buildVersion`. Last tag: `git describe --tags --abbrev=0`.
+Windows-only. Ship both the **NSIS installer** (auto-update) and the **portable** `.exe`. Version lives in two files and must match: `package.json` `"version"` and `electron-builder.yml` `buildVersion`. Last tag: `git describe --tags --abbrev=0`. Auto-update reads `latest.yml` from the published GitHub release; a release without that file and the setup exe cannot update installed copies.
 
 Run the **commit-pr** identity gate before the version commit, push, merge, `gh release create`, upload, or publish.
 
@@ -53,14 +54,16 @@ What broke and what changed.
 
 ## Installation
 
-Download **Icosa X.Y.Z.exe** (portable) from Assets below and run it. No installer.
+Download **Icosa-X.Y.Z-windows-x64-setup.exe** (installer, auto-update) or **Icosa X.Y.Z.exe** (portable) from Assets below.
+
+The installer keeps dictionary and settings in `%APPDATA%/Icosa` and can update itself. The portable build does not auto-update.
 
 **Full Changelog:** [vA.B.C...vX.Y.Z](https://github.com/Kaironn2/BG3-Mod-Translator-Desktop/compare/vA.B.C...vX.Y.Z)
 ```
 
 Omit the image line when there is no screenshot. `<ref>` is `main` if the draft targets main, otherwise the bump branch. PRs may be cited *inside* a section (`#50`) as support, never as the whole notes.
 
-Installation always describes the **portable** exe, not the NSIS setup.
+Installation describes **both** the NSIS setup (auto-update) and the portable exe.
 
 ## Nexus blurb
 
@@ -98,13 +101,23 @@ Bullets are short English facts from the release, not PR URLs.
    gh release create vX.Y.Z --draft --title "Icosa X.Y.Z" --target <main-or-branch> --notes-file <notes.md>
    ```
 
-7. **Build:** `pnpm build:win` (timeout ≥ 30 minutes). Output `dist/`. NSIS is also built; **do not attach it** unless asked.
+7. **Build:** `pnpm build:win` (timeout ≥ 30 minutes). Output `dist/`. The script passes `--publish never` so electron-builder does not upload on its own.
 
-8. **Attach portable** from `dist/`: `Icosa*.exe` that is not `*-setup.exe`. Skip `*.blockmap` / `*.yml`. Typical name: `Icosa X.Y.Z.exe`.
+8. **Attach auto-update + portable** from `dist/`:
+
+   - `Icosa-X.Y.Z-windows-x64-setup.exe` (NSIS installer — required for auto-update)
+   - `Icosa-X.Y.Z-windows-x64-setup.exe.blockmap` (differential updates)
+   - `latest.yml` (electron-updater feed — required)
+   - `Icosa X.Y.Z.exe` (portable; the `Icosa*.exe` that is **not** `*-setup.exe`)
 
    ```
-   gh release upload vX.Y.Z "<portable-exe>"
+   gh release upload vX.Y.Z "dist/Icosa-X.Y.Z-windows-x64-setup.exe"
+   gh release upload vX.Y.Z "dist/Icosa-X.Y.Z-windows-x64-setup.exe.blockmap"
+   gh release upload vX.Y.Z "dist/latest.yml"
+   gh release upload vX.Y.Z "dist/Icosa X.Y.Z.exe"
    ```
+
+   Do not attach `win-unpacked/` or other leftovers. The setup exe filename must stay `Icosa-*-windows-x64-setup.exe` or the in-app updater will reject it.
 
 9. Write `dist/nexus-X.Y.Z` (255-char cap).
 
@@ -128,6 +141,6 @@ No code signing is configured. The portable exe is unsigned (SmartScreen may war
 
 1. `package.json` and `electron-builder.yml` show the same `X.Y.Z`.
 2. Draft body has intro + sections, not a PR-only list. Image URLs load if screenshots were included.
-3. `gh release view vX.Y.Z --json isDraft,url,targetCommitish,assets` — after publish, `isDraft` is false, portable asset listed, `targetCommitish` is `main` if the user asked to merge.
+3. `gh release view vX.Y.Z --json isDraft,url,targetCommitish,assets` — after publish, `isDraft` is false, setup exe + `latest.yml` + blockmap + portable are listed, `targetCommitish` is `main` if the user asked to merge.
 4. `dist/nexus-X.Y.Z` exists and is ≤ 255 characters.
-5. Assets are the portable exe, not the NSIS setup.
+5. Assets include the NSIS setup **and** `latest.yml`. Auto-update cannot work with only the portable exe.

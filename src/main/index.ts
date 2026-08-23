@@ -16,10 +16,17 @@ import { registerMetricsHandlers } from './ipc/metrics.ipc'
 import { registerModHandlers } from './ipc/mod.ipc'
 import { registerPromptSlotHandlers } from './ipc/prompt-slot.ipc'
 import { registerTranslationHandlers } from './ipc/translation.ipc'
+import { registerUpdaterHandlers } from './ipc/updater.ipc'
 import { registerWindowHandlers, setupWindowEvents } from './ipc/window.ipc'
 import { registerXmlHandlers } from './ipc/xml.ipc'
 import { logError } from './services/log.service'
 import { disposeSimilarityClient } from './services/similarity-client'
+import { openDbWithUpdateRecovery } from './services/update-backup.service'
+import {
+  registerUpdater,
+  startBackgroundUpdateChecks,
+  stopBackgroundUpdateChecks
+} from './services/updater.service'
 import { createUsageService } from './services/usage.service'
 
 let mainWindow: BrowserWindow | null = null
@@ -88,10 +95,14 @@ app.whenReady().then(() => {
 
   let repos: RepositoryRegistry
   try {
+    openDbWithUpdateRecovery()
     repos = createRepositoryRegistry(getDb())
   } catch (err) {
     logError('main.getDb', err)
+    registerUpdater(getWindow)
+    registerUpdaterHandlers()
     createWindow()
+    startBackgroundUpdateChecks()
     return
   }
 
@@ -106,6 +117,8 @@ app.whenReady().then(() => {
   registerConfigHandlers()
   registerPromptSlotHandlers(repos)
   registerXmlHandlers(repos)
+  registerUpdater(getWindow)
+  registerUpdaterHandlers()
 
   createWindow()
 
@@ -117,6 +130,8 @@ app.whenReady().then(() => {
       logError('db.ftsBackfill', err)
     }
   })
+
+  startBackgroundUpdateChecks()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -132,6 +147,7 @@ process.on('unhandledRejection', (reason) => {
 })
 
 app.on('window-all-closed', () => {
+  stopBackgroundUpdateChecks()
   void disposeSimilarityClient().finally(() => {
     closeDb()
     if (process.platform !== 'darwin') {

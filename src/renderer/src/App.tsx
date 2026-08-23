@@ -3,6 +3,7 @@ import { Toaster } from 'sonner'
 import { MainLayout } from './components/layout/MainLayout'
 import { MergeSessionProvider } from './context/MergeSession'
 import { TranslationSessionProvider } from './context/TranslationSession'
+import { UpdaterProvider } from './context/UpdaterSession'
 import { DictionaryPage } from './pages/DictionaryPage'
 import { EntryEditPage } from './pages/EntryEditPage'
 import { ExtractPage } from './pages/ExtractPage'
@@ -20,11 +21,13 @@ function App(): React.JSX.Element {
       <Routes>
         <Route
           element={
-            <TranslationSessionProvider>
-              <MergeSessionProvider>
-                <MainLayout />
-              </MergeSessionProvider>
-            </TranslationSessionProvider>
+            <UpdaterProvider>
+              <TranslationSessionProvider>
+                <MergeSessionProvider>
+                  <MainLayout />
+                </MergeSessionProvider>
+              </TranslationSessionProvider>
+            </UpdaterProvider>
           }
         >
           <Route index element={<Navigate to="/translate" replace />} />

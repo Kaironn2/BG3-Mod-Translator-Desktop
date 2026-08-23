@@ -429,6 +429,17 @@ const api: AppApi = {
       to: string
       service?: import('./api-types').MetricsRunService
     }) => ipcRenderer.invoke('metrics:aggregateByMod', payload)
+  },
+
+  updater: {
+    getState: (): Promise<import('./api-types').UpdaterState> =>
+      ipcRenderer.invoke('updater:getState'),
+    check: (): Promise<import('./api-types').UpdaterState> => ipcRenderer.invoke('updater:check'),
+    install: (): Promise<void> => ipcRenderer.invoke('updater:install'),
+    ackChangelog: (): Promise<import('./api-types').UpdaterState> =>
+      ipcRenderer.invoke('updater:ackChangelog'),
+    onState: (cb: (state: import('./api-types').UpdaterState) => void): UnsubscribeFn =>
+      on('updater:state', cb)
   }
 }
 
