@@ -10,7 +10,7 @@ description: >
 
 # Version bump
 
-Windows-only. Ship both the **NSIS installer** (auto-update) and the **portable** `.exe`. Version lives in two files and must match: `package.json` `"version"` and `electron-builder.yml` `buildVersion`. Last tag: `git describe --tags --abbrev=0`. Auto-update reads `latest.yml` from the published GitHub release; a release without that file and the setup exe cannot update installed copies.
+Windows-only. Ship **both** artifacts every time: the **NSIS setup** (`Icosa-X.Y.Z-windows-x64-setup.exe`, auto-update) **and** the **portable** (`Icosa-X.Y.Z-windows-x64-portable.exe`). Never publish a release that is only the portable. Version lives in two files and must match: `package.json` `"version"` and `electron-builder.yml` `buildVersion`. Last tag: `git describe --tags --abbrev=0`. Auto-update reads `latest.yml` from the published GitHub release; without `latest.yml`, the setup exe, and the `.blockmap`, installed copies cannot update.
 
 Run the **commit-pr** identity gate before the version commit, push, merge, `gh release create`, upload, or publish.
 
@@ -54,16 +54,18 @@ What broke and what changed.
 
 ## Installation
 
-Download **Icosa-X.Y.Z-windows-x64-setup.exe** (installer, auto-update) or **Icosa X.Y.Z.exe** (portable) from Assets below.
+**Installer (recommended, auto-update):** download **Icosa-X.Y.Z-windows-x64-setup.exe** and run it. You can choose the install folder. Dictionary and settings stay in `%APPDATA%/Icosa`.
 
-The installer keeps dictionary and settings in `%APPDATA%/Icosa` and can update itself. The portable build does not auto-update.
+**Portable:** download **Icosa-X.Y.Z-windows-x64-portable.exe**. Put it in its **own folder** (not the Windows Desktop). Data is stored in a `data` folder next to the exe. Delete any leftover `app/` extract folder from older portables (temp or beside the exe) — that folder is not your dictionary.
+
+The portable build does not auto-update.
 
 **Full Changelog:** [vA.B.C...vX.Y.Z](https://github.com/Kaironn2/BG3-Mod-Translator-Desktop/compare/vA.B.C...vX.Y.Z)
 ```
 
 Omit the image line when there is no screenshot. `<ref>` is `main` if the draft targets main, otherwise the bump branch. PRs may be cited *inside* a section (`#50`) as support, never as the whole notes.
 
-Installation describes **both** the NSIS setup (auto-update) and the portable exe.
+Installation describes **both** the NSIS **setup** (first, auto-update) and the portable exe. Always tell people to put the portable in its own folder, that data lives in `data/` next to it, and to delete leftover `app/` extract folders from older portables.
 
 ## Nexus blurb
 
@@ -108,13 +110,13 @@ Bullets are short English facts from the release, not PR URLs.
    - `Icosa-X.Y.Z-windows-x64-setup.exe` (NSIS installer — required for auto-update)
    - `Icosa-X.Y.Z-windows-x64-setup.exe.blockmap` (differential updates)
    - `latest.yml` (electron-updater feed — required)
-   - `Icosa X.Y.Z.exe` (portable; the `Icosa*.exe` that is **not** `*-setup.exe`)
+   - `Icosa-X.Y.Z-windows-x64-portable.exe`
 
    ```
    gh release upload vX.Y.Z "dist/Icosa-X.Y.Z-windows-x64-setup.exe"
    gh release upload vX.Y.Z "dist/Icosa-X.Y.Z-windows-x64-setup.exe.blockmap"
    gh release upload vX.Y.Z "dist/latest.yml"
-   gh release upload vX.Y.Z "dist/Icosa X.Y.Z.exe"
+   gh release upload vX.Y.Z "dist/Icosa-X.Y.Z-windows-x64-portable.exe"
    ```
 
    Do not attach `win-unpacked/` or other leftovers. The setup exe filename must stay `Icosa-*-windows-x64-setup.exe` or the in-app updater will reject it.
