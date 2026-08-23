@@ -38,8 +38,11 @@ nsis:
   artifactName: ${productName}-${version}-windows-${arch}-setup.${ext}
   oneClick: false
   perMachine: false
-  allowElevation: false
+  allowElevation: true
   allowToChangeInstallationDirectory: true
+  include: installer.nsh
+  unicode: true
+  packElevateHelper: true
   installerIcon: build/icon.ico
   uninstallerIcon: build/icon.ico
   shortcutName: ${productName}
@@ -47,6 +50,9 @@ nsis:
   createDesktopShortcut: always
   runAfterFinish: false
   deleteAppDataOnUninstall: false
+portable:
+  requestExecutionLevel: user
+  artifactName: ${productName}-${version}-windows-${arch}-portable.${ext}
 publish:
   provider: github
   owner: Kaironn2
