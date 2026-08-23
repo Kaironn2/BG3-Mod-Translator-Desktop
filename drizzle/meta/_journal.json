@@ -71,6 +71,13 @@
       "when": 1782945157817,
       "tag": "0009_peaceful_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1783440000000,
+      "tag": "0010_dictionary_perf",
+      "breakpoints": true
     }
   ]
 }

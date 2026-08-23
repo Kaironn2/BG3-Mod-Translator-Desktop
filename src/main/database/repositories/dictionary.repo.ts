@@ -2,6 +2,7 @@ import { and, desc, eq, or, type SQL, sql } from 'drizzle-orm'
 import type { drizzle } from 'drizzle-orm/better-sqlite3'
 import { dictionaryTextKey, normalizeDictionaryText } from '../../utils/dictionaryText'
 import { normalizeLangs } from '../../utils/languages'
+import { toFtsQuery } from '../fts-query'
 import { type DictionaryEntry, dictionary, type NewDictionaryEntry } from '../schema'
 
 type AppDb = ReturnType<typeof drizzle>
@@ -57,7 +58,13 @@ export function getDictionaryTargetText(
 }
 
 export class DictionaryRepository {
+  private ftsEnabled: boolean | null = null
+
   constructor(private db: AppDb) {}
+
+  refreshFtsProbe(): void {
+    this.ftsEnabled = null
+  }
 
   list(filters: DictionaryFilters = {}): DictionaryEntry[] {
     return this.queryList(filters).all() as DictionaryEntry[]
@@ -394,8 +401,12 @@ export class DictionaryRepository {
     const targetColumn: 'language1' | 'language2' = swapped ? 'language1' : 'language2'
 
     const toInsert: NewDictionaryEntry[] = []
-    const toUpdate: { id: number; targetText: string; targetTextKey: string; uid: string | null }[] =
-      []
+    const toUpdate: {
+      id: number
+      targetText: string
+      targetTextKey: string
+      uid: string | null
+    }[] = []
 
     for (const row of rows) {
       const sourceText = normalizeDictionaryText(row.sourceText)
@@ -607,20 +618,48 @@ export class DictionaryRepository {
     }
 
     if (text) {
-      const pattern = `%${text}%`
-      conditions.push(
-        sql`(
+      const ftsQuery = this.hasFts() ? toFtsQuery(text) : null
+      if (ftsQuery) {
+        conditions.push(
+          sql`${dictionary.id} in (select rowid from dictionary_fts where dictionary_fts match ${ftsQuery})`
+        )
+      } else {
+        const pattern = `%${text}%`
+        conditions.push(
+          sql`(
           lower(${dictionary.textLanguage1}) like ${pattern}
           or lower(${dictionary.textLanguage2}) like ${pattern}
           or lower(coalesce(${dictionary.uid}, '')) like ${pattern}
           or lower(coalesce(${dictionary.modName}, '')) like ${pattern}
         )`
-      )
+        )
+      }
     }
 
     if (conditions.length === 0) return undefined
     if (conditions.length === 1) return conditions[0]
     return and(...conditions) as SQL
+  }
+
+  private hasFts(): boolean {
+    if (this.ftsEnabled != null) return this.ftsEnabled
+    try {
+      const sqlite = (this.db as { $client: { prepare: (sql: string) => { get: () => unknown } } })
+        .$client
+      const table = sqlite
+        .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'dictionary_fts'")
+        .get()
+      if (!table) {
+        this.ftsEnabled = false
+        return false
+      }
+      this.ftsEnabled = Boolean(
+        sqlite.prepare("SELECT 1 FROM dictionary_fts WHERE dictionary_fts MATCH 'a*' LIMIT 1").get()
+      )
+    } catch {
+      this.ftsEnabled = false
+    }
+    return this.ftsEnabled
   }
 
   private findUnscopedByText(

@@ -4,8 +4,9 @@ import { DictionaryRepository } from '../database/repositories/dictionary.repo'
 import { ModRepository } from '../database/repositories/mod.repo'
 import type { NewDictionaryEntry } from '../database/schema'
 import * as schema from '../database/schema'
-import { dictionaryTextKey, normalizeDictionaryText } from '../utils/dictionaryText'
+import { applySqlitePragmas } from '../database/sqlite-pragmas'
 import { readImportCsv } from '../utils/dictionaryCsv'
+import { dictionaryTextKey, normalizeDictionaryText } from '../utils/dictionaryText'
 import { normalizeLangs } from '../utils/languages'
 
 export interface ImportWorkerInput {
@@ -35,12 +36,7 @@ export async function runImportWorker(
   post: (msg: ImportProgress) => void
 ): Promise<void> {
   const sqlite = new Database(input.dbPath)
-  sqlite.pragma('journal_mode = WAL')
-  sqlite.pragma('foreign_keys = ON')
-  sqlite.pragma('synchronous = NORMAL')
-  sqlite.pragma('cache_size = -64000')
-  sqlite.pragma('temp_store = MEMORY')
-  sqlite.pragma('mmap_size = 268435456')
+  applySqlitePragmas(sqlite)
 
   try {
     const db = drizzle(sqlite, { schema })
@@ -63,7 +59,12 @@ export async function runImportWorker(
     for (const row of valid) {
       const key = `${row.sourceLang}|${row.targetLang}|${row.modName ?? ''}`
       if (!groups.has(key)) {
-        groups.set(key, { sourceLang: row.sourceLang, targetLang: row.targetLang, modName: row.modName, rows: [] })
+        groups.set(key, {
+          sourceLang: row.sourceLang,
+          targetLang: row.targetLang,
+          modName: row.modName,
+          rows: []
+        })
       }
       groups.get(key)!.rows.push(row)
     }
@@ -102,7 +103,17 @@ export async function runImportWorker(
               uid: row.uid?.trim() || existing.uid
             })
           } else {
-            toInsert.push(buildEntry(sourceLang, targetLang, swapped, sourceText, targetText, trimmedModName, row.uid))
+            toInsert.push(
+              buildEntry(
+                sourceLang,
+                targetLang,
+                swapped,
+                sourceText,
+                targetText,
+                trimmedModName,
+                row.uid
+              )
+            )
           }
         }
       } else {
@@ -111,7 +122,9 @@ export async function runImportWorker(
           const sourceText = normalizeDictionaryText(row.sourceText)
           const targetText = normalizeDictionaryText(row.targetText)
           if (!sourceText || !targetText) continue
-          toInsert.push(buildEntry(sourceLang, targetLang, swapped, sourceText, targetText, null, row.uid))
+          toInsert.push(
+            buildEntry(sourceLang, targetLang, swapped, sourceText, targetText, null, row.uid)
+          )
         }
       }
 
