@@ -59,6 +59,9 @@ importers:
       lz4-napi:
         specifier: ^2.9.0
         version: 2.9.0
+      ms:
+        specifier: ^2.1.3
+        version: 2.1.3
       react-i18next:
         specifier: ^17.0.7
         version: 17.0.7(i18next@26.0.10(typescript@5.9.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3)
