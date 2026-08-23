@@ -19,7 +19,8 @@ import { registerTranslationHandlers } from './ipc/translation.ipc'
 import { registerUpdaterHandlers } from './ipc/updater.ipc'
 import { registerWindowHandlers, setupWindowEvents } from './ipc/window.ipc'
 import { registerXmlHandlers } from './ipc/xml.ipc'
-import { logError } from './services/log.service'
+import { configurePortableUserData, showPortableBlockDialog } from './portable-paths'
+import { logError, writeLog } from './services/log.service'
 import { disposeSimilarityClient } from './services/similarity-client'
 import { openDbWithUpdateRecovery } from './services/update-backup.service'
 import {
@@ -39,6 +40,14 @@ if (is.dev && typeof process.loadEnvFile === 'function') {
   } catch {
     // no .env present - fine
   }
+}
+
+// Portable builds keep dictionary/config next to the exe. Must run before whenReady
+// and before getDb() / logs (https://www.electronjs.org/docs/latest/api/app#appsetpathname-path).
+const portablePaths = configurePortableUserData()
+if (portablePaths.blockedReason) {
+  showPortableBlockDialog(portablePaths.blockedReason)
+  app.exit(1)
 }
 
 function getWindow(): BrowserWindow | null {
@@ -83,9 +92,25 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  if (portablePaths.blockedReason) return
+
   electronApp.setAppUserModelId('com.icosa.bg3-mod-translator')
   patchIpcLogging()
   registerLogHandlers()
+  try {
+    writeLog({
+      level: 'info',
+      scope: 'main.paths',
+      message: 'userData ready',
+      meta: {
+        portable: portablePaths.isPortable,
+        userData: portablePaths.userData,
+        exeDir: portablePaths.exeDir
+      }
+    })
+  } catch {
+    // logging must not block boot
+  }
   registerWindowHandlers(getWindow)
   registerFsHandlers()
 
