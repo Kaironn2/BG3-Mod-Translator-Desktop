@@ -6,6 +6,11 @@ import { defineConfig } from 'electron-vite'
 export default defineConfig({
   main: {
     build: {
+      // pnpm + electron-builder drops nested deps of electron-updater (debug -> ms).
+      // Bundle the updater so those modules are not required from app.asar/node_modules.
+      externalizeDeps: {
+        exclude: ['electron-updater', 'ms']
+      },
       rollupOptions: {
         input: {
           index: resolve('src/main/index.ts'),
