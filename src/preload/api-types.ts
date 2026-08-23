@@ -305,7 +305,6 @@ export type ConfigKey =
   | 'app_language'
   | 'author'
   | 'dictionary_page_size'
-  | 'divine_path'
 
 export type UserErrorCode =
   | 'common.unknown'
