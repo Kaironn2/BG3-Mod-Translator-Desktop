@@ -15,7 +15,11 @@ A failed or slow `getDb()` used to run **before** `createWindow()` and **before*
 - `pnpm dev` stuck on `starting electron app...` (main threw; no window)
 - `No handler registered for 'log:write'` (window opened after a `getDb` catch that `return`ed without IPC)
 
-Portable Windows builds (`PORTABLE_EXECUTABLE_DIR`): call `configurePortableUserData()` **before** `app.whenReady()`. userData becomes `<exe-dir>/data`, not `%APPDATA%`. Refuse to start if the exe sits directly on the Desktop.
+Call `configurePortableUserData()` **before** `app.whenReady()` (and before any `app.getPath('userData')` / `getDb()` / log write):
+
+- Unpackaged (`pnpm dev`, `!app.isPackaged`): userData is `<repo>/data`, not `%APPDATA%`.
+- Portable (`PORTABLE_EXECUTABLE_DIR`): userData is `<exe-dir>/data`. Refuse to start if the exe sits directly on the Desktop.
+- Installed NSIS: leave Electron's default `%APPDATA%/Icosa`.
 
 ## Order in `app.whenReady`
 
@@ -44,7 +48,7 @@ Do not create a `BrowserWindow` and `return` before step 3. The renderer calls `
 ## Verify before finishing
 
 1. `pnpm dev` shows a window. DevTools must not spam `log:write` missing-handler errors.
-2. Cold start against `%APPDATA%/Icosa/icosa.db` (200k+ rows): window appears without waiting for FTS rebuild.
+2. Cold start: `pnpm dev` uses `<repo>/data/icosa.db`; the installed app uses `%APPDATA%/Icosa/icosa.db`. Window appears without waiting for FTS rebuild.
 3. If you add IPC: register it before `createWindow`, or the first renderer invoke races.
 4. Check `%APPDATA%/Icosa/logs/icosa-errors.log` after a failed boot instead of guessing.
 5. Updater IPC must be registered before `createWindow()` so the first `updater:getState` does not race. Checks stay off the main-thread hot path (timer + `electron-updater` network I/O).

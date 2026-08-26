@@ -5,7 +5,9 @@ import { app, dialog } from 'electron'
 import {
   isWindowsDesktopDirectory,
   PORTABLE_DATA_DIR_NAME,
-  portableDataDir
+  portableDataDir,
+  unpackagedDataDir,
+  unpackagedRepoRoot
 } from './utils/portable-location'
 
 export { isWindowsDesktopDirectory, PORTABLE_DATA_DIR_NAME, portableDataDir }
@@ -14,6 +16,7 @@ export type PortableBlockReason = 'desktop' | 'not-writable'
 
 export interface PortablePathState {
   isPortable: boolean
+  unpackaged: boolean
   exeDir: string | null
   userData: string
   blockedReason: PortableBlockReason | null
@@ -51,32 +54,8 @@ export function directoryIsWritable(dir: string): boolean {
   }
 }
 
-// Must run before app.whenReady() and before any app.getPath('userData') read.
-export function configurePortableUserData(): PortablePathState {
-  const exeDir = portableExeDir()
-  if (!exeDir) {
-    return {
-      isPortable: false,
-      exeDir: null,
-      userData: app.getPath('userData'),
-      blockedReason: null
-    }
-  }
-
-  if (isWindowsDesktopDirectory(exeDir, windowsDesktopDirectories())) {
-    return {
-      isPortable: true,
-      exeDir,
-      userData: app.getPath('userData'),
-      blockedReason: 'desktop'
-    }
-  }
-
-  const userData = portableDataDir(exeDir)
-  if (!directoryIsWritable(userData)) {
-    return { isPortable: true, exeDir, userData, blockedReason: 'not-writable' }
-  }
-
+function applyUserDataPath(userData: string): void {
+  fs.mkdirSync(userData, { recursive: true })
   app.setPath('userData', userData)
   app.setPath('sessionData', userData)
   try {
@@ -89,8 +68,55 @@ export function configurePortableUserData(): PortablePathState {
   } catch {
     // same
   }
+}
 
-  return { isPortable: true, exeDir, userData, blockedReason: null }
+// Must run before app.whenReady() and before any app.getPath('userData') read.
+export function configurePortableUserData(): PortablePathState {
+  const exeDir = portableExeDir()
+  if (!exeDir) {
+    if (!app.isPackaged) {
+      const userData = unpackagedDataDir(unpackagedRepoRoot(__dirname))
+      applyUserDataPath(userData)
+      return {
+        isPortable: false,
+        unpackaged: true,
+        exeDir: null,
+        userData,
+        blockedReason: null
+      }
+    }
+    return {
+      isPortable: false,
+      unpackaged: false,
+      exeDir: null,
+      userData: app.getPath('userData'),
+      blockedReason: null
+    }
+  }
+
+  if (isWindowsDesktopDirectory(exeDir, windowsDesktopDirectories())) {
+    return {
+      isPortable: true,
+      unpackaged: false,
+      exeDir,
+      userData: app.getPath('userData'),
+      blockedReason: 'desktop'
+    }
+  }
+
+  const userData = portableDataDir(exeDir)
+  if (!directoryIsWritable(userData)) {
+    return {
+      isPortable: true,
+      unpackaged: false,
+      exeDir,
+      userData,
+      blockedReason: 'not-writable'
+    }
+  }
+
+  applyUserDataPath(userData)
+  return { isPortable: true, unpackaged: false, exeDir, userData, blockedReason: null }
 }
 
 export function showPortableBlockDialog(reason: PortableBlockReason): void {

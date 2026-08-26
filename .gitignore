@@ -7,6 +7,7 @@ out
 .claude/
 .env.local
 .env
+# pnpm dev + portable dictionary/config (icosa.db, logs, stored mods)
 data/
 *.txt
 *.xml

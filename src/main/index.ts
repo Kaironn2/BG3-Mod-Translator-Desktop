@@ -104,6 +104,7 @@ app.whenReady().then(() => {
       message: 'userData ready',
       meta: {
         portable: portablePaths.isPortable,
+        unpackaged: portablePaths.unpackaged,
         userData: portablePaths.userData,
         exeDir: portablePaths.exeDir
       }

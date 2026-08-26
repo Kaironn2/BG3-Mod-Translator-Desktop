@@ -5,7 +5,9 @@ import {
   isWindowsDesktopDirectory,
   normalizeDir,
   PORTABLE_DATA_DIR_NAME,
-  portableDataDir
+  portableDataDir,
+  unpackagedDataDir,
+  unpackagedRepoRoot
 } from './portable-location'
 
 const desktop = path.resolve('C:\\Users\\kaironn\\Desktop')
@@ -32,6 +34,12 @@ test('allows Documents or any non-desktop folder', () => {
 test('portable data lives in a data folder next to the exe', () => {
   assert.equal(PORTABLE_DATA_DIR_NAME, 'data')
   assert.equal(portableDataDir('D:\\Icosa'), path.resolve('D:\\Icosa\\data'))
+})
+
+test('unpackaged pnpm dev data lives in the repo data folder', () => {
+  const repo = path.resolve('C:\\code\\BG3-Mod-Translator-Desktop')
+  assert.equal(unpackagedRepoRoot(path.join(repo, 'out', 'main')), repo)
+  assert.equal(unpackagedDataDir(repo), path.join(repo, 'data'))
 })
 
 test('normalizeDir ignores trailing slashes and case on Windows', () => {
