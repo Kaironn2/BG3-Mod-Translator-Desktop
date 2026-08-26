@@ -132,6 +132,9 @@ const api: AppApi = {
     delete: (params: { id: number }): Promise<{ success: boolean }> =>
       ipcRenderer.invoke('dictionary:delete', params),
 
+    deleteMany: (params: { ids: number[] }): Promise<{ deleted: number }> =>
+      ipcRenderer.invoke('dictionary:deleteMany', params),
+
     previewImport: (params: { filePath: string; format: 'csv' | 'xlsx' }) =>
       ipcRenderer.invoke('dictionary:previewImport', params),
 
@@ -141,6 +144,10 @@ const api: AppApi = {
     onImportProgress: (
       cb: (data: import('./api-types').DictionaryImportProgressUpdate) => void
     ): UnsubscribeFn => on('dictionary:import:progress', cb),
+
+    onDeleteProgress: (
+      cb: (data: import('./api-types').DictionaryDeleteProgressUpdate) => void
+    ): UnsubscribeFn => on('dictionary:delete:progress', cb),
 
     export: (params: {
       filters: {
@@ -266,7 +273,16 @@ const api: AppApi = {
 
     delete: (params: { modName: string }) => ipcRenderer.invoke('mod:delete', params),
 
+    deleteMany: (params: { modNames: string[] }) => ipcRenderer.invoke('mod:deleteMany', params),
+
     previewDelete: (params: { modName: string }) => ipcRenderer.invoke('mod:previewDelete', params),
+
+    previewDeleteMany: (params: { modNames: string[] }) =>
+      ipcRenderer.invoke('mod:previewDeleteMany', params),
+
+    onDeleteProgress: (
+      cb: (data: import('./api-types').ModDeleteProgressUpdate) => void
+    ): UnsubscribeFn => on('mod:delete:progress', cb),
 
     setPriority: (params: { modName: string; priority: number | null }) =>
       ipcRenderer.invoke('mod:setPriority', params),

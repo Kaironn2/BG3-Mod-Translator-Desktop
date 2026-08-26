@@ -23,7 +23,8 @@
     "languagesMustDiffer": "Source and target languages must be different."
   },
   "dictionary": {
-    "xlsxNotSupported": "XLSX import/export is not supported yet."
+    "xlsxNotSupported": "XLSX import/export is not supported yet.",
+    "deleteInProgress": "A delete is already in progress. Wait for it to finish."
   },
   "package": {
     "versionFormatInvalid": "Version must use the format 1.2.3.4.",

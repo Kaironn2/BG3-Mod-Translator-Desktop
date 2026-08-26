@@ -233,6 +233,31 @@ export interface DeleteModPreview {
   folderExists: boolean
 }
 
+export interface DeleteModPreviewItem extends DeleteModPreview {
+  modName: string
+}
+
+export interface DeleteModsPreview {
+  mods: DeleteModPreviewItem[]
+  totalMods: number
+  totalRows: number
+  foldersToRemove: number
+}
+
+export interface DeleteModsResult {
+  dictionaryRows: number
+  mods: DeleteModResult[]
+}
+
+export type ModDeleteProgressUpdate =
+  | { phase: 'counting'; total?: number }
+  | { phase: 'deleting'; processed?: number; total?: number }
+  | { phase: 'folders' }
+
+export type DictionaryDeleteProgressUpdate =
+  | { phase: 'counting'; total: number }
+  | { phase: 'deleting'; processed: number; total: number }
+
 export interface ModMeta {
   metaFilePath: string
   name: string
@@ -325,6 +350,7 @@ export type UserErrorCode =
   | 'merge.modNameRequired'
   | 'merge.languagesMustDiffer'
   | 'dictionary.xlsxNotSupported'
+  | 'dictionary.deleteInProgress'
   | 'package.versionFormatInvalid'
   | 'package.languageFolderInvalid'
   | 'package.folderInvalid'
@@ -413,12 +439,14 @@ export interface DictionaryApi {
   upsert(entry: UpsertDictionaryPayload): Promise<{ success: boolean }>
   bulkUpsert(entries: UpsertDictionaryPayload[]): Promise<{ count: number }>
   delete(params: { id: number }): Promise<{ success: boolean }>
+  deleteMany(params: { ids: number[] }): Promise<{ deleted: number }>
   previewImport(params: {
     filePath: string
     format: 'csv' | 'xlsx'
   }): Promise<DictionaryImportPreview>
   import(params: { filePath: string; format: 'csv' | 'xlsx' }): Promise<{ count: number }>
   onImportProgress(cb: (data: DictionaryImportProgressUpdate) => void): () => void
+  onDeleteProgress(cb: (data: DictionaryDeleteProgressUpdate) => void): () => void
   export(params: {
     filters: DictionaryFilters
     format: 'csv' | 'xlsx'
@@ -477,7 +505,10 @@ export interface ModApi {
     bg3LanguageFolder: string
   }): Promise<{ outputPath: string }>
   delete(params: { modName: string }): Promise<DeleteModResult>
+  deleteMany(params: { modNames: string[] }): Promise<DeleteModsResult>
   previewDelete(params: { modName: string }): Promise<DeleteModPreview>
+  previewDeleteMany(params: { modNames: string[] }): Promise<DeleteModsPreview>
+  onDeleteProgress(cb: (data: ModDeleteProgressUpdate) => void): UnsubscribeFn
   setPriority(params: { modName: string; priority: number | null }): Promise<{ success: boolean }>
   reorderPriority(params: { orderedNames: string[] }): Promise<{ success: boolean }>
   listWithPriority(params?: { lang1?: string; lang2?: string }): Promise<ModWithPriority[]>

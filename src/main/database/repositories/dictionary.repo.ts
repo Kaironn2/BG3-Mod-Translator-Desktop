@@ -1,4 +1,4 @@
-import { and, desc, eq, or, type SQL, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, or, type SQL, sql } from 'drizzle-orm'
 import type { drizzle } from 'drizzle-orm/better-sqlite3'
 import { dictionaryTextKey, normalizeDictionaryText } from '../../utils/dictionaryText'
 import { normalizeLangs } from '../../utils/languages'
@@ -526,8 +526,65 @@ export class DictionaryRepository {
     return result?.count ?? 0
   }
 
+  countAllByModNames(names: string[]): Record<string, number> {
+    const counts: Record<string, number> = {}
+    if (names.length === 0) return counts
+    const rows = this.db
+      .select({
+        modName: dictionary.modName,
+        count: sql<number>`count(*)`
+      })
+      .from(dictionary)
+      .where(inArray(dictionary.modName, names))
+      .groupBy(dictionary.modName)
+      .all() as { modName: string | null; count: number }[]
+    for (const row of rows) {
+      if (row.modName) counts[row.modName] = row.count
+    }
+    return counts
+  }
+
+  countByFilter(filters: DictionaryFilters): number {
+    const where = this.buildFilterWhere(filters)
+    const totalRow = where
+      ? (this.db.select({ count: sql<number>`count(*)` }).from(dictionary).where(where).get() as
+          | { count: number }
+          | undefined)
+      : (this.db.select({ count: sql<number>`count(*)` }).from(dictionary).get() as
+          | { count: number }
+          | undefined)
+    return totalRow?.count ?? 0
+  }
+
   delete(id: number): void {
     this.db.delete(dictionary).where(eq(dictionary.id, id)).run()
+  }
+
+  deleteByIds(ids: number[]): number {
+    if (ids.length === 0) return 0
+    const result = this.db.delete(dictionary).where(inArray(dictionary.id, ids)).run() as {
+      changes: number
+    }
+    return result.changes
+  }
+
+  deleteChunkByFilter(filters: DictionaryFilters, limit: number): number {
+    const where = this.buildFilterWhere(filters)
+    const query = this.db.select({ id: dictionary.id }).from(dictionary)
+    const rows = (where ? query.where(where) : query).limit(Math.max(1, limit)).all() as {
+      id: number
+    }[]
+    return this.deleteByIds(rows.map((row) => row.id))
+  }
+
+  deleteChunkByModName(modName: string, limit: number): number {
+    const rows = this.db
+      .select({ id: dictionary.id })
+      .from(dictionary)
+      .where(eq(dictionary.modName, modName))
+      .limit(Math.max(1, limit))
+      .all() as { id: number }[]
+    return this.deleteByIds(rows.map((row) => row.id))
   }
 
   deleteByFilter(filters: DictionaryFilters): { deleted: number } {

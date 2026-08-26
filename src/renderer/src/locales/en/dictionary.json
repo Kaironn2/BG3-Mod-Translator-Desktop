@@ -56,7 +56,8 @@
     "deleteSelectionDescription": "{{count}} selected entries will be removed from the dictionary.",
     "deleteEntryTitle": "Delete entry?",
     "deleteEntryDescription": "Entry #{{id}} will be removed from the dictionary.",
-    "deleteConfirm": "Delete"
+    "deleteConfirm": "Delete",
+    "deleting": "Deleting..."
   },
   "entryModal": {
     "createTitle": "New entry",

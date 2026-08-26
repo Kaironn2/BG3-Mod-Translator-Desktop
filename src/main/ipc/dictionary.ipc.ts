@@ -3,6 +3,7 @@ import path from 'node:path'
 import { ipcMain } from 'electron'
 import { getDbPath } from '../database/connection'
 import type { RepositoryRegistry } from '../database/repositories/registry'
+import { runDelete } from '../services/delete.service'
 import { runImport, runPreviewImport } from '../services/import.service'
 import { getSimilarityClient, invalidateSimilarityCache } from '../services/similarity-client'
 import { csvCell } from '../utils/csv'
@@ -100,10 +101,22 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
     return { success: true }
   })
 
-  ipcMain.handle('dictionary:deleteByFilter', (_event, filters: DictionaryFilters) => {
-    const result = repos.dictionary.deleteByFilter(filters)
+  ipcMain.handle('dictionary:deleteMany', async (event, { ids }: { ids: number[] }) => {
+    const result = await runDelete({
+      job: { type: 'dictionary-ids', ids },
+      onProgress: (p) => event.sender.send('dictionary:delete:progress', p)
+    })
     invalidateSimilarity()
-    return result
+    return { deleted: result.dictionaryRows }
+  })
+
+  ipcMain.handle('dictionary:deleteByFilter', async (event, filters: DictionaryFilters) => {
+    const result = await runDelete({
+      job: { type: 'dictionary-filter', filters },
+      onProgress: (p) => event.sender.send('dictionary:delete:progress', p)
+    })
+    invalidateSimilarity()
+    return { deleted: result.dictionaryRows }
   })
 
   ipcMain.handle(
