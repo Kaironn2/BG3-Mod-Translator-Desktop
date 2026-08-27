@@ -1,11 +1,4 @@
-// SQL transaction runs first; filesystem removal runs after and is best-effort (logged on failure, never rethrows).
-import fs from 'node:fs/promises'
-import type { drizzle } from 'drizzle-orm/better-sqlite3'
-import { ModRepository } from '../database/repositories/mod.repo'
-import { logError } from './log.service'
-import { getStoredModDir } from './translation-import.service'
-
-type AppDb = ReturnType<typeof drizzle>
+import { getStoredModsRoot, runDelete } from './delete.service'
 
 export interface DeleteModResult {
   modName: string
@@ -15,29 +8,57 @@ export interface DeleteModResult {
   folderPath: string
 }
 
-export interface DeleteModInput {
-  modName: string
-  db: AppDb
+export interface DeleteModsResult {
+  dictionaryRows: number
+  mods: DeleteModResult[]
 }
 
-export async function deleteMod(input: DeleteModInput): Promise<DeleteModResult> {
-  const { modName, db } = input
-  const modRepo = new ModRepository(db)
-  const folderPath = getStoredModDir(modName)
+export interface DeleteModProgressUpdate {
+  phase: 'counting' | 'deleting' | 'folders'
+  processed?: number
+  total?: number
+}
 
-  const { dictionaryRows, hadMeta } = modRepo.delete(modName)
+export async function deleteMods(input: {
+  modNames: string[]
+  onProgress?: (p: DeleteModProgressUpdate) => void
+}): Promise<DeleteModsResult> {
+  const result = await runDelete({
+    job: { type: 'mods', modNames: input.modNames },
+    modsRoot: getStoredModsRoot(),
+    onProgress: (p) => {
+      if (p.phase === 'counting') {
+        input.onProgress?.({ phase: 'counting', total: p.total })
+        return
+      }
+      if (p.phase === 'deleting') {
+        input.onProgress?.({ phase: 'deleting', processed: p.processed, total: p.total })
+        return
+      }
+      input.onProgress?.({ phase: 'folders' })
+    }
+  })
 
-  let folderRemoved = false
-  try {
-    await fs.access(folderPath)
-    await fs.rm(folderPath, { recursive: true })
-    folderRemoved = true
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code
-    if (code !== 'ENOENT') {
-      logError('mod-delete: failed to remove folder', err, { modName, folderPath })
+  return {
+    dictionaryRows: result.dictionaryRows,
+    mods: result.mods ?? []
+  }
+}
+
+export async function deleteMod(input: {
+  modName: string
+  onProgress?: (p: DeleteModProgressUpdate) => void
+}): Promise<DeleteModResult> {
+  const result = await deleteMods({ modNames: [input.modName], onProgress: input.onProgress })
+  const item = result.mods[0]
+  if (!item) {
+    return {
+      modName: input.modName,
+      dictionaryRows: 0,
+      hadMeta: false,
+      folderRemoved: false,
+      folderPath: ''
     }
   }
-
-  return { modName, dictionaryRows, hadMeta, folderRemoved, folderPath }
+  return item
 }

@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { ArrowDownToLine, ChevronDown, ChevronUp, GripVertical, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { AmberCheckbox } from '@/components/shared/AmberCheckbox'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import type { ModWithPriority } from '@/types'
 
@@ -9,39 +9,44 @@ interface PriorityModRowProps {
   mod: ModWithPriority
   index: number
   total: number
+  selected: boolean
+  disabled?: boolean
+  onSelectedChange: (checked: boolean) => void
   onMoveUp: () => void
   onMoveDown: () => void
   onSetPosition: (position: number) => void
   onDemote: () => void
   onDelete: () => void
   isSearchActive?: boolean
+  dropPreview?: boolean
+  ghost?: boolean
 }
 
 export function PriorityModRow({
   mod,
   index,
   total,
+  selected,
+  disabled,
+  onSelectedChange,
   onMoveUp,
   onMoveDown,
   onSetPosition,
   onDemote,
   onDelete,
-  isSearchActive
+  isSearchActive,
+  dropPreview,
+  ghost
 }: PriorityModRowProps): React.JSX.Element {
   const { t } = useAppTranslation('mods')
   const [draft, setDraft] = useState<string>(String(index + 1))
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: mod.name
+  const dragDisabled = Boolean(disabled || isSearchActive)
+  const { attributes, listeners, setNodeRef } = useSortable({
+    id: mod.name,
+    disabled: dragDisabled
   })
-
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 10 : undefined
-  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDraft(e.target.value)
@@ -83,22 +88,27 @@ export function PriorityModRow({
   return (
     <div
       ref={setNodeRef}
-      style={style}
       {...attributes}
-      className={`grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-4 py-3 hover:bg-[#131518] transition-colors border-b border-[#1f2329] last:border-b-0${isDragging ? ' shadow-lg ring-1 ring-amber-500/30' : ''}`}
+      className={`grid grid-cols-[auto_auto_1fr_auto_auto] gap-3 items-center px-4 py-3 hover:bg-[#131518] transition-colors border-b border-[#1f2329] last:border-b-0${ghost ? ' opacity-0' : dropPreview ? ' bg-amber-500/15 ring-1 ring-inset ring-amber-500' : selected ? ' bg-[#131518]' : ''}`}
     >
+      <AmberCheckbox
+        checked={selected}
+        disabled={disabled}
+        title={t('actions.select')}
+        onChange={onSelectedChange}
+      />
       {/* left controls */}
       <div className="flex items-center gap-1">
         <span
-          className={`inline-flex shrink-0${isSearchActive ? ' cursor-not-allowed opacity-40' : ' cursor-grab text-neutral-600'}`}
-          {...(!isSearchActive ? listeners : undefined)}
+          className={`inline-flex shrink-0${dragDisabled ? ' cursor-not-allowed opacity-40' : ' cursor-grab text-neutral-600'}`}
+          {...(!dragDisabled ? listeners : undefined)}
         >
           <GripVertical size={16} />
         </span>
         <button
           type="button"
           onClick={onMoveUp}
-          disabled={isFirst}
+          disabled={isFirst || disabled}
           title={t('actions.moveUp')}
           className={
             isFirst
@@ -111,7 +121,7 @@ export function PriorityModRow({
         <button
           type="button"
           onClick={onMoveDown}
-          disabled={isLast}
+          disabled={isLast || disabled}
           title={t('actions.moveDown')}
           className={
             isLast
@@ -146,8 +156,9 @@ export function PriorityModRow({
       <button
         type="button"
         onClick={onDemote}
+        disabled={disabled}
         title={t('actions.demote')}
-        className="text-neutral-400 hover:text-amber-400 hover:bg-amber-500/10 p-1.5 rounded transition-colors cursor-pointer"
+        className="text-neutral-400 hover:text-amber-400 hover:bg-amber-500/10 p-1.5 rounded transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
       >
         <ArrowDownToLine size={15} />
       </button>
@@ -156,8 +167,9 @@ export function PriorityModRow({
       <button
         type="button"
         onClick={onDelete}
+        disabled={disabled}
         title={t('actions.delete')}
-        className="text-neutral-500 hover:text-red-400 hover:bg-red-500/10 p-1.5 rounded transition-colors cursor-pointer"
+        className="text-neutral-500 hover:text-red-400 hover:bg-red-500/10 p-1.5 rounded transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Trash2 size={15} />
       </button>

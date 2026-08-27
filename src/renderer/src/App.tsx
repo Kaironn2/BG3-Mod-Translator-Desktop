@@ -3,6 +3,7 @@ import { Toaster } from 'sonner'
 import { MainLayout } from './components/layout/MainLayout'
 import { DictionaryDeleteSessionProvider } from './context/DictionaryDeleteSession'
 import { MergeSessionProvider } from './context/MergeSession'
+import { ModDeleteSessionProvider } from './context/ModDeleteSession'
 import { TranslationSessionProvider } from './context/TranslationSession'
 import { UpdaterProvider } from './context/UpdaterSession'
 import { DictionaryPage } from './pages/DictionaryPage'
@@ -25,9 +26,11 @@ function App(): React.JSX.Element {
             <UpdaterProvider>
               <TranslationSessionProvider>
                 <MergeSessionProvider>
-                  <DictionaryDeleteSessionProvider>
-                    <MainLayout />
-                  </DictionaryDeleteSessionProvider>
+                  <ModDeleteSessionProvider>
+                    <DictionaryDeleteSessionProvider>
+                      <MainLayout />
+                    </DictionaryDeleteSessionProvider>
+                  </ModDeleteSessionProvider>
                 </MergeSessionProvider>
               </TranslationSessionProvider>
             </UpdaterProvider>
