@@ -6,6 +6,7 @@ const USER_ERROR_PREFIX = '[user-error:'
 const legacyErrorMap = new Map<string, UserErrorCode>([
   ['XLSX import not yet supported', 'dictionary.xlsxNotSupported'],
   ['XLSX export not yet supported', 'dictionary.xlsxNotSupported'],
+  ['A delete is already in progress', 'dictionary.deleteInProgress'],
   ['No .pak file found inside archive', 'common.noPakInArchive'],
   ['No .pak file found inside zip', 'common.noPakInArchive'],
   ['No .pak file found inside the ZIP archive', 'common.noPakInArchive'],

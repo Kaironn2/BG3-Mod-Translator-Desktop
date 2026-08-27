@@ -126,13 +126,15 @@ export function useManageMods() {
   )
 
   const reorder = useCallback(
-    async (orderedNames: string[]) => {
+    async (orderedNames: string[], options?: { silent?: boolean }): Promise<boolean> => {
       try {
         await window.api.mod.reorderPriority({ orderedNames })
         await refetch()
-        toast.success(t('toast.reordered'))
+        if (!options?.silent) toast.success(t('toast.reordered'))
+        return true
       } catch {
         toast.error(t('toast.deleteFailed'))
+        return false
       }
     },
     [refetch, t]

@@ -56,7 +56,8 @@
     "deleteSelectionDescription": "{{count}} entradas selecionadas serão removidas do dicionário.",
     "deleteEntryTitle": "Excluir entrada?",
     "deleteEntryDescription": "A entrada #{{id}} será removida do dicionário.",
-    "deleteConfirm": "Excluir"
+    "deleteConfirm": "Excluir",
+    "deleting": "Excluindo..."
   },
   "entryModal": {
     "createTitle": "Nova entrada",

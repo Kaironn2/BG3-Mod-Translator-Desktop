@@ -1,6 +1,6 @@
 import { asc, eq, isNotNull, sql } from 'drizzle-orm'
 import type { drizzle } from 'drizzle-orm/better-sqlite3'
-import { dictionary, type Mod, mod, modMeta } from '../schema'
+import { dictionary, type Mod, mod, modMeta, translationRun } from '../schema'
 
 type AppDb = ReturnType<typeof drizzle>
 
@@ -123,6 +123,7 @@ export class ModRepository {
         .get() as { id: number } | undefined
       hadMeta = metaRow != null
 
+      tx.update(translationRun).set({ modName: null }).where(eq(translationRun.modName, name)).run()
       tx.delete(dictionary).where(eq(dictionary.modName, name)).run()
       tx.delete(mod).where(eq(mod.name, name)).run()
     })

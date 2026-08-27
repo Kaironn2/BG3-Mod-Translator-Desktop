@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Download,
   FilterX,
+  Loader2,
   Pencil,
   Plus,
   Search,
@@ -31,7 +32,9 @@ import {
   type ReplaceDraft
 } from '@/components/dictionary/types'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { ProgressBar } from '@/components/shared/ProgressBar'
 import { ThemedSelect, type ThemedSelectOption } from '@/components/shared/ThemedSelect'
+import { useDictionaryDeleteSession } from '@/context/DictionaryDeleteSession'
 import { useDebouncedFilter } from '@/hooks/useDebouncedFilter'
 import { getLocalizedErrorMessage } from '@/i18n/errors'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
@@ -82,6 +85,7 @@ const PAGE_SIZE_OPTIONS = [50, 100, 200, 500, 1000]
 
 export function DictionaryPage(): React.JSX.Element {
   const { t, currentLanguage } = useAppTranslation(['dictionary', 'common', 'toasts'])
+  const deleteJob = useDictionaryDeleteSession()
   const [result, setResult] = useState<DictionaryResultState>({
     items: [],
     total: 0,
@@ -373,42 +377,28 @@ export function DictionaryPage(): React.JSX.Element {
     }
   }
 
-  const handleDeleteMany = async (ids: number[]) => {
+  const handleDeleteOne = async (id: number) => {
     try {
-      for (const id of ids) {
-        await window.api.dictionary.delete({ id })
-      }
-      toast.success(
-        t(ids.length === 1 ? 'dictionary.deleted_one' : 'dictionary.deleted_other', {
-          ns: 'toasts',
-          count: ids.length
-        })
-      )
-      setPendingDelete(null)
-      setSelectedIds(new Set())
+      await window.api.dictionary.delete({ id })
+      toast.success(t('dictionary.deleted_one', { ns: 'toasts', count: 1 }))
+      setSelectedIds((previous) => {
+        const next = new Set(previous)
+        next.delete(id)
+        return next
+      })
       await refreshCurrentPage()
     } catch (error) {
       toast.error(getLocalizedErrorMessage(error, t))
     }
   }
 
-  const handleDeleteByFilter = async () => {
-    try {
-      const { deleted } = await window.api.dictionary.deleteByFilter(filters)
-      toast.success(
-        t(deleted === 1 ? 'dictionary.deleted_one' : 'dictionary.deleted_other', {
-          ns: 'toasts',
-          count: deleted
-        })
-      )
-      setPendingDelete(null)
-      setSelectedIds(new Set())
-      setSelectionScope('page')
-      await refreshCurrentPage()
-    } catch (error) {
-      toast.error(getLocalizedErrorMessage(error, t))
-    }
-  }
+  useEffect(() => {
+    if (deleteJob.status !== 'done') return
+    setSelectedIds(new Set())
+    setSelectionScope('page')
+    void Promise.all([refreshCurrentPage(), loadReferenceData()])
+    deleteJob.acknowledge()
+  }, [deleteJob.acknowledge, deleteJob.status, loadReferenceData, refreshCurrentPage])
 
   const handleBatchReplace = async (draft: ReplaceDraft): Promise<boolean> => {
     if (selectionScope === 'all-filtered') {
@@ -666,7 +656,7 @@ export function DictionaryPage(): React.JSX.Element {
           </span>
           <button
             type="button"
-            disabled={selectedCount === 0}
+            disabled={selectedCount === 0 || deleteJob.running}
             onClick={() =>
               setPendingDelete(
                 selectionScope === 'all-filtered'
@@ -691,12 +681,18 @@ export function DictionaryPage(): React.JSX.Element {
             }
             className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/8 px-3 text-xs font-medium text-red-200 transition-colors hover:bg-red-500/14 disabled:cursor-not-allowed disabled:border-[#252a32] disabled:bg-[#131518] disabled:text-neutral-500"
           >
-            <Trash2 size={13} />
-            {t('actions.delete', { ns: 'common' })}
+            {deleteJob.running ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Trash2 size={13} />
+            )}
+            {deleteJob.running
+              ? t('dialogs.deleting', { ns: 'dictionary' })
+              : t('actions.delete', { ns: 'common' })}
           </button>
           <button
             type="button"
-            disabled={selectedCount === 0}
+            disabled={selectedCount === 0 || deleteJob.running}
             onClick={() => setReplaceOpen(true)}
             className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -876,13 +872,15 @@ export function DictionaryPage(): React.JSX.Element {
                     <div className="flex justify-end gap-1">
                       <button
                         type="button"
+                        disabled={deleteJob.running}
                         onClick={() => setEditingEntry(entry)}
-                        className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-[#252a32] hover:bg-[#131518] hover:text-neutral-200"
+                        className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-[#252a32] hover:bg-[#131518] hover:text-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <Pencil size={13} />
                       </button>
                       <button
                         type="button"
+                        disabled={deleteJob.running}
                         onClick={() =>
                           setPendingDelete({
                             ids: [entry.id],
@@ -893,7 +891,7 @@ export function DictionaryPage(): React.JSX.Element {
                             })
                           })
                         }
-                        className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+                        className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -929,6 +927,19 @@ export function DictionaryPage(): React.JSX.Element {
 
         {loading && <DictionaryLoadingOverlay mode={loadingMode} />}
       </div>
+
+      {deleteJob.running && (
+        <div className="shrink-0 border-t border-[#1f2329] bg-[#0c0d0f] px-4 py-2">
+          {deleteJob.total > 0 ? (
+            <ProgressBar current={deleteJob.processed} total={deleteJob.total} />
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-neutral-400">
+              <Loader2 size={12} className="animate-spin text-amber-400" />
+              {t('dialogs.deleting', { ns: 'dictionary' })}
+            </div>
+          )}
+        </div>
+      )}
 
       <footer className="flex items-center gap-4 border-t border-[#1f2329] bg-[#0c0d0f] px-4 py-2 text-[11px] text-neutral-500">
         <span className="inline-flex items-center gap-1.5">
@@ -1010,8 +1021,18 @@ export function DictionaryPage(): React.JSX.Element {
         destructive
         onClose={() => setPendingDelete(null)}
         onConfirm={() => {
-          if (pendingDelete?.filterBased) void handleDeleteByFilter()
-          else if (pendingDelete) void handleDeleteMany(pendingDelete.ids)
+          const pending = pendingDelete
+          setPendingDelete(null)
+          if (!pending) return
+          if (pending.filterBased) {
+            void deleteJob.startByFilter(filters)
+            return
+          }
+          if (pending.ids.length === 1) {
+            void handleDeleteOne(pending.ids[0])
+            return
+          }
+          void deleteJob.startByIds(pending.ids)
         }}
       />
 

@@ -23,7 +23,8 @@
     "languagesMustDiffer": "Os idiomas de origem e destino devem ser diferentes."
   },
   "dictionary": {
-    "xlsxNotSupported": "Importação/exportação XLSX ainda não é suportada."
+    "xlsxNotSupported": "Importação/exportação XLSX ainda não é suportada.",
+    "deleteInProgress": "Já existe uma exclusão em andamento. Aguarde ela terminar."
   },
   "package": {
     "versionFormatInvalid": "A versão deve usar o formato 1.2.3.4.",

@@ -10,7 +10,7 @@ description: >
 
 # SQLite / dictionary DB
 
-Live file: `%APPDATA%/Icosa/icosa.db` (~200k–250k rows is normal). SQLite has **no partitioning**; do not add ATTACH/shards at this size. Indexes + FTS5 are the strategy.
+Live file (installed): `%APPDATA%/Icosa/icosa.db` (~200k–250k rows is normal). `pnpm dev` uses `<repo>/data/icosa.db`. SQLite has **no partitioning**; do not add ATTACH/shards at this size. Indexes + FTS5 are the strategy.
 
 ## Queries
 

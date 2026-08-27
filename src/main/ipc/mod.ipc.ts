@@ -4,7 +4,8 @@ import { app, ipcMain } from 'electron'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { packMod, unpackMod } from '../services/lslib.service'
 import type { MetaInfo } from '../services/lsx-parser.service'
-import { deleteMod } from '../services/mod-delete.service'
+import { deleteMod, deleteMods } from '../services/mod-delete.service'
+import { invalidateSimilarityCache } from '../services/similarity-client'
 import {
   completeTranslationImport as completeImport,
   discardTranslationInput,
@@ -168,15 +169,51 @@ export function registerModHandlers(repos: RepositoryRegistry): void {
     }
   )
 
-  ipcMain.handle('mod:delete', async (_e, { modName }: { modName: string }) =>
-    deleteMod({ modName, db: repos.db })
-  )
+  ipcMain.handle('mod:delete', async (event, { modName }: { modName: string }) => {
+    const result = await deleteMod({
+      modName,
+      onProgress: (p) => event.sender.send('mod:delete:progress', p)
+    })
+    repos.mod.compactPriority()
+    invalidateSimilarityCache()
+    return result
+  })
+
+  ipcMain.handle('mod:deleteMany', async (event, { modNames }: { modNames: string[] }) => {
+    const result = await deleteMods({
+      modNames,
+      onProgress: (p) => event.sender.send('mod:delete:progress', p)
+    })
+    repos.mod.compactPriority()
+    invalidateSimilarityCache()
+    return result
+  })
 
   ipcMain.handle('mod:previewDelete', (_e, { modName }: { modName: string }) => {
     const folderPath = getStoredModDir(modName)
     const folderExists = fs.existsSync(folderPath)
     const dictionaryRows = repos.dictionary.countAllByMod(modName)
     return { dictionaryRows, folderPath, folderExists }
+  })
+
+  ipcMain.handle('mod:previewDeleteMany', (_e, { modNames }: { modNames: string[] }) => {
+    const unique = [...new Set(modNames.map((name) => name.trim()).filter(Boolean))]
+    const counts = repos.dictionary.countAllByModNames(unique)
+    const mods = unique.map((modName) => {
+      const folderPath = getStoredModDir(modName)
+      return {
+        modName,
+        dictionaryRows: counts[modName] ?? 0,
+        folderPath,
+        folderExists: fs.existsSync(folderPath)
+      }
+    })
+    return {
+      mods,
+      totalMods: mods.length,
+      totalRows: mods.reduce((sum, row) => sum + row.dictionaryRows, 0),
+      foldersToRemove: mods.filter((row) => row.folderExists).length
+    }
   })
 
   ipcMain.handle(
