@@ -31,6 +31,7 @@ export interface UpsertParams {
   targetText: string
   modName?: string | null
   uid?: string | null
+  sourceFileId?: number | null
 }
 
 export type DictionaryMatchType = 'mod-text' | 'text'
@@ -213,6 +214,9 @@ export class DictionaryRepository {
       .update(dictionary)
       .set({
         ...this.toValues(params),
+        // Same COALESCE semantics as bulkUpdate: a caller that doesn't know the source
+        // file leaves the pointer untouched instead of clearing it.
+        sourceFileId: sql`COALESCE(${params.sourceFileId ?? null}, ${dictionary.sourceFileId})`,
         updatedAt: sql`(datetime('now'))`
       })
       .where(eq(dictionary.id, id))
@@ -268,7 +272,7 @@ export class DictionaryRepository {
     sourceLang: string,
     targetLang: string,
     modName: string
-  ): Map<string, { id: number; targetKey: string; uid: string | null }> {
+  ): Map<string, { id: number; targetKey: string; uid: string | null; sourceFileId: number | null }> {
     const [l1, l2, swapped] = normalizeLangs(sourceLang, targetLang)
     const normalizedMod = modName.toLowerCase()
 
@@ -277,7 +281,8 @@ export class DictionaryRepository {
         id: dictionary.id,
         uid: dictionary.uid,
         key1: dictionary.textLanguage1Key,
-        key2: dictionary.textLanguage2Key
+        key2: dictionary.textLanguage2Key,
+        sourceFileId: dictionary.sourceFileId
       })
       .from(dictionary)
       .where(
@@ -287,13 +292,13 @@ export class DictionaryRepository {
           sql`lower(coalesce(${dictionary.modName}, '')) = ${normalizedMod}`
         )
       )
-      .all() as { id: number; uid: string | null; key1: string; key2: string }[]
+      .all() as { id: number; uid: string | null; key1: string; key2: string; sourceFileId: number | null }[]
 
-    const map = new Map<string, { id: number; targetKey: string; uid: string | null }>()
+    const map = new Map<string, { id: number; targetKey: string; uid: string | null; sourceFileId: number | null }>()
     for (const row of rows) {
       const sourceKey = swapped ? row.key2 : row.key1
       const targetKey = swapped ? row.key1 : row.key2
-      map.set(sourceKey, { id: row.id, targetKey, uid: row.uid })
+      map.set(sourceKey, { id: row.id, targetKey, uid: row.uid, sourceFileId: row.sourceFileId })
     }
     return map
   }
@@ -406,6 +411,7 @@ export class DictionaryRepository {
       targetText: string
       targetTextKey: string
       uid: string | null
+      sourceFileId: number | null
     }[] = []
 
     for (const row of rows) {
@@ -419,7 +425,10 @@ export class DictionaryRepository {
           id: existing.id,
           targetText,
           targetTextKey: dictionaryTextKey(targetText),
-          uid: row.uid?.trim() || existing.uid
+          uid: row.uid?.trim() || existing.uid,
+          // Only move the file pointer when the caller knows the file; otherwise
+          // preserve the current value (legacy rows keep their state).
+          sourceFileId: row.sourceFileId ?? existing.sourceFileId ?? null
         })
       } else {
         toInsert.push(this.toValues(row))
@@ -445,8 +454,15 @@ export class DictionaryRepository {
   }
 
   // Per-row UPDATE in a single transaction. uid is COALESCEd so null leaves it untouched.
+  // Same for sourceFileId: null = caller doesn't know the file, keep the current value.
   bulkUpdate(
-    updates: { id: number; targetText: string; targetTextKey: string; uid: string | null }[],
+    updates: {
+      id: number
+      targetText: string
+      targetTextKey: string
+      uid: string | null
+      sourceFileId?: number | null
+    }[],
     column: 'language1' | 'language2' = 'language2'
   ): void {
     if (updates.length === 0) return
@@ -462,6 +478,7 @@ export class DictionaryRepository {
           .set({
             ...setPayload,
             uid: sql`COALESCE(${u.uid}, ${dictionary.uid})`,
+            sourceFileId: sql`COALESCE(${u.sourceFileId ?? null}, ${dictionary.sourceFileId})`,
             updatedAt: sql`(datetime('now'))`
           })
           .where(eq(dictionary.id, u.id))
@@ -499,6 +516,34 @@ export class DictionaryRepository {
       .from(dictionary)
       .where(eq(dictionary.modName, modName))
       .all() as DictionaryEntry[]
+  }
+
+  // Rows grouped by original source file, preserving first-seen file order.
+  // Feeds per-file export (one XML/LOCA per original file, original names).
+  listGroupedBySourceFile(modName: string): {
+    fileIds: number[]
+    byFileId: Map<number, DictionaryEntry[]>
+    unfiled: DictionaryEntry[]
+  } {
+    const rows = this.getByMod(modName)
+    const byFileId = new Map<number, DictionaryEntry[]>()
+    const fileIds: number[] = []
+    const unfiled: DictionaryEntry[] = []
+    for (const row of rows) {
+      const fileId = row.sourceFileId
+      if (fileId == null) {
+        unfiled.push(row)
+        continue
+      }
+      let bucket = byFileId.get(fileId)
+      if (!bucket) {
+        bucket = []
+        byFileId.set(fileId, bucket)
+        fileIds.push(fileId)
+      }
+      bucket.push(row)
+    }
+    return { fileIds, byFileId, unfiled }
   }
 
   countByMod(modName: string, sourceLang: string, targetLang: string): number {
@@ -783,7 +828,8 @@ export class DictionaryRepository {
       textLanguage1Key: dictionaryTextKey(text1),
       textLanguage2Key: dictionaryTextKey(text2),
       modName: params.modName?.trim() || null,
-      uid: params.uid?.trim() || null
+      uid: params.uid?.trim() || null,
+      sourceFileId: params.sourceFileId ?? null
     }
   }
 }

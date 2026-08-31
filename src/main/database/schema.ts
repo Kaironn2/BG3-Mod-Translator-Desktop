@@ -42,6 +42,29 @@ export const modMeta = sqliteTable('mod_meta', {
   ...timestamps
 })
 
+// One row per original localization file inside a mod (e.g. Spells.xml, Names.xml,
+// translation_merged.xml). Dictionary rows reference this so exports can rebuild the
+// original per-file split with the original names. file_type: 'xml' | 'loca'.
+export const modSource = sqliteTable(
+  'mod_source',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    modId: integer('mod_id')
+      .notNull()
+      .references(() => mod.id, { onDelete: 'cascade' }),
+    fileName: text('file_name').notNull(),
+    fileType: text('file_type').notNull().default('xml'),
+    ...timestamps
+  },
+  (table) => ({
+    mod_source_mod_file_unique: index('mod_source_mod_file_unique').on(
+      table.modId,
+      table.fileName
+    ),
+    mod_source_file_name_idx: index('mod_source_file_name_idx').on(table.fileName)
+  })
+)
+
 // Invariant: language1 < language2 (alphabetically sorted) - prevents mirrored duplicates.
 // UID is metadata only. Matching and persistence are based on mod + source text, then source text.
 export const dictionary = sqliteTable(
@@ -60,6 +83,9 @@ export const dictionary = sqliteTable(
     textLanguage2Key: text('text_language2_key').notNull().default(''),
     modName: text('mod_name').references(() => mod.name),
     uid: text('uid'),
+    // Original localization file this row came from (mod_source). New writes set it;
+    // legacy rows stay NULL (= merged file) and every query must tolerate that.
+    sourceFileId: integer('source_file_id'),
     ...timestamps
   },
   (table) => ({
@@ -139,6 +165,8 @@ export type Language = typeof language.$inferSelect
 export type Mod = typeof mod.$inferSelect
 export type ModMeta = typeof modMeta.$inferSelect
 export type NewModMeta = typeof modMeta.$inferInsert
+export type ModSource = typeof modSource.$inferSelect
+export type NewModSource = typeof modSource.$inferInsert
 export type DictionaryEntry = typeof dictionary.$inferSelect
 export type NewDictionaryEntry = typeof dictionary.$inferInsert
 export type TranslationUsage = typeof translationUsage.$inferSelect
