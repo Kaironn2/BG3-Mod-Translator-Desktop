@@ -13,8 +13,7 @@ export function compareLanguagesOfficialFirst(left: Language, right: Language): 
 }
 
 // Display names come from i18n (languages.<code>), falling back to the seeded
-// English name. Badge keeps the BG3 Localization folder so both identities are
-// visible at once (label = language, badge = folder the game actually loads).
+// English name. The BG3 folder stays in searchText only (searchable, not shown).
 export function languageToSelectOption(
   language: Language,
   officialMark: string,
@@ -26,7 +25,6 @@ export function languageToSelectOption(
   return {
     value: language.code,
     label,
-    badge: folder,
     searchText: `${label} ${language.name} ${language.code} ${folder}${official ? ` ${officialMark}` : ''}`,
     highlight: official,
     mark: official ? officialMark : undefined
