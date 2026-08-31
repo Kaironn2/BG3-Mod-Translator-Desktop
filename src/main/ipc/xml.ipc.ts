@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { ipcMain } from 'electron'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { writeLocaFile } from '../services/loca/loca-writer'
@@ -20,12 +22,19 @@ interface ExportPayload {
   fileType?: 'xml' | 'loca'
 }
 
+interface ExportMultiPayload {
+  outputDir: string
+  entries: XmlEntry[]
+  // Used when entries carry no sourceFile info (legacy session / single import).
+  fallbackFileName: string
+}
+
 function exportFile(payload: ExportPayload): void {
   const { outputPath, entries } = payload
   if (payload.fileType === 'loca') {
     const target = outputPath.toLowerCase().endsWith('.loca')
       ? outputPath
-      : outputPath.replace(/\.(xml|loca)?$/i, '') + '.loca'
+      : `${outputPath.replace(/\.(xml|loca)?$/i, '')}.loca`
     writeLocaFile(
       entries.map((entry) => ({
         key: entry.uid,
@@ -45,6 +54,84 @@ function exportFile(payload: ExportPayload): void {
   writeLocalizationXml(localizationEntries, outputPath)
 }
 
+interface SourceFileGroup {
+  fileName: string
+  entries: XmlEntry[]
+}
+
+// Split entries into their original per-file groups (same rule as the package
+// export): basename with an .xml/.loca extension. Loca-sourced entries become
+// .xml here because this handler only writes localization XML.
+function groupEntriesBySourceFile(
+  entries: XmlEntry[],
+  fallbackFileName: string
+): SourceFileGroup[] {
+  const byLowerName = new Map<string, SourceFileGroup>()
+  const order: string[] = []
+  const unfiled: XmlEntry[] = []
+
+  const groupFor = (fileName: string): SourceFileGroup => {
+    const key = fileName.toLowerCase()
+    let group = byLowerName.get(key)
+    if (!group) {
+      group = { fileName, entries: [] }
+      byLowerName.set(key, group)
+      order.push(key)
+    }
+    return group
+  }
+
+  for (const entry of entries) {
+    const rawName = entry.sourceFile?.trim()
+    if (!rawName || !/^[^\\/]+\.(xml|loca)$/i.test(rawName)) {
+      unfiled.push(entry)
+      continue
+    }
+    const fileName = rawName.toLowerCase().endsWith('.loca')
+      ? rawName.replace(/\.loca$/i, '.xml')
+      : rawName
+    groupFor(fileName).entries.push(entry)
+  }
+
+  if (order.length === 0) return [{ fileName: fallbackFileName, entries }]
+
+  // Entries without file info ride along in the first group so nothing is
+  // silently dropped from the export.
+  if (unfiled.length > 0) {
+    byLowerName.get(order[0])?.entries.push(...Array.from(unfiled))
+  }
+  return order.map((key) => byLowerName.get(key) as SourceFileGroup)
+}
+
+function exportPerSourceFile(payload: ExportMultiPayload): string[] {
+  fs.mkdirSync(payload.outputDir, { recursive: true })
+  const groups = groupEntriesBySourceFile(payload.entries, payload.fallbackFileName)
+  const written: string[] = []
+  const usedNames = new Set<string>()
+  for (const group of groups) {
+    let fileName = path.basename(group.fileName)
+    // Avoid clobbering a different group mapping onto the same file name.
+    let suffix = 2
+    while (usedNames.has(fileName.toLowerCase())) {
+      fileName = group.fileName.replace(/\.xml$/i, `_${suffix}.xml`)
+      suffix += 1
+    }
+    usedNames.add(fileName.toLowerCase())
+    if (!fileName.toLowerCase().endsWith('.xml')) {
+      fileName = `${fileName.replace(/\.(xml|loca)?$/i, '')}.xml`
+    }
+    const target = path.join(payload.outputDir, fileName)
+    const localizationEntries = group.entries.map((entry) => ({
+      contentuid: entry.uid,
+      version: entry.version,
+      text: encodeEntities(entry.target || entry.source)
+    }))
+    writeLocalizationXml(localizationEntries, target)
+    written.push(target)
+  }
+  return written
+}
+
 export function registerXmlHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle('xml:load', async (event, payload: LoadPayload) => {
     const result = await loadXmlViaWorker({
@@ -56,4 +143,9 @@ export function registerXmlHandlers(repos: RepositoryRegistry): void {
   })
 
   ipcMain.handle('xml:export', (_event, payload: ExportPayload) => exportFile(payload))
+
+  ipcMain.handle('xml:exportPerSourceFile', (_event, payload: ExportMultiPayload) => {
+    if (payload.entries.length === 0) return []
+    return exportPerSourceFile(payload)
+  })
 }
