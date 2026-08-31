@@ -58,3 +58,11 @@ Unfiltered `ORDER BY updated_at DESC LIMIT 200` without `dictionary_list_idx` wa
 2. FTS: insert/update/delete a row, then `MATCH` that text.
 3. Cold start on a copy of a large DB: window must appear; FTS rebuild happens after.
 4. Kill the app mid-migrate on a copy and confirm the next boot quarantines WAL instead of hanging on `starting electron app...`.
+
+## DB-level tests / benchmarks (`pnpm test:db`)
+
+- `better-sqlite3` is a native build for **Electron's ABI** (NODE_MODULE_VERSION 143, node 24); plain `node`/`tsx` (ABI 147) fails with `ERR_DLOPEN_FAILED`. Never try to run .ts scripts that import it via tsx.
+- Pattern: `pnpm dlx esbuild tests/<script>.ts --bundle --platform=node --external:electron --external:better-sqlite3 --format=cjs --outfile=scripts/<name>.cjs && electron scripts/dev/electron-runner.cjs scripts/<name>.cjs`. The runner (`scripts/dev/electron-runner.cjs`) normalizes argv and requires the compiled script inside Electron.
+- `tests/source-file.test.ts` (via `pnpm test:db`) covers `mod_source`/`source_file_id` invariants (rename-doesn't-duplicate, COALESCE pointer preservation, case-insensitive dedupe) + `.loca` round-trip. Bundle output is gitignored (`*.test.cjs`).
+- Repo tooling layout: `scripts/dev/` = reusable CLIs, `tests/` = integration/live tests not in `pnpm test`, `bench/` = benchmarks (`bench-results/` gitignored — may contain DB copies).
+- Migration verification on a real DB: copy the live DB (not the WAL if quiesced), run the migrator inside Electron, then check row counts, `integrity_check`, and `EXPLAIN QUERY PLAN` before/after. One-shot scripts for this should be deleted, not committed.
