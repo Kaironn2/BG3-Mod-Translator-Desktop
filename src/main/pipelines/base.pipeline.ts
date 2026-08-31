@@ -186,6 +186,53 @@ export abstract class BasePipeline {
       this.emitProgress(i + 1, total, entry.text, targetText)
     }
 
+    // Multi-file loose import is stored as one merged xml plus a side map.
+    // When the map exists, keep per-file identity in the output as well.
+    let perEntryFiles: string[] | null = null
+    if (path.basename(ctx.filePath) === 'translation_merged.xml') {
+      try {
+        const mapPath = path.join(path.dirname(ctx.filePath), 'translation_source_map.json')
+        const raw = fs.readFileSync(mapPath, 'utf-8')
+        const parsed = JSON.parse(raw) as string[]
+        if (Array.isArray(parsed) && parsed.length === entries.length) perEntryFiles = parsed
+      } catch {}
+    }
+
+    if (perEntryFiles) {
+      const groups = new Map<string, { fileName: string; entries: LocalizationEntry[] }>()
+      const order: string[] = []
+      for (let i = 0; i < translated.length; i++) {
+        const rawName = perEntryFiles[i]
+        const fileName = rawName.toLowerCase().endsWith('.loca')
+          ? rawName.replace(/\.loca$/i, '.xml')
+          : rawName
+        const key = fileName.toLowerCase()
+        let g = groups.get(key)
+        if (!g) {
+          g = { fileName, entries: [] }
+          groups.set(key, g)
+          order.push(key)
+        }
+        g.entries.push(translated[i])
+      }
+      if (order.length > 1) {
+        const written: string[] = []
+        for (const key of order) {
+          const g = groups.get(key)!
+          const base = path.basename(g.fileName, '.xml')
+          const outName = `${base}_${ctx.targetLang}.xml`
+          const outPath = path.join(outDir, outName)
+          writeLocalizationXml(g.entries, outPath)
+          const finalPath = path.join(path.dirname(ctx.filePath), outName)
+          fs.copyFileSync(outPath, finalPath)
+          written.push(finalPath)
+        }
+        const first = written[0]
+        this.emitDone(first)
+        return first
+      }
+    }
+
     const baseName = path.basename(ctx.filePath, '.xml')
     const outPath = path.join(outDir, `${baseName}_${ctx.targetLang}.xml`)
     writeLocalizationXml(translated, outPath)

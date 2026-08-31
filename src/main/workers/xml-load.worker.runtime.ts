@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
@@ -84,6 +85,7 @@ export async function runXmlLoadWorker(
     const ext = path.extname(inputPath).toLowerCase()
 
     let files: { fileName: string; fileType: 'xml' | 'loca'; entries: LocalizationEntry[] }[]
+    let perEntrySourceFiles: string[] | null = null
 
     if (ext === '.xml' || ext === '.loca') {
       post({ phase: 'parsing' })
@@ -96,6 +98,18 @@ export async function runXmlLoadWorker(
           entries
         }
       ]
+      // Multi-file loose import is stored as one merged xml plus a side map
+      // so the session keeps per-file identity without N files or DB joins.
+      if (path.basename(inputPath) === 'translation_merged.xml') {
+        try {
+          const mapPath = path.join(path.dirname(inputPath), 'translation_source_map.json')
+          const raw = await fs.promises.readFile(mapPath, 'utf-8')
+          const parsed = JSON.parse(raw) as string[]
+          if (Array.isArray(parsed) && parsed.length === entries.length) {
+            perEntrySourceFiles = parsed
+          }
+        } catch {}
+      }
     } else if (ext === '.pak') {
       post({ phase: 'unpacking' })
       const tempDir = createTempDir('icosa_xml')
@@ -136,11 +150,23 @@ export async function runXmlLoadWorker(
       const sourceRepo = new SourceFileRepository(db)
       const modRepo = new ModRepository(db)
       modRepo.upsert(modName)
-      for (const file of files) {
-        sourceFileIdByName.set(
-          file.fileName.toLowerCase(),
-          sourceRepo.getOrCreate(modName, file.fileName, file.fileType)
-        )
+      if (perEntrySourceFiles) {
+        const seen = new Map<string, string>()
+        for (const name of perEntrySourceFiles) {
+          const key = name.toLowerCase()
+          if (!seen.has(key)) seen.set(key, name)
+        }
+        for (const [key, original] of seen) {
+          const t = original.toLowerCase().endsWith('.loca') ? 'loca' : 'xml'
+          sourceFileIdByName.set(key, sourceRepo.getOrCreate(modName, original, t))
+        }
+      } else {
+        for (const file of files) {
+          sourceFileIdByName.set(
+            file.fileName.toLowerCase(),
+            sourceRepo.getOrCreate(modName, file.fileName, file.fileType)
+          )
+        }
       }
     }
 
@@ -153,20 +179,29 @@ export async function runXmlLoadWorker(
           uid: entry.contentuid,
           sourceText: entry.text
         })
+        let sourceFile = file.fileName
+        let sourceFileType: 'xml' | 'loca' = file.fileType
+        if (perEntrySourceFiles) {
+          const mapped = perEntrySourceFiles[cursor]
+          if (mapped) {
+            sourceFile = mapped
+            sourceFileType = mapped.toLowerCase().endsWith('.loca') ? 'loca' : 'xml'
+          }
+        }
         result[cursor] = match
           ? {
               ...uiEntry,
               target: decodeEntities(getDictionaryTargetText(match.entry, sourceLang, targetLang)),
               matchType: match.matchType,
-              sourceFile: file.fileName,
-              sourceFileType: file.fileType
+              sourceFile,
+              sourceFileType
             }
           : {
               ...uiEntry,
               target: '',
               matchType: 'none',
-              sourceFile: file.fileName,
-              sourceFileType: file.fileType
+              sourceFile,
+              sourceFileType
             }
         cursor++
       }
