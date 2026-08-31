@@ -22,24 +22,28 @@ export function useTranslationExport(session: TranslationSession, languages: Lan
     const folder = languageToBg3Folder(targetLanguage, targetLang)
     const base = exportFileBaseName(modName || 'translation', targetLang)
 
-    // Multiple known source files -> one .xml per original file in a chosen
-    // folder (single-file sessions keep the plain save dialog).
+    // Multiple known source files -> one file per original file in a chosen
+    // folder (single-file sessions keep the plain save dialog). For xml the
+    // output is always .xml; for explicit loca it is .loca.
     const sourceFileCount = new Set(
       entries
         .map((entry) => entry.sourceFile?.trim().toLowerCase())
         .filter((name): name is string => !!name && /^[^\\/]+\.(xml|loca)$/i.test(name))
     ).size
-    if (!useLoca && sourceFileCount > 1) {
+    if (sourceFileCount > 1) {
       const outputDir = await window.api.fs.openFolder()
       if (!outputDir) return
       setIsExporting(true)
       try {
+        const ext = useLoca ? '.loca' : '.xml'
         const written = await window.api.xml.exportPerSourceFile({
           outputDir,
           entries,
-          fallbackFileName: `${base}.xml`
+          fallbackFileName: `${base}${ext}`,
+          fileType: useLoca ? 'loca' : 'xml'
         })
-        toast.success(t('translate.xmlFilesExported', { ns: 'toasts', count: written.length }))
+        const key = useLoca ? 'translate.locaFilesExported' : 'translate.xmlFilesExported'
+        toast.success(t(key, { ns: 'toasts', count: written.length }))
       } catch (err) {
         toast.error(getLocalizedErrorMessage(err, t))
       } finally {

@@ -29,6 +29,8 @@
     "xmlFilesExported_one": "{{count}} arquivo XML exportado com sucesso",
     "xmlFilesExported_other": "{{count}} arquivos XML exportados com sucesso",
     "locaExported": "LOCA exportado com sucesso",
+    "locaFilesExported_one": "{{count}} arquivo LOCA exportado com sucesso",
+    "locaFilesExported_other": "{{count}} arquivos LOCA exportados com sucesso",
     "packageExported": "{{format}} exportado com sucesso",
     "noValidXml": "Nenhum XML válido encontrado",
     "invalidFormat": "Formato inválido"

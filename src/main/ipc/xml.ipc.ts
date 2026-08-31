@@ -27,6 +27,7 @@ interface ExportMultiPayload {
   entries: XmlEntry[]
   // Used when entries carry no sourceFile info (legacy session / single import).
   fallbackFileName: string
+  fileType?: 'xml' | 'loca'
 }
 
 function exportFile(payload: ExportPayload): void {
@@ -60,11 +61,12 @@ interface SourceFileGroup {
 }
 
 // Split entries into their original per-file groups (same rule as the package
-// export): basename with an .xml/.loca extension. Loca-sourced entries become
-// .xml here because this handler only writes localization XML.
+// export): basename with an .xml/.loca extension. Output extension is forced
+// to fileType (pak/zip always xml, explicit loca always .loca).
 function groupEntriesBySourceFile(
   entries: XmlEntry[],
-  fallbackFileName: string
+  fallbackFileName: string,
+  fileType: 'xml' | 'loca' = 'xml'
 ): SourceFileGroup[] {
   const byLowerName = new Map<string, SourceFileGroup>()
   const order: string[] = []
@@ -87,9 +89,8 @@ function groupEntriesBySourceFile(
       unfiled.push(entry)
       continue
     }
-    const fileName = rawName.toLowerCase().endsWith('.loca')
-      ? rawName.replace(/\.loca$/i, '.xml')
-      : rawName
+    const targetExt = fileType === 'loca' ? '.loca' : '.xml'
+    const fileName = rawName.replace(/\.(xml|loca)$/i, targetExt)
     groupFor(fileName).entries.push(entry)
   }
 
@@ -105,28 +106,41 @@ function groupEntriesBySourceFile(
 
 function exportPerSourceFile(payload: ExportMultiPayload): string[] {
   fs.mkdirSync(payload.outputDir, { recursive: true })
-  const groups = groupEntriesBySourceFile(payload.entries, payload.fallbackFileName)
+  const fileType = payload.fileType ?? 'xml'
+  const groups = groupEntriesBySourceFile(payload.entries, payload.fallbackFileName, fileType)
   const written: string[] = []
   const usedNames = new Set<string>()
   for (const group of groups) {
     let fileName = path.basename(group.fileName)
     // Avoid clobbering a different group mapping onto the same file name.
+    const targetExt = fileType === 'loca' ? '.loca' : '.xml'
     let suffix = 2
     while (usedNames.has(fileName.toLowerCase())) {
-      fileName = group.fileName.replace(/\.xml$/i, `_${suffix}.xml`)
+      fileName = group.fileName.replace(/\.(xml|loca)$/i, `_${suffix}${targetExt}`)
       suffix += 1
     }
     usedNames.add(fileName.toLowerCase())
-    if (!fileName.toLowerCase().endsWith('.xml')) {
-      fileName = `${fileName.replace(/\.(xml|loca)?$/i, '')}.xml`
+    if (!fileName.toLowerCase().endsWith(targetExt)) {
+      fileName = `${fileName.replace(/\.(xml|loca)?$/i, '')}${targetExt}`
     }
     const target = path.join(payload.outputDir, fileName)
-    const localizationEntries = group.entries.map((entry) => ({
-      contentuid: entry.uid,
-      version: entry.version,
-      text: encodeEntities(entry.target || entry.source)
-    }))
-    writeLocalizationXml(localizationEntries, target)
+    if (fileType === 'loca') {
+      writeLocaFile(
+        group.entries.map((entry) => ({
+          key: entry.uid,
+          version: Number.parseInt(entry.version, 10) || 1,
+          text: decodeEntities(entry.target || entry.source)
+        })),
+        target
+      )
+    } else {
+      const localizationEntries = group.entries.map((entry) => ({
+        contentuid: entry.uid,
+        version: entry.version,
+        text: encodeEntities(entry.target || entry.source)
+      }))
+      writeLocalizationXml(localizationEntries, target)
+    }
     written.push(target)
   }
   return written

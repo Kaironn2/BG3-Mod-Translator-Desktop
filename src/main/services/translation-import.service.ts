@@ -445,7 +445,11 @@ export async function exportTranslatedPackage(
           version: entry.version,
           text: encodeEntities(entry.target || entry.source)
         }))
-        writeLocalizationXml(locEntries, path.join(localizationDir, group.fileName))
+        // pak/zip with xml must always be .xml even if the source was .loca
+        const outName = group.fileName.toLowerCase().endsWith('.loca')
+          ? group.fileName.replace(/\.loca$/i, '.xml')
+          : group.fileName
+        writeLocalizationXml(locEntries, path.join(localizationDir, outName))
       }
     }
 
