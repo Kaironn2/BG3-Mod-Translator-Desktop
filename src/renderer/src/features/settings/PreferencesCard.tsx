@@ -1,12 +1,13 @@
 import { Languages } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { LanguageSelect } from '@/components/shared/LanguageSelect'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
+import { LanguageSelect } from '@/components/shared/LanguageSelect'
 import { i18n } from '@/i18n'
 import { defaultLanguage, languageLabels, supportedLanguages } from '@/i18n/languages'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
-import type { ConfigKey } from '@/types'
+import { compareLanguagesOfficialFirst } from '@/lib/languageOptions'
+import { isOfficialBg3Language, type ConfigKey, toBg3LanguageFolder } from '@/types'
 import { SettingsSectionCard } from './SettingsSectionCard'
 import { useDebouncedPersist } from './useDebouncedPersist'
 
@@ -62,6 +63,31 @@ function AutosaveTextField({
 
 export function PreferencesCard({ config, set }: PreferencesCardProps): React.JSX.Element {
   const { t } = useAppTranslation(['settings', 'toasts'])
+  const [bg3Languages, setBg3Languages] = useState<
+    { value: string; label: string; highlight: boolean; mark?: string }[]
+  >([])
+
+  useEffect(() => {
+    window.api.language.getAll().then((languages) => {
+      const officialMark = t('badges.official', { ns: 'common' })
+      const mapped = [...languages]
+        .sort(compareLanguagesOfficialFirst)
+        .map((language) => {
+          const folder = toBg3LanguageFolder(language.code, language.name)
+          const official = isOfficialBg3Language(language.code)
+          const label = t(`languages.${language.code}`)
+          return {
+            value: language.code,
+            label,
+            badge: folder,
+            searchText: `${label} ${language.name} ${language.code} ${folder}`,
+            highlight: official,
+            mark: official ? officialMark : undefined
+          }
+        })
+      setBg3Languages(mapped)
+    })
+  }, [t])
 
   const handleLanguageChange = async (language: string): Promise<void> => {
     await set('app_language', language)
@@ -129,6 +155,33 @@ export function PreferencesCard({ config, set }: PreferencesCardProps): React.JS
             )
           }}
           className="w-full"
+        />
+      </div>
+      <div className="mt-5">
+        <span
+          title={t('fields.defaultExportLanguageTip')}
+          className="mb-1.5 flex w-fit cursor-help items-center gap-1 text-xs text-neutral-400"
+        >
+          {t('fields.defaultExportLanguage')}
+          <span className="inline-flex items-center text-neutral-500 hover:text-neutral-300">
+            ⓘ
+          </span>
+        </span>
+        <ThemedSelect
+          className="w-full"
+          value={config.default_export_language ?? ''}
+          onChange={(code) => {
+            void handleDefaultLanguageChange(
+              'default_export_language',
+              code,
+              t('fields.defaultExportLanguage')
+            )
+          }}
+          placeholder={t('placeholders.defaultExportLanguage')}
+          searchable
+          searchPlaceholder={t('placeholders.searchLanguage', { ns: 'common' })}
+          emptyLabel={t('placeholders.noLanguageFound', { ns: 'common' })}
+          options={bg3Languages}
         />
       </div>
       <div className="mt-4 text-right text-xs text-neutral-500">{t('autoSaved')}</div>

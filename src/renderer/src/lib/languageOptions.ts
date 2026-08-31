@@ -1,5 +1,9 @@
 import type { ThemedSelectOption } from '@/components/shared/ThemedSelect'
-import { isOfficialBg3Language, type Language } from '@/types'
+import {
+  isOfficialBg3Language,
+  toBg3LanguageFolder,
+  type Language
+} from '@/types'
 
 export function compareLanguagesOfficialFirst(left: Language, right: Language): number {
   const leftOfficial = isOfficialBg3Language(left.code) ? 0 : 1
@@ -8,18 +12,22 @@ export function compareLanguagesOfficialFirst(left: Language, right: Language): 
   return left.name.localeCompare(right.name)
 }
 
+// Display names come from i18n (languages.<code>), falling back to the seeded
+// English name. Badge keeps the BG3 Localization folder so both identities are
+// visible at once (label = language, badge = folder the game actually loads).
 export function languageToSelectOption(
   language: Language,
-  officialMark: string
+  officialMark: string,
+  translateName: (code: string) => string
 ): ThemedSelectOption {
   const official = isOfficialBg3Language(language.code)
+  const label = translateName(language.code)
+  const folder = toBg3FolderLabel(language)
   return {
     value: language.code,
-    label: language.name,
-    badge: language.code.toUpperCase(),
-    searchText: official
-      ? `${language.name} ${language.code} ${officialMark}`
-      : `${language.name} ${language.code}`,
+    label,
+    badge: folder,
+    searchText: `${label} ${language.name} ${language.code} ${folder}${official ? ` ${officialMark}` : ''}`,
     highlight: official,
     mark: official ? officialMark : undefined
   }
@@ -27,9 +35,23 @@ export function languageToSelectOption(
 
 export function languagesToSelectOptions(
   languages: Language[],
-  officialMark: string
+  officialMark: string,
+  translateName: (code: string) => string
 ): ThemedSelectOption[] {
   return [...languages]
-    .sort(compareLanguagesOfficialFirst)
-    .map((language) => languageToSelectOption(language, officialMark))
+    .sort((left, right) => {
+      const leftOfficial = isOfficialBg3Language(left.code) ? 0 : 1
+      const rightOfficial = isOfficialBg3Language(right.code) ? 0 : 1
+      if (leftOfficial !== rightOfficial) return leftOfficial - rightOfficial
+      // Sort by the TRANSLATED display label so the localized list reads naturally.
+      return translateName(left.code).localeCompare(translateName(right.code))
+    })
+    .map((language) => languageToSelectOption(language, officialMark, translateName))
+}
+
+// BG3 folder name for the badge: official codes use the Larian folder, others
+// strip non-alphanumerics from the seeded name (same rule as export path building).
+function toBg3FolderLabel(language: Language): string {
+  if (isOfficialBg3Language(language.code)) return toBg3LanguageFolder(language.code)
+  return language.name.replace(/[^a-zA-Z0-9]/g, '')
 }
