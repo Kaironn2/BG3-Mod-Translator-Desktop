@@ -12,6 +12,7 @@
     "aiQuotaExhausted": "This AI provider's quota is exhausted (daily or billing). Translation stopped — try again later or switch provider. Full details are in the application logs.",
     "invalidProvider": "Unknown translation provider.",
     "noValidXml": "No valid XML was found in the selected file.",
+    "mixedFormats": "This mod ships the same strings as XML and LOCA files. Import one format at a time.",
     "invalidFormat": "Invalid input format.",
     "fileLoadFailed": "Failed to load the selected file.",
     "saveFailed": "Failed to save translations."

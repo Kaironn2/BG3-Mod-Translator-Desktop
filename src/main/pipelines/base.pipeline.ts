@@ -14,7 +14,7 @@ import { type SimilarEntry, SimilarityIndex } from '../services/similarity.servi
 import {
   findLocalizationXmls,
   type LocalizationEntry,
-  parseLocalizationXml,
+  parseLocalizationFile,
   writeLocalizationXml
 } from '../services/xml-parser.service'
 import { createZip, extract } from '../services/zip.service'
@@ -86,12 +86,12 @@ export abstract class BasePipeline {
       const unpackedDir = path.join(tmpDir, 'unpacked')
       await unpackMod(pakPath, unpackedDir)
 
-      // 3 - find source XMLs
+      // 3 - find source XMLs and binary locas
       const sourceFolder = this.languageFolder(ctx.sourceLang)
       const targetFolder = this.languageFolder(ctx.targetLang)
       const xmlFiles = findLocalizationXmls(unpackedDir, sourceFolder)
       if (xmlFiles.length === 0) {
-        throw new Error(`No localization XMLs found for language '${sourceFolder}' in the mod`)
+        throw new Error(`No localization files found for language '${sourceFolder}' in the mod`)
       }
 
       // 4 - pre-load similarity index and match index once per run
@@ -106,7 +106,7 @@ export abstract class BasePipeline {
       )
 
       // 5 - count total entries for progress tracking
-      const allEntries = xmlFiles.flatMap((f) => parseLocalizationXml(f))
+      const allEntries = xmlFiles.flatMap((f) => parseLocalizationFile(f))
       const total = allEntries.length
       let current = 0
 
@@ -120,10 +120,12 @@ export abstract class BasePipeline {
       const packageRoot = path.join(outDir, translatedFolder)
       const modRoot = path.join(packageRoot, 'Mods', translatedFolder)
 
-      // 7 - translate each XML into a localization-only add-on
+      // 7 - translate each localization file into a localization-only add-on.
+      // Output keeps each original file name as .xml (engine-verified format for mods:
+      // any name works inside Localization/<lang>/, and XML loads regardless of name).
       for (const xmlPath of xmlFiles) {
         this.checkCancelled()
-        const entries = parseLocalizationXml(xmlPath)
+        const entries = parseLocalizationFile(xmlPath)
         const translated: LocalizationEntry[] = []
 
         for (const entry of entries) {
@@ -134,7 +136,8 @@ export abstract class BasePipeline {
           this.emitProgress(current, total, entry.text, targetText)
         }
 
-        const outXmlPath = path.join(modRoot, 'Localization', targetFolder, path.basename(xmlPath))
+        const outBase = path.basename(xmlPath).replace(/\.loca$/i, '.xml')
+        const outXmlPath = path.join(modRoot, 'Localization', targetFolder, outBase)
         writeLocalizationXml(translated, outXmlPath)
       }
 
@@ -171,7 +174,7 @@ export abstract class BasePipeline {
     )
     this.modRepo.upsert(ctx.modName)
 
-    const entries = parseLocalizationXml(ctx.filePath)
+    const entries = parseLocalizationFile(ctx.filePath)
     const total = entries.length
     const translated: LocalizationEntry[] = []
 
@@ -206,6 +209,12 @@ export abstract class BasePipeline {
       const pak = findPakFiles(archiveDir)[0]
       if (!pak) throw new Error('No .pak file found inside the ZIP archive')
       return pak
+    }
+
+    if (ext === '.loca') {
+      // Binary loca input: hand it to the unpack step as a single-file "package" by
+      // staging it unchanged - unpackMod expects a pak, so parse directly instead.
+      throw new Error('Unsupported input format: .loca (use the Translate page import instead)')
     }
 
     if (ext === '.rar') {

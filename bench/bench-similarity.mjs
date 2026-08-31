@@ -2,9 +2,9 @@
  * Real-data benchmark for dictionary similarity + list-query patterns.
  *
  * Usage:
- *   node scripts/bench-similarity.mjs
- *   node scripts/bench-similarity.mjs --phase=baseline
- *   node scripts/bench-similarity.mjs --phase=optimized
+ *   node bench/bench-similarity.mjs
+ *   node bench/bench-similarity.mjs --phase=baseline
+ *   node bench/bench-similarity.mjs --phase=optimized
  *
  * Reads data/dictionary.csv and data/enhanced-elemental-gear.xml.
  * Does not write to the live app database.
@@ -18,7 +18,7 @@ import Fuse from 'fuse.js'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CSV_PATH = path.join(ROOT, 'data', 'dictionary.csv')
 const XML_PATH = path.join(ROOT, 'data', 'enhanced-elemental-gear.xml')
-const OUT_DIR = path.join(ROOT, 'scripts', 'bench-results')
+const OUT_DIR = path.join(ROOT, 'bench', 'bench-results')
 
 const FUSE_OPTIONS = {
   keys: ['source'],

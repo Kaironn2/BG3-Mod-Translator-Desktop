@@ -1,6 +1,6 @@
 // Smoke test for DeepL source/target codes used by the app map.
 //
-// Usage: node --env-file=.env scripts/test-deepl-langs.mjs
+// Usage: node --env-file=.env tests/test-deepl-langs.mjs
 //
 // Requires DEEPL_API_KEY in .env. Hits the real API with tiny throwaway
 // phrases. Self-contained: no imports from src/. Never prints the key.
@@ -10,7 +10,7 @@
 const apiKey = process.env.DEEPL_API_KEY?.trim()
 if (!apiKey) {
   console.error(
-    'DEEPL_API_KEY is not set. Run with: node --env-file=.env scripts/test-deepl-langs.mjs'
+    'DEEPL_API_KEY is not set. Run with: node --env-file=.env tests/test-deepl-langs.mjs'
   )
   process.exit(1)
 }

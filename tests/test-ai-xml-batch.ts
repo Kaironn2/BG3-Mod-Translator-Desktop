@@ -1,7 +1,7 @@
 // Live smoke: dictionary similarity + OpenAI grouped translation of
 // data/enhanced-elemental-gear.xml, the same path the AI batch uses.
 //
-// Usage: node --env-file=.env --experimental-strip-types scripts/test-ai-xml-batch.ts
+// Usage: node --env-file=.env --experimental-strip-types tests/test-ai-xml-batch.ts
 
 import fs from 'node:fs'
 import path from 'node:path'
@@ -18,7 +18,7 @@ import { parseLocalizationXml } from '../src/main/services/xml-parser.service'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CSV_PATH = path.join(ROOT, 'data', 'dictionary.csv')
 const XML_PATH = path.join(ROOT, 'data', 'enhanced-elemental-gear.xml')
-const OUT_PATH = path.join(ROOT, 'scripts', 'bench-results', 'ai-xml-batch.json')
+const OUT_PATH = path.join(ROOT, 'bench', 'bench-results', 'ai-xml-batch.json')
 
 const SOURCE_LANG = 'English'
 const TARGET_LANG = 'Brazilian Portuguese'

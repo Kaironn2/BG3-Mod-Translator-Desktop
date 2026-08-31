@@ -3,7 +3,7 @@ import path from 'node:path'
 import { findPakFiles } from '../utils/findPakFiles'
 import { cleanupTempDir, createTempDir } from '../utils/tempDir'
 import { unpackMod } from './lslib.service'
-import { parseLocalizationXml } from './xml-parser.service'
+import { parseLocalizationFile } from './xml-parser.service'
 import { extract } from './zip.service'
 
 export interface TranslationXmlCandidate {
@@ -14,6 +14,8 @@ export interface TranslationXmlCandidate {
   sizeKb: number
   valid: boolean
   status: 'valid' | 'invalid'
+  // 'loca' = binary .loca file (shown in the .loca tab); 'xml' = LocaXML.
+  fileType: 'xml' | 'loca'
 }
 
 export interface UnpackedLocalizationPackage {
@@ -47,7 +49,7 @@ export async function unpackLocalizationPackage(
       if (!pak) throw new Error('No .pak file found inside zip')
       pakPath = pak
     } else if (ext !== '.pak') {
-      throw new Error(`Unsupported file type: ${ext}. Use .xml, .pak, or .zip`)
+      throw new Error(`Unsupported file type: ${ext}. Use .xml, .loca, .pak, or .zip`)
     }
 
     onProgress?.({ phase: 'unpacking' })
@@ -58,21 +60,21 @@ export async function unpackLocalizationPackage(
     })
 
     onProgress?.({ phase: 'scanning' })
-    const xmlPaths = findLocalizationXmlsDeep(unpackedDir)
+    const locaPaths = findLocalizationFilesDeep(unpackedDir)
     let lastScanEmit = 0
-    const candidates = xmlPaths.map((xmlPath, index) => {
-      const candidate = inspectXmlCandidate(xmlPath, unpackedDir, `candidate-${index}`)
+    const candidates = locaPaths.map((filePath, index) => {
+      const candidate = inspectFileCandidate(filePath, unpackedDir, `candidate-${index}`)
       const now = Date.now()
-      if (index === xmlPaths.length - 1 || now - lastScanEmit >= 100) {
+      if (index === locaPaths.length - 1 || now - lastScanEmit >= 100) {
         lastScanEmit = now
-        onProgress?.({ phase: 'scanning', processed: index + 1, total: xmlPaths.length })
+        onProgress?.({ phase: 'scanning', processed: index + 1, total: locaPaths.length })
       }
       return candidate
     })
     const metaPath = findMetaLsx(unpackedDir)
 
     if (candidates.length === 0) {
-      throw new Error('No localization XML files found in package')
+      throw new Error('No localization files found in package')
     }
 
     return { tempDir, candidates, metaPath }
@@ -82,38 +84,52 @@ export async function unpackLocalizationPackage(
   }
 }
 
-export function inspectXmlCandidate(
-  xmlPath: string,
+export function inspectFileCandidate(
+  filePath: string,
   rootDir: string,
   id: string
 ): TranslationXmlCandidate {
-  const stat = fs.statSync(xmlPath)
+  const stat = fs.statSync(filePath)
+  const isLoca = filePath.toLowerCase().endsWith('.loca')
   let stringCount = 0
   try {
-    stringCount = parseLocalizationXml(xmlPath).length
+    stringCount = parseLocalizationFile(filePath).length
   } catch {
     stringCount = 0
   }
   return {
     id,
-    absolutePath: xmlPath,
-    relativePath: relativeFromLocalization(xmlPath, rootDir),
+    absolutePath: filePath,
+    relativePath: relativeFromLocalization(filePath, rootDir),
     stringCount,
     sizeKb: Number((stat.size / 1024).toFixed(1)),
     valid: stringCount > 0,
-    status: stringCount > 0 ? 'valid' : 'invalid'
+    status: stringCount > 0 ? 'valid' : 'invalid',
+    fileType: isLoca ? 'loca' : 'xml'
   }
 }
 
-function findLocalizationXmlsDeep(dir: string): string[] {
+// Direct .xml/.loca file import (no package) - keeps the original file name.
+export function inspectXmlCandidate(
+  xmlPath: string,
+  rootDir: string,
+  id: string
+): TranslationXmlCandidate {
+  return inspectFileCandidate(xmlPath, rootDir, id)
+}
+
+function findLocalizationFilesDeep(dir: string): string[] {
   const results: string[] = []
   if (!fs.existsSync(dir)) return results
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) {
-      results.push(...findLocalizationXmlsDeep(full))
-    } else if (entry.name.toLowerCase().endsWith('.xml') && isInsideLocalization(full)) {
-      results.push(full)
+      results.push(...findLocalizationFilesDeep(full))
+    } else {
+      const lower = entry.name.toLowerCase()
+      if ((lower.endsWith('.xml') || lower.endsWith('.loca')) && isInsideLocalization(full)) {
+        results.push(full)
+      }
     }
   }
   return results.sort((a, b) => a.localeCompare(b))

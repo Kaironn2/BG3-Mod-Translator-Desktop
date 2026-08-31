@@ -1,6 +1,6 @@
 // Smoke test for the Google Translate v2 REST API.
 //
-// Usage: node --env-file=.env scripts/test-google-translate.mjs
+// Usage: node --env-file=.env tests/test-google-translate.mjs
 //
 // Requires GOOGLE_API_KEY in .env. Hits the real API with tiny throwaway
 // phrases (total < 100 chars) to verify single, batch, tag preservation,
@@ -11,7 +11,7 @@ const GOOGLE_API_URL = 'https://translation.googleapis.com/language/translate/v2
 const apiKey = process.env.GOOGLE_API_KEY
 if (!apiKey) {
   console.error(
-    'GOOGLE_API_KEY is not set. Run with: node --env-file=.env scripts/test-google-translate.mjs'
+    'GOOGLE_API_KEY is not set. Run with: node --env-file=.env tests/test-google-translate.mjs'
   )
   process.exit(1)
 }

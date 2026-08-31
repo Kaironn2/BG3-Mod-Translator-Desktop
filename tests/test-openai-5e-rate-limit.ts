@@ -1,7 +1,7 @@
 // Live smoke test: OpenAI + a few 5e Spells strings, through the same
 // requestWithRateLimit helper the app uses.
 //
-// Usage: node --env-file=.env --experimental-strip-types scripts/test-openai-5e-rate-limit.ts
+// Usage: node --env-file=.env --experimental-strip-types tests/test-openai-5e-rate-limit.ts
 
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -12,7 +12,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const apiKey = process.env.OPENAI_API_KEY?.trim()
 if (!apiKey) {
   console.error(
-    'OPENAI_API_KEY is not set. Run with: node --env-file=.env --experimental-strip-types scripts/test-openai-5e-rate-limit.ts'
+    'OPENAI_API_KEY is not set. Run with: node --env-file=.env --experimental-strip-types tests/test-openai-5e-rate-limit.ts'
   )
   process.exit(1)
 }

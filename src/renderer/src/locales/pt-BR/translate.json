@@ -61,6 +61,7 @@
   "grid": {
     "searchPlaceholder": "Buscar em strings...",
     "all": "Todas",
+    "tabAll": "Todas",
     "untranslated": "Não traduzidas",
     "translated": "Traduzidas",
     "dictionary": "Com dicionário",
@@ -128,14 +129,20 @@
   "xmlSelection": {
     "title": "Selecionar XML",
     "description": "Arquivos sem tags de conteúdo aparecem como Formato inválido.",
-    "selectAll": "Selecionar todos os XMLs",
     "useXml": "Usar XML",
     "selectedCount_one": "{{count}} XML selecionado",
     "selectedCount_other": "{{count}} XMLs selecionados",
-    "strings": "{{count}} strings"
+    "strings": "{{count}} strings",
+    "tabXml": "Arquivos XML",
+    "tabLoca": "Arquivos LOCA",
+    "useLoca": "Usar LOCA",
+    "duplicateHint": "Este mod traz as mesmas strings em .xml e .loca. Escolha um único formato — importar os dois duplicaria as entradas."
   },
   "loaded": {
     "defaultFileName": "traducao.xml"
+  },
+  "exportModal": {
+    "languageTip": "O jogo substitui as strings por UUID dentro de Localization/{idioma}/ — escolha a pasta correspondente ao idioma em que você joga. Se o seu idioma não é suportado pelo jogo, deixe English (idiomas não suportados usam o inglês). Exportações .loca recebem o nome desse idioma (ex.: english.loca)."
   },
   "export": {
     "searchLanguageFolder": "Buscar pasta...",

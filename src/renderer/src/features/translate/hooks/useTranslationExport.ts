@@ -6,7 +6,7 @@ import type { Language, ModMeta } from '@/types'
 import type { ExportFormat, TranslationSession } from '../types'
 import { exportFileBaseName, languageToBg3Folder } from '../utils/exportNames'
 
-const EXPORT_FORMAT_ORDER: ExportFormat[] = ['xml', 'pak', 'zip']
+const EXPORT_FORMAT_ORDER: ExportFormat[] = ['xml', 'loca', 'pak', 'zip']
 
 export function useTranslationExport(session: TranslationSession, languages: Language[]) {
   const { t } = useAppTranslation(['toasts', 'common'])
@@ -17,22 +17,30 @@ export function useTranslationExport(session: TranslationSession, languages: Lan
   const { entries, modName, targetLang } = session
 
   const exportXml = useCallback(async () => {
+    const useLoca = exportFormat === 'loca'
+    const targetLanguage = languages.find((language) => language.code === targetLang)
+    const folder = languageToBg3Folder(targetLanguage, targetLang)
+    const base = exportFileBaseName(modName || 'translation', targetLang)
     const outputPath = await window.api.fs.saveDialog({
-      defaultName: `${exportFileBaseName(modName || 'translation', targetLang)}.xml`,
-      filters: [{ name: 'XML', extensions: ['xml'] }]
+      defaultName: useLoca ? `${folder.toLowerCase()}.loca` : `${base}.xml`,
+      filters: [{ name: useLoca ? 'LOCA' : 'XML', extensions: [useLoca ? 'loca' : 'xml'] }]
     })
     if (!outputPath) return
 
     try {
-      await window.api.xml.export({ outputPath, entries })
-      toast.success(t('translate.xmlExported', { ns: 'toasts' }))
+      await window.api.xml.export({
+        outputPath,
+        entries,
+        fileType: useLoca ? 'loca' : 'xml'
+      })
+      toast.success(t(useLoca ? 'translate.locaExported' : 'translate.xmlExported', { ns: 'toasts' }))
     } catch (err) {
       toast.error(getLocalizedErrorMessage(err, t))
     }
-  }, [entries, modName, t, targetLang])
+  }, [entries, exportFormat, languages, modName, t, targetLang])
 
   const openExport = useCallback(async () => {
-    if (exportFormat === 'xml') {
+    if (exportFormat === 'xml' || exportFormat === 'loca') {
       await exportXml()
       return
     }
@@ -63,7 +71,8 @@ export function useTranslationExport(session: TranslationSession, languages: Lan
           modName,
           entries,
           meta,
-          bg3LanguageFolder: languageFolder
+          bg3LanguageFolder: languageFolder,
+          preserveSourceFiles: true
         })
         toast.success(
           t('translate.packageExported', {

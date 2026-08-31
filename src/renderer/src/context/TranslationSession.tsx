@@ -14,9 +14,12 @@ export interface TranslationSessionEntry extends XmlEntry {
 type Phase = 'idle' | 'loading' | 'loaded'
 
 export type FilterMode = 'all' | 'untranslated' | 'translated' | 'dictionary' | 'tags'
+export type SourceTabMode = 'all' | 'xml' | 'loca'
 export interface FilterSpec {
   mode: FilterMode
   search: string
+  // Per-origin tab (.xml / .loca). 'all' means no file-type restriction.
+  sourceTab?: SourceTabMode
 }
 export type SelectionState =
   | { kind: 'explicit'; uids: Set<string> }
@@ -39,6 +42,8 @@ export function entryMatchesFilter(entry: TranslationSessionEntry, filter: Filte
   if (filter.mode === 'translated' && !entry.target.trim()) return false
   if (filter.mode === 'dictionary' && getCategory(entry) !== 'dictionary') return false
   if (filter.mode === 'tags' && !hasXmlTags(entry)) return false
+  if (filter.sourceTab === 'loca' && entry.sourceFileType !== 'loca') return false
+  if (filter.sourceTab === 'xml' && entry.sourceFileType === 'loca') return false
   if (filter.search) {
     const query = filter.search.toLowerCase()
     return entry.source.toLowerCase().includes(query) || entry.target.toLowerCase().includes(query)

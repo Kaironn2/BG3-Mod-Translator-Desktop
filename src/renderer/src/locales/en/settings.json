@@ -15,10 +15,13 @@
     "defaultAuthor": "Default author",
     "defaultSourceLanguage": "Default source language",
     "defaultTargetLanguage": "Default target language",
+    "defaultExportLanguage": "Default export language (BG3)",
+    "defaultExportLanguageTip": "Pre-selects the BG3 language folder whenever you export a package, so you don't have to pick it every time. Choose the language you play with — languages not supported by the game should export as English.",
     "appLanguage": "Application language"
   },
   "placeholders": {
-    "author": "Your name"
+    "author": "Your name",
+    "defaultExportLanguage": "Select the in-game language..."
   },
   "apiKeys": {
     "connected": "connected",

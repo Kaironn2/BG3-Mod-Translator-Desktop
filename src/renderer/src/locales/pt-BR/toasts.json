@@ -26,6 +26,7 @@
     "nothingToSave": "Nenhuma tradução para salvar",
     "savedCount": "{{count}} traduções salvas no dicionário",
     "xmlExported": "XML exportado com sucesso",
+    "locaExported": "LOCA exportado com sucesso",
     "packageExported": "{{format}} exportado com sucesso",
     "noValidXml": "Nenhum XML válido encontrado",
     "invalidFormat": "Formato inválido"

@@ -253,7 +253,15 @@ const api: AppApi = {
       outputPath: string
       format: 'pak' | 'zip'
       modName: string
-      entries: { uid: string; version: string; source: string; target: string; matchType: string }[]
+      entries: {
+        uid: string
+        version: string
+        source: string
+        target: string
+        matchType: string
+        sourceFile?: string | null
+        sourceFileType?: 'xml' | 'loca' | null
+      }[]
       meta: {
         metaFilePath: string
         name: string
@@ -268,6 +276,8 @@ const api: AppApi = {
         version64: string
       }
       bg3LanguageFolder: string
+      exportFileType?: 'xml' | 'loca'
+      preserveSourceFiles?: boolean
     }): Promise<{ outputPath: string }> =>
       ipcRenderer.invoke('mod:exportTranslatedPackage', params),
 
@@ -307,12 +317,15 @@ const api: AppApi = {
         source: string
         target: string
         matchType: 'none' | 'mod-text' | 'text' | 'manual'
+        sourceFile: string | null
+        sourceFileType: 'xml' | 'loca' | null
       }[]
     > => ipcRenderer.invoke('xml:load', params),
 
     export: (params: {
       outputPath: string
       entries: { uid: string; version: string; source: string; target: string; matchType: string }[]
+      fileType?: 'xml' | 'loca'
     }): Promise<void> => ipcRenderer.invoke('xml:export', params),
 
     onLoadProgress: (cb: (data: import('./api-types').XmlLoadProgress) => void): UnsubscribeFn =>

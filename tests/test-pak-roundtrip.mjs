@@ -1,6 +1,6 @@
 // Round-trip test for the new pak module.
 //
-// Usage: node scripts/test-pak-roundtrip.mjs <input-mod-folder>
+// Usage: node tests/test-pak-roundtrip.mjs <input-mod-folder>
 //
 // Pipeline:
 //   1. Pack <input-folder> with our writer  -> tmp/ours.pak
@@ -25,7 +25,7 @@ const projectRoot = path.resolve(__dirname, '..')
 
 const inputDir = process.argv[2]
 if (!inputDir) {
-  console.error('Usage: node scripts/test-pak-roundtrip.mjs <input-folder>')
+  console.error('Usage: node tests/test-pak-roundtrip.mjs <input-folder>')
   process.exit(2)
 }
 

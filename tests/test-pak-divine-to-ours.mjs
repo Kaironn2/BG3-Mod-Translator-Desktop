@@ -2,7 +2,7 @@
 // This validates that our reader handles pak files produced by the reference implementation
 // (i.e. that BG3 game .pak files we'd actually receive in the wild can be read correctly).
 //
-// Usage: node scripts/test-pak-divine-to-ours.mjs <input-folder>
+// Usage: node tests/test-pak-divine-to-ours.mjs <input-folder>
 
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -18,7 +18,7 @@ const projectRoot = path.resolve(__dirname, '..')
 
 const inputDir = process.argv[2]
 if (!inputDir) {
-  console.error('Usage: node scripts/test-pak-divine-to-ours.mjs <input-folder>')
+  console.error('Usage: node tests/test-pak-divine-to-ours.mjs <input-folder>')
   process.exit(2)
 }
 

@@ -19,5 +19,6 @@
     "bg3LanguageFolder": "Pasta de idioma do BG3",
     "searchLanguageFolder": "Buscar pasta...",
     "noLanguageFolderFound": "Nenhuma pasta encontrada."
-  }
+  },
+  "exportLanguageTip": "Escolha a pasta de localização que corresponde ao idioma em que você joga. O jogo substitui as strings por UUID dentro de Localization/{idioma}/ — se o seu idioma não é suportado pelo jogo, deixe English (idiomas não suportados usam o inglês como base). Arquivos exportados como .loca recebem o nome desse idioma (ex.: brazilianportuguese.loca)."
 }

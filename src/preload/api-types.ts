@@ -280,6 +280,7 @@ export interface TranslationXmlCandidate {
   sizeKb: number
   valid: boolean
   status: 'valid' | 'invalid'
+  fileType: 'xml' | 'loca'
 }
 
 export interface PreparedTranslationInput {
@@ -330,6 +331,7 @@ export type ConfigKey =
   | 'app_language'
   | 'author'
   | 'dictionary_page_size'
+  | 'default_export_language'
 
 export type UserErrorCode =
   | 'common.unknown'
@@ -342,6 +344,7 @@ export type UserErrorCode =
   | 'translation.aiQuotaExhausted'
   | 'translation.invalidProvider'
   | 'translation.noValidXml'
+  | 'translation.mixedFormats'
   | 'translation.invalidFormat'
   | 'translation.fileLoadFailed'
   | 'translation.saveFailed'
@@ -399,6 +402,9 @@ export interface XmlEntry {
   source: string
   target: string
   matchType: XmlMatchType
+  // Original localization file (basename) this entry came from; null for legacy data.
+  sourceFile?: string | null
+  sourceFileType?: 'xml' | 'loca' | null
 }
 
 export interface TranslationApi {
@@ -503,6 +509,8 @@ export interface ModApi {
     entries: XmlEntry[]
     meta: ModMeta
     bg3LanguageFolder: string
+    exportFileType?: 'xml' | 'loca'
+    preserveSourceFiles?: boolean
   }): Promise<{ outputPath: string }>
   delete(params: { modName: string }): Promise<DeleteModResult>
   deleteMany(params: { modNames: string[] }): Promise<DeleteModsResult>
@@ -566,7 +574,11 @@ export interface XmlApi {
     targetLang: string
     modName?: string
   }): Promise<XmlEntry[]>
-  export(params: { outputPath: string; entries: XmlEntry[] }): Promise<void>
+  export(params: {
+    outputPath: string
+    entries: XmlEntry[]
+    fileType?: 'xml' | 'loca'
+  }): Promise<void>
   onLoadProgress(cb: (data: XmlLoadProgress) => void): UnsubscribeFn
 }
 
