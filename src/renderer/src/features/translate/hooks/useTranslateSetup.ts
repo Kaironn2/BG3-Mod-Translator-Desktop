@@ -102,7 +102,7 @@ export function useTranslateSetup(session: TranslationSession) {
 
   const handleBrowse = async () => {
     const paths = await window.api.fs.openDialog({
-      filters: [{ name: 'Mod Files', extensions: ['xml', 'pak', 'zip'] }]
+      filters: [{ name: 'Mod Files', extensions: ['xml', 'loca', 'pak', 'zip'] }]
     })
     if (paths.length > 0) {
       setFilePath(paths[0])

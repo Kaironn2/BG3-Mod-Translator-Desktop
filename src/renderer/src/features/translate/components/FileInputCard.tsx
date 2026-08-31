@@ -77,7 +77,7 @@ export function FileInputCard({
               {t('setup.fileCard.dropPrompt', { ns: 'translate' })}
             </div>
             <div className="flex gap-1.5">
-              {['.xml', '.pak', '.zip'].map((ext) => (
+              {['.xml', '.loca', '.pak', '.zip'].map((ext) => (
                 <span
                   key={ext}
                   className="font-mono text-[10px] px-1.5 py-0.5 bg-[#131518] border border-[#1f2329] rounded text-neutral-500"

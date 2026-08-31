@@ -37,8 +37,20 @@ export function XmlCandidateCard({
       </div>
       <div className="p-4 flex items-center gap-4 min-w-0">
         <div className="flex-1 min-w-0">
-          <div className="font-mono text-[13px] font-semibold text-neutral-200 truncate">
-            {candidate.relativePath}
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'inline-flex h-4.5 shrink-0 items-center rounded px-1.5 font-mono text-[10px] font-bold tracking-[0.06em]',
+                candidate.fileType === 'loca'
+                  ? 'bg-purple-500/14 text-purple-300'
+                  : 'bg-amber-500/14 text-amber-400'
+              )}
+            >
+              .{candidate.fileType}
+            </span>
+            <div className="font-mono text-[13px] font-semibold text-neutral-200 truncate">
+              {candidate.relativePath}
+            </div>
           </div>
           <div className="flex items-center gap-2 mt-1 text-[11px] text-neutral-500">
             {candidate.valid ? (

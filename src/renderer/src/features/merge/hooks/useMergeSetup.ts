@@ -5,7 +5,7 @@ import { useAppTranslation } from '@/i18n/useAppTranslation'
 import type { Language, MergeProgress, MergeResult, PreparedTranslationInput } from '@/types'
 import type { MergeFileSlot, SlotKey } from '../types'
 
-const ACCEPTED_EXT = ['xml', 'pak', 'zip']
+const ACCEPTED_EXT = ['xml', 'loca', 'pak', 'zip']
 const FILE_FILTERS = [{ name: 'Mod Files', extensions: ACCEPTED_EXT }]
 
 function emptySlot(lang: string): MergeFileSlot {

@@ -48,6 +48,7 @@ export function ExportControls({
         triggerAdornment={<ShortcutHint>Ctrl T</ShortcutHint>}
         options={[
           { value: 'xml', label: 'xml' },
+          { value: 'loca', label: 'loca' },
           { value: 'pak', label: 'pak' },
           { value: 'zip', label: 'zip' }
         ]}

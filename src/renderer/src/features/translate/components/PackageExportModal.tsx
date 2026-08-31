@@ -1,4 +1,4 @@
-import { Download, Loader2, Package, X } from 'lucide-react'
+import { Download, Info, Loader2, Package, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
@@ -15,6 +15,7 @@ interface PackageExportModalProps {
   languages: Language[]
   selectedLanguageFolder: string
   isExporting: boolean
+  tipText?: string
   onCancel: () => void
   onSubmit: (meta: ModMeta, languageFolder: string) => Promise<void>
 }
@@ -24,6 +25,7 @@ export function PackageExportModal({
   languages,
   selectedLanguageFolder,
   isExporting,
+  tipText,
   onCancel,
   onSubmit
 }: PackageExportModalProps): React.JSX.Element {
@@ -41,10 +43,11 @@ export function PackageExportModal({
     const mapped = [...languages].sort(compareLanguagesOfficialFirst).map((language) => {
       const folder = languageToBg3Folder(language, language.code)
       const official = isOfficialBg3Language(language.code)
+      const label = t(`languages.${language.code}`, { ns: 'common' })
       return {
         value: folder,
-        label: folder,
-        searchText: `${language.name} ${language.code} ${folder}`,
+        label,
+        searchText: `${label} ${language.name} ${language.code} ${folder}`,
         highlight: official,
         mark: official ? officialMark : undefined
       }
@@ -136,8 +139,14 @@ export function PackageExportModal({
             }
           />
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+            <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
               {t('exportModal.bg3LanguageFolder')}
+              <span
+                title={tipText}
+                className="inline-flex cursor-help items-center text-neutral-500 hover:text-neutral-300"
+              >
+                <Info size={12} />
+              </span>
             </span>
             <ThemedSelect
               value={languageFolder}

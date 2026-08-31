@@ -11,6 +11,7 @@ import { useBatchTranslation } from '../hooks/useBatchTranslation'
 import { useDictionarySave } from '../hooks/useDictionarySave'
 import { useLoadedEditorShortcuts } from '../hooks/useLoadedEditorShortcuts'
 import { useTranslationExport } from '../hooks/useTranslationExport'
+import { languageToBg3Folder } from '../utils/exportNames'
 import type { TranslationSession } from '../types'
 import { EditorHeader } from './EditorHeader'
 import { PackageExportModal } from './PackageExportModal'
@@ -55,6 +56,17 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
     onCycleExportFormat: exportFlow.cycleExportFormat,
     onOpenExport: exportFlow.openExport
   })
+
+  // Default BG3 export language comes from Settings (default_export_language); the
+  // session value (derived from the target language) wins when set.
+  const [defaultExportFolder, setDefaultExportFolder] = useState('')
+  useEffect(() => {
+    window.api.config.get({ key: 'default_export_language' }).then((row) => {
+      const code = row.value?.trim()
+      if (!code) return
+      setDefaultExportFolder(languageToBg3Folder(languages.find((item) => item.code === code), code))
+    })
+  }, [languages])
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -119,8 +131,11 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
         <PackageExportModal
           meta={exportFlow.exportMeta}
           languages={languages}
-          selectedLanguageFolder={exportFlow.bg3LanguageFolder}
+          selectedLanguageFolder={
+            exportFlow.bg3LanguageFolder || defaultExportFolder || exportFlow.bg3LanguageFolder
+          }
           isExporting={exportFlow.isExporting}
+          tipText={t('exportModal.languageTip', { ns: 'translate' })}
           onCancel={exportFlow.closeExportModal}
           onSubmit={exportFlow.submitPackageExport}
         />

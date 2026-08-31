@@ -36,6 +36,8 @@ interface TranslationGridProps {
   viewMode: 'stacked' | 'side'
 }
 
+type SourceFileTab = 'all' | 'xml' | 'loca'
+
 function getCategory(entry: TranslationSessionEntry): TranslationCategory {
   if (entry.matchType === 'mod-text' || entry.matchType === 'text') return 'dictionary'
   if (entry.matchType === 'manual') return 'manual'
@@ -90,8 +92,10 @@ export function TranslationGrid({
   } = session
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterMode>('all')
+  const [sourceTab, setSourceTab] = useState<SourceFileTab>('all')
   const deferredSearch = useDeferredValue(search)
   const deferredFilter = useDeferredValue(filter)
+  const deferredSourceTab = useDeferredValue(sourceTab)
   const [isPending, startFilterTransition] = useTransition()
   const [pageSize, setPageSize] = useState<100 | 250 | 500 | 1000>(250)
   const [currentPage, setCurrentPage] = useState(1)
@@ -105,6 +109,9 @@ export function TranslationGrid({
   const savedByEnterRef = useRef<Set<string>>(new Set())
   const sideParentRef = useRef<HTMLDivElement>(null)
   const stackedParentRef = useRef<HTMLDivElement>(null)
+
+  const hasLocaFiles = entries.some((entry) => entry.sourceFileType === 'loca')
+  const hasXmlFiles = entries.some((entry) => !entry.sourceFileType || entry.sourceFileType === 'xml')
 
   const counts = useMemo(() => {
     let translated = 0
@@ -122,6 +129,16 @@ export function TranslationGrid({
     return { translated, untranslated, dictionary, tags }
   }, [entries])
 
+  const tabCounts = useMemo(() => {
+    let xml = 0
+    let loca = 0
+    for (const entry of entries) {
+      if (entry.sourceFileType === 'loca') loca += 1
+      else xml += 1
+    }
+    return { xml, loca }
+  }, [entries])
+
   const filteredEntries = useMemo(() => {
     return entries.filter((entry) => {
       if (stickyRowIds.has(entry.rowId)) return true
@@ -129,6 +146,8 @@ export function TranslationGrid({
       if (deferredFilter === 'translated' && !entry.target.trim()) return false
       if (deferredFilter === 'dictionary' && getCategory(entry) !== 'dictionary') return false
       if (deferredFilter === 'tags' && !hasXmlTags(entry)) return false
+      if (deferredSourceTab === 'loca' && entry.sourceFileType !== 'loca') return false
+      if (deferredSourceTab === 'xml' && entry.sourceFileType === 'loca') return false
       if (deferredSearch) {
         const query = deferredSearch.toLowerCase()
         return (
@@ -137,20 +156,20 @@ export function TranslationGrid({
       }
       return true
     })
-  }, [deferredFilter, deferredSearch, entries, stickyRowIds])
+  }, [deferredFilter, deferredSearch, deferredSourceTab, entries, stickyRowIds])
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [deferredFilter, deferredSearch])
+  }, [deferredFilter, deferredSearch, deferredSourceTab])
 
   // clear selection and sticky rows when filter or search changes
   useEffect(() => {
     clearSelection()
     setStickyRowIds(new Set())
-  }, [deferredFilter, deferredSearch, clearSelection])
+  }, [deferredFilter, deferredSearch, deferredSourceTab, clearSelection])
 
   // single source of truth for which entries "select-all" covers
-  const currentFilter: FilterSpec = { mode: deferredFilter, search: deferredSearch }
+  const currentFilter: FilterSpec = { mode: deferredFilter, search: deferredSearch, sourceTab: deferredSourceTab }
 
   const totalPages = Math.max(1, Math.ceil(filteredEntries.length / pageSize))
 
@@ -409,6 +428,38 @@ export function TranslationGrid({
     }
   ]
 
+  const sourceTabs =
+    hasLocaFiles && hasXmlFiles ? (
+      <div className="flex shrink-0 items-center gap-1 rounded-md border border-[#1f2329] bg-[#131518] p-0.5">
+        {(
+          [
+            { mode: 'all' as SourceFileTab, label: t('grid.tabAll', { ns: 'translate' }), count: undefined },
+            { mode: 'xml' as SourceFileTab, label: '.xml', count: tabCounts.xml },
+            { mode: 'loca' as SourceFileTab, label: '.loca', count: tabCounts.loca }
+          ]
+        ).map((tab) => (
+          <button
+            key={tab.mode}
+            type="button"
+            onClick={() => startFilterTransition(() => setSourceTab(tab.mode))}
+            className={cn(
+              'flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-xs font-semibold transition-colors',
+              sourceTab === tab.mode
+                ? 'bg-[#1f2329] text-neutral-100'
+                : 'text-neutral-500 hover:bg-[#181b1f] hover:text-neutral-300'
+            )}
+          >
+            {tab.label}
+            {tab.count !== undefined && (
+              <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[10px] tabular-nums text-neutral-500">
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+    ) : null
+
   const searchBar = (
     <div className="flex shrink-0 items-center gap-3 border-b border-[#1f2329] bg-[#0c0d0f] px-5 py-1">
       <div className="flex h-8 w-[292px] min-w-45 items-center gap-2 rounded-md border border-[#1f2329] bg-[#131518] px-3 transition-colors focus-within:border-neutral-600">
@@ -432,6 +483,8 @@ export function TranslationGrid({
           Ctrl F
         </span>
       </div>
+
+      {sourceTabs}
 
       <div className="flex shrink-0 items-center gap-3">
         <button
@@ -606,6 +659,14 @@ export function TranslationGrid({
                       {isDictionary && (
                         <span className="inline-flex items-center gap-1 rounded bg-blue-500/12 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-blue-400">
                           <BookOpen size={10} /> D <span className="text-blue-500/70">1</span>
+                        </span>
+                      )}
+                      {entry.sourceFile && (
+                        <span
+                          title={entry.sourceFile}
+                          className="inline-flex max-w-40 items-center truncate rounded border border-[#1f2329] bg-[#131518] px-1.5 font-mono text-[10px] text-neutral-500"
+                        >
+                          {entry.sourceFile}
                         </span>
                       )}
                       <span className="font-mono text-[10px] text-neutral-600">
@@ -790,6 +851,14 @@ export function TranslationGrid({
                           <span className="inline-flex items-center gap-1 rounded bg-purple-500/14 px-2 py-0.5 text-[11px] font-medium text-purple-300">
                             <AlertTriangle size={11} />{' '}
                             {t('grid.containsTags', { ns: 'translate' })}
+                          </span>
+                        )}
+                        {entry.sourceFile && (
+                          <span
+                            title={entry.sourceFile}
+                            className="inline-flex max-w-45 items-center truncate rounded border border-[#1f2329] bg-[#131518] px-2 py-0.5 font-mono text-[10px] text-neutral-500"
+                          >
+                            {entry.sourceFile}
                           </span>
                         )}
                         <button

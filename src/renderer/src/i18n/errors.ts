@@ -20,6 +20,7 @@ const legacyErrorMap = new Map<string, UserErrorCode>([
   ['Source XML has an invalid format', 'merge.invalidXml'],
   ['Target XML has an invalid format', 'merge.invalidXml'],
   ['Selected XML has an invalid format', 'merge.invalidXml'],
+  ['Selected files mix XML and LOCA formats', 'translation.mixedFormats'],
   ['Selected XML was not found', 'merge.sessionExpired'],
   ['No valid XML found', 'translation.noValidXml'],
   ['Formato invalido', 'translation.invalidFormat']
