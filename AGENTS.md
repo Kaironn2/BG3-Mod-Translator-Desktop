@@ -30,3 +30,10 @@ Read the matching skill **before** changing that area. Each skill lists checks t
 - `src/preload` — `window.api` bridge
 - `drizzle/` — SQL migrations (migrator splits on `--> statement-breakpoint` only)
 - `src/main/workers` — each worker is a separate `electron.vite` input
+
+## Git / CRLF
+
+- Windows uses `core.autocrlf=true` (repo LF, working copy CRLF). Never commit a file that shows as fully rewritten due to line endings.
+- Before staging, compare `git diff --stat` vs `git diff -w --stat`; if the latter is empty/clean while the former shows the whole file, it is CRLF pollution — restore the file and re-apply only the real hunks.
+- Do not run `biome check --write` on the whole repo; scope it to touched files and keep the original CRLF in the working copy (or let git normalize on `git add`).
+- Commit per scope (`feat(scope):`, `fix(scope):`, `refactor(scope):`, `chore(scope):`) matching existing history — avoid one huge commit and avoid staging files with only whitespace/CRLF changes.
