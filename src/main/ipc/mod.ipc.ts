@@ -115,9 +115,18 @@ export function registerModHandlers(repos: RepositoryRegistry): void {
         outputPath: string
         format: 'pak' | 'zip'
         modName: string
-        entries: { uid: string; version: string; source: string; target: string }[]
+        entries: {
+          uid: string
+          version: string
+          source: string
+          target: string
+          sourceFile?: string | null
+          sourceFileType?: 'xml' | 'loca' | null
+        }[]
         meta: MetaInfo
         bg3LanguageFolder: string
+        exportFileType?: 'xml' | 'loca'
+        preserveSourceFiles?: boolean
       }
     ) => exportTranslatedPackage(repos, params)
   )

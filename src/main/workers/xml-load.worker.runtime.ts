@@ -6,14 +6,15 @@ import {
   getDictionaryTargetText
 } from '../database/repositories/dictionary.repo'
 import { ModRepository } from '../database/repositories/mod.repo'
+import { SourceFileRepository } from '../database/repositories/source-file.repo'
 import * as schema from '../database/schema'
 import { applySqlitePragmas } from '../database/sqlite-pragmas'
 import { unpackMod } from '../services/lslib.service'
 import { decodeEntities } from '../services/xml-entities.service'
 import {
   findLocalizationXmls,
-  type LocalizationEntry,
-  parseLocalizationXml
+  parseLocalizationFile,
+  type LocalizationEntry
 } from '../services/xml-parser.service'
 import { extract } from '../services/zip.service'
 import { findPakFiles } from '../utils/findPakFiles'
@@ -34,6 +35,10 @@ export interface XmlEntry {
   source: string
   target: string
   matchType: 'none' | 'mod-text' | 'text' | 'manual'
+  // Original localization file this entry came from (basename, e.g. "Spells.xml",
+  // "brazilianportuguese.loca"). Drives the per-file column/filter and exports.
+  sourceFile: string | null
+  sourceFileType: 'xml' | 'loca' | null
 }
 
 export interface XmlLoadResult {
@@ -49,6 +54,12 @@ export type XmlLoadProgress =
   | { phase: 'error'; message: string }
 
 const MATCH_CHUNK = 500
+
+interface ParsedFile {
+  fileName: string
+  fileType: 'xml' | 'loca'
+  entries: LocalizationEntry[]
+}
 
 function toUiEntry(entry: LocalizationEntry): Pick<XmlEntry, 'uid' | 'version' | 'source'> {
   return {
@@ -72,19 +83,25 @@ export async function runXmlLoadWorker(
     const { inputPath, sourceLang, targetLang, modName, sourceFolder } = input
     const ext = path.extname(inputPath).toLowerCase()
 
-    let xmlPath: string
+    let files: { fileName: string; fileType: 'xml' | 'loca'; entries: LocalizationEntry[] }[]
 
-    if (ext === '.xml') {
-      xmlPath = inputPath
+    if (ext === '.xml' || ext === '.loca') {
+      post({ phase: 'parsing' })
+      // .loca input: the user imported a binary file directly - parse in place.
+      const entries = parseLocalizationFile(inputPath)
+      files = [
+        {
+          fileName: path.basename(inputPath),
+          fileType: ext === '.loca' ? 'loca' : 'xml',
+          entries
+        }
+      ]
     } else if (ext === '.pak') {
       post({ phase: 'unpacking' })
       const tempDir = createTempDir('icosa_xml')
       tempDirs.push(tempDir)
       await unpackMod(inputPath, tempDir)
-      const xmlFiles = findLocalizationXmls(tempDir, sourceFolder)
-      if (xmlFiles.length === 0)
-        throw new Error(`No XML found for language "${sourceFolder}" in pak`)
-      xmlPath = xmlFiles[0]
+      files = readAllLocalizationFiles(tempDir, sourceFolder, post)
     } else if (ext === '.zip') {
       post({ phase: 'unpacking' })
       const archiveDir = createTempDir('icosa_zip')
@@ -95,17 +112,12 @@ export async function runXmlLoadWorker(
       const unpackedDir = createTempDir('icosa_pak')
       tempDirs.push(unpackedDir)
       await unpackMod(pakFiles[0], unpackedDir)
-      const xmlFiles = findLocalizationXmls(unpackedDir, sourceFolder)
-      if (xmlFiles.length === 0)
-        throw new Error(`No XML found for language "${sourceFolder}" in pak`)
-      xmlPath = xmlFiles[0]
+      files = readAllLocalizationFiles(unpackedDir, sourceFolder, post)
     } else {
-      throw new Error(`Unsupported file type: ${ext}. Use .xml, .pak, or .zip`)
+      throw new Error(`Unsupported file type: ${ext}. Use .xml, .loca, .pak, or .zip`)
     }
 
-    post({ phase: 'parsing' })
-    const localizationEntries = parseLocalizationXml(xmlPath)
-    const total = localizationEntries.length
+    const total = files.reduce((sum, file) => sum + file.entries.length, 0)
     const result: XmlEntry[] = new Array(total)
 
     post({ phase: 'loading-cache' })
@@ -117,25 +129,52 @@ export async function runXmlLoadWorker(
       priorityMods
     )
 
-    for (let i = 0; i < total; i += MATCH_CHUNK) {
-      const end = Math.min(i + MATCH_CHUNK, total)
-      for (let j = i; j < end; j++) {
-        const entry = localizationEntries[j]
+    // Persist the per-file split: one mod_source row per file (getOrCreate is a single
+    // indexed lookup on repeat imports - no duplicate rows for renamed files).
+    const sourceFileIdByName = new Map<string, number>()
+    if (modName) {
+      const sourceRepo = new SourceFileRepository(db)
+      const modRepo = new ModRepository(db)
+      modRepo.upsert(modName)
+      for (const file of files) {
+        sourceFileIdByName.set(
+          file.fileName.toLowerCase(),
+          sourceRepo.getOrCreate(modName, file.fileName, file.fileType)
+        )
+      }
+    }
+
+    let cursor = 0
+    for (const file of files) {
+      for (const entry of file.entries) {
         const uiEntry = toUiEntry(entry)
         const match = index.resolve({
           modName: modName ?? null,
           uid: entry.contentuid,
           sourceText: entry.text
         })
-        result[j] = match
+        result[cursor] = match
           ? {
               ...uiEntry,
               target: decodeEntities(getDictionaryTargetText(match.entry, sourceLang, targetLang)),
-              matchType: match.matchType
+              matchType: match.matchType,
+              sourceFile: file.fileName,
+              sourceFileType: file.fileType
             }
-          : { ...uiEntry, target: '', matchType: 'none' }
+          : {
+              ...uiEntry,
+              target: '',
+              matchType: 'none',
+              sourceFile: file.fileName,
+              sourceFileType: file.fileType
+            }
+        cursor++
       }
-      post({ phase: 'matching', processed: end, total })
+    }
+
+    // Emit progress in chunks (cheap, keep the loop allocation-free per batch).
+    for (let i = 0; i < total; i += MATCH_CHUNK) {
+      post({ phase: 'matching', processed: Math.min(i + MATCH_CHUNK, total), total })
       await new Promise<void>((resolve) => setImmediate(resolve))
     }
 
@@ -144,4 +183,31 @@ export async function runXmlLoadWorker(
     for (const tempDir of tempDirs) cleanupTempDir(tempDir)
     sqlite.close()
   }
+}
+
+// Every .xml AND .loca inside Localization/{sourceFolder}/ - the tab views are built
+// from the file types actually found. .loca entries are decoded to raw text.
+function readAllLocalizationFiles(
+  rootDir: string,
+  sourceFolder: string,
+  post: (msg: XmlLoadProgress) => void
+): ParsedFile[] {
+  const paths = findLocalizationXmls(rootDir, sourceFolder)
+  const files: ParsedFile[] = []
+  for (const filePath of paths) {
+    const fileName = path.basename(filePath)
+    const fileType: 'xml' | 'loca' = fileName.toLowerCase().endsWith('.loca') ? 'loca' : 'xml'
+    post({ phase: 'parsing' })
+    files.push({ fileName, fileType, entries: parseLocalizationFile(filePath) })
+  }
+  if (files.length === 0) {
+    throw new Error(`No localization files found for language "${sourceFolder}" in pak`)
+  }
+  return files
+}
+
+interface ParsedFile {
+  fileName: string
+  fileType: 'xml' | 'loca'
+  entries: LocalizationEntry[]
 }

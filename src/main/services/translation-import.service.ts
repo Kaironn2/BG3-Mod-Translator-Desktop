@@ -25,9 +25,14 @@ import {
   sanitizeMetaFolder,
   writeMeta
 } from './lsx-parser.service'
-import { encodeEntities } from './xml-entities.service'
-import { parseLocalizationXml, writeLocalizationXml } from './xml-parser.service'
+import { encodeEntities, decodeEntities } from './xml-entities.service'
+import {
+  parseLocalizationFile,
+  writeLocalizationXml,
+  type LocalizationEntry
+} from './xml-parser.service'
 import { createZip } from './zip.service'
+import { writeLocaFile } from './loca/loca-writer'
 
 export type { TranslationXmlCandidate }
 
@@ -40,6 +45,8 @@ export interface PreparedTranslationInput {
 export interface CompleteTranslationImportResult {
   xmlPath: string
   meta: MetaInfo
+  // mod_source ids keyed by lowercase original file name.
+  sourceFileIds: Record<string, number>
 }
 
 export interface ExportPackagePayload {
@@ -49,6 +56,13 @@ export interface ExportPackagePayload {
   entries: ExportPackageEntry[]
   meta: MetaInfo
   bg3LanguageFolder: string
+  // 'xml' (default, engine-verified) or 'loca' (binary; file named as the language).
+  exportFileType?: 'xml' | 'loca'
+  // When true, entries are grouped back into their ORIGINAL files (mod_source) instead
+  // of one merged file. Falls back to a single file when the split is unknown.
+  preserveSourceFiles?: boolean
+  // uid -> original file name (lowercased key) resolved by the caller from the session.
+  entrySourceFiles?: Record<string, string>
 }
 
 export interface ExportPackageEntry {
@@ -56,6 +70,8 @@ export interface ExportPackageEntry {
   version: string
   source: string
   target: string
+  sourceFile?: string | null
+  sourceFileType?: 'xml' | 'loca' | null
 }
 
 interface StagedImport {
@@ -99,7 +115,7 @@ export async function prepareTranslationInput(
   const ext = path.extname(inputPath).toLowerCase()
   const importId = randomUUID()
 
-  if (ext === '.xml') {
+  if (ext === '.xml' || ext === '.loca') {
     const candidate = inspectXmlCandidate(inputPath, inputPath, 'direct')
     stagedImports.set(importId, {
       inputPath,
@@ -261,18 +277,58 @@ export function completeTranslationImport(
   if (candidates.some((candidate) => !candidate.valid)) {
     throw new Error('Selected XML has an invalid format')
   }
+  // UI tabs already enforce one-format-per-import; this guards direct IPC calls.
+  // Same strings in .xml and .loca would create duplicate dictionary entries.
+  const fileTypes = new Set(candidates.map((candidate) => candidate.fileType))
+  if (fileTypes.size > 1) {
+    throw new Error('Selected files mix XML and LOCA formats')
+  }
 
   const modDir = getStoredModDir(params.modName)
   fs.mkdirSync(modDir, { recursive: true })
 
-  const mergedEntries = candidates.flatMap((candidate) =>
-    parseLocalizationXml(candidate.absolutePath)
-  )
+  // Merge keeps per-file identity: each entry carries its original file so the
+  // import session can register one mod_source row per selected file (original
+  // names). Renamed-file re-imports reuse the same mod_source row (unique
+  // (mod_id, file_name)); dictionary UIDs are NOT duplicated.
+  const mergedEntries: { entry: LocalizationEntry; fileName: string; isLoca: boolean }[] =
+    candidates.flatMap((candidate) => {
+      const isLoca = candidate.fileType === 'loca'
+      return parseLocalizationFile(candidate.absolutePath).map((entry) => ({
+        entry,
+        fileName: path.basename(candidate.absolutePath),
+        isLoca
+      }))
+    })
+  // Group by file name to dedupe mod_source lookups (importants: same file selected
+  // twice across candidates lands in one mod_source row).
+  const fileNamesInOrder: string[] = []
+  const fileTypesByName = new Map<string, 'xml' | 'loca'>()
+  for (const item of mergedEntries) {
+    const key = item.fileName.toLowerCase()
+    if (!fileTypesByName.has(key)) {
+      fileNamesInOrder.push(item.fileName)
+      fileTypesByName.set(key, item.isLoca ? 'loca' : 'xml')
+    }
+  }
+  const sourceFileIds = new Map<string, number>()
+  for (const fileName of fileNamesInOrder) {
+    sourceFileIds.set(
+      fileName.toLowerCase(),
+      repos.sourceFile.getOrCreate(
+        params.modName,
+        fileName,
+        fileTypesByName.get(fileName.toLowerCase()) ?? 'xml'
+      )
+    )
+  }
+
+  const mergedXmlEntries = mergedEntries.map(({ entry }) => entry)
   const xmlPath = path.join(modDir, 'translation_merged.xml')
-  writeLocalizationXml(mergedEntries, xmlPath)
+  writeLocalizationXml(mergedXmlEntries, xmlPath)
 
   repos.mod.upsert(params.modName, {
-    totalStrings: mergedEntries.length,
+    totalStrings: mergedXmlEntries.length,
     lastFilePath: xmlPath
   })
 
@@ -284,8 +340,14 @@ export function completeTranslationImport(
   })
   const savedMeta = repos.modMeta.upsertForModName(params.modName, meta)
 
+  const result: CompleteTranslationImportResult & { sourceFileIds: Record<string, number> } = {
+    xmlPath,
+    meta: savedMeta,
+    sourceFileIds: Object.fromEntries(sourceFileIds)
+  }
+
   discardTranslationInput(params.importId)
-  return { xmlPath, meta: savedMeta }
+  return result
 }
 
 export function getMetaForMod(
@@ -337,6 +399,7 @@ export async function exportTranslatedPackage(
   if (!/^[a-zA-Z0-9]+$/.test(payload.bg3LanguageFolder)) {
     throw new Error('BG3 language folder must not contain spaces or special characters')
   }
+  const exportFileType = payload.exportFileType ?? 'xml'
 
   const tempDir = createTempDir('icosa_export')
   fs.mkdirSync(tempDir, { recursive: true })
@@ -345,16 +408,34 @@ export async function exportTranslatedPackage(
     const packageRoot = path.join(tempDir, meta.folder)
     const modRoot = path.join(packageRoot, 'Mods', meta.folder)
     const localizationDir = path.join(modRoot, 'Localization', payload.bg3LanguageFolder)
-    const originalXmlName = readOriginalXmlName(repos, payload.modName, meta.folder)
-    const exportXmlPath = path.join(localizationDir, originalXmlName)
     const exportMetaPath = path.join(modRoot, 'meta.lsx')
 
-    const locEntries = payload.entries.map((entry) => ({
-      contentuid: entry.uid,
-      version: entry.version,
-      text: encodeEntities(entry.target || entry.source)
-    }))
-    writeLocalizationXml(locEntries, exportXmlPath)
+    // Group entries back into their original files when the split is known and wanted.
+    const groups = groupEntriesForExport(repos, payload, meta)
+
+    if (exportFileType === 'loca') {
+      // Binary .loca: the game only loads add-on binary locas when the file is named
+      // as the language (vanilla convention, lowercase) - one file regardless of the
+      // original split. Markup must be stored raw (LocaXML keeps it entity-escaped).
+      writeLocaFile(
+        payload.entries.map((entry) => ({
+          key: entry.uid,
+          version: Number.parseInt(entry.version, 10) || 1,
+          text: decodeEntities(entry.target || entry.source)
+        })),
+        path.join(localizationDir, `${payload.bg3LanguageFolder.toLowerCase()}.loca`)
+      )
+    } else {
+      for (const group of groups) {
+        const locEntries = group.entries.map((entry) => ({
+          contentuid: entry.uid,
+          version: entry.version,
+          text: encodeEntities(entry.target || entry.source)
+        }))
+        writeLocalizationXml(locEntries, path.join(localizationDir, group.fileName))
+      }
+    }
+
     writeMeta({
       sourcePath: meta.metaFilePath,
       outputPath: exportMetaPath,
@@ -387,6 +468,72 @@ export async function exportTranslatedPackage(
   } finally {
     cleanupTempDir(tempDir)
   }
+}
+
+interface ExportFileGroup {
+  fileName: string
+  entries: ExportPackageEntry[]
+}
+
+// Resolve the on-disk file grouping for this export:
+// 1. per-entry sourceFile from the live session (authoritative for what the user sees);
+// 2. fallback: mod_source grouping from the dictionary (rows saved earlier);
+// 3. fallback: single file with the original merged name / language name.
+function groupEntriesForExport(
+  repos: RepositoryRegistry,
+  payload: ExportPackagePayload,
+  meta: MetaInfo
+): ExportFileGroup[] {
+  const { entries } = payload
+  const preserve = payload.preserveSourceFiles ?? true
+
+  const byLowerName = new Map<string, ExportFileGroup>()
+  const order: string[] = []
+  let unfiled: ExportPackageEntry[] = []
+
+  for (const entry of entries) {
+    const rawName = entry.sourceFile?.trim()
+    if (preserve && rawName && /^[^\\/]+\.(xml|loca)$/i.test(rawName)) {
+      const key = rawName.toLowerCase()
+      let group = byLowerName.get(key)
+      if (!group) {
+        group = { fileName: rawName, entries: [] }
+        byLowerName.set(key, group)
+        order.push(rawName)
+      }
+      group.entries.push(entry)
+    } else {
+      unfiled.push(entry)
+    }
+  }
+
+  if (byLowerName.size === 0 || unfiled.length === entries.length) {
+    // No per-file info (legacy session / single import): one file.
+    if (payload.exportFileType === 'loca') {
+      return [
+        {
+          fileName: `${payload.bg3LanguageFolder.toLowerCase()}.loca`,
+          entries
+        }
+      ]
+    }
+    return [{ fileName: readOriginalXmlName(repos, payload.modName, meta.folder), entries }]
+  }
+
+  // Entries without file info ride along in the first group so nothing is silently
+  // dropped from the export.
+  if (unfiled.length > 0) {
+    const first = order[0]
+    const target = first ? byLowerName.get(first.toLowerCase()) : undefined
+    if (target) target.entries.push(...unfiled)
+    else {
+      const mergedName = readOriginalXmlName(repos, payload.modName, meta.folder)
+      byLowerName.set(mergedName.toLowerCase(), { fileName: mergedName, entries: unfiled })
+      order.push(mergedName)
+    }
+  }
+
+  return order.map((name) => byLowerName.get(name.toLowerCase()) as ExportFileGroup)
 }
 
 function buildDefaultMeta(

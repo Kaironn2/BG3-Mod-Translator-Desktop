@@ -1,11 +1,16 @@
+import path from 'node:path'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import type { MergeProgress, MergeResult } from '../../preload/api-types'
 import { DictionaryRepository } from '../database/repositories/dictionary.repo'
+import { SourceFileRepository } from '../database/repositories/source-file.repo'
 import type { NewDictionaryEntry } from '../database/schema'
 import * as schema from '../database/schema'
 import { applySqlitePragmas } from '../database/sqlite-pragmas'
-import { type LocalizationEntry, parseLocalizationXml } from '../services/xml-parser.service'
+import {
+  type LocalizationEntry,
+  parseLocalizationFile
+} from '../services/xml-parser.service'
 import { dictionaryTextKey, normalizeDictionaryText } from '../utils/dictionaryText'
 import { normalizeLangs } from '../utils/languages'
 
@@ -41,8 +46,8 @@ export async function runMergeWorker(
     const repo = new DictionaryRepository(db)
 
     post({ phase: 'parsing' })
-    const sourceEntries = parseLocalizationXml(input.sourceXmlPath)
-    const targetEntries = parseLocalizationXml(input.targetXmlPath)
+    const sourceEntries = parseLocalizationFile(input.sourceXmlPath)
+    const targetEntries = parseLocalizationFile(input.targetXmlPath)
     const targetBuckets = groupByUid(targetEntries)
 
     post({ phase: 'loading-map' })
@@ -53,12 +58,24 @@ export async function runMergeWorker(
       .prepare('INSERT INTO mod (name) VALUES (?) ON CONFLICT(name) DO NOTHING')
       .run(input.modName)
 
+    // Per-file identity for the target (translated) side - the target file name is
+    // what exports will rebuild. Source file name only fills in when the target is
+    // the merged file (import flow already registered real names).
+    const sourceRepo = new SourceFileRepository(db)
+    const targetFileName = path.basename(input.targetXmlPath)
+    const targetIsLoca = targetFileName.toLowerCase().endsWith('.loca')
+    const targetFileId = sourceRepo.getOrCreate(
+      input.modName,
+      targetFileName,
+      targetIsLoca ? 'loca' : 'xml'
+    )
+
     post({ phase: 'classifying' })
     const [l1, l2, swapped] = normalizeLangs(input.sourceLang, input.targetLang)
     const updateColumn: 'language1' | 'language2' = swapped ? 'language1' : 'language2'
 
     const inserts: NewDictionaryEntry[] = []
-    const updates: PendingUpdate[] = []
+    const updates: (PendingUpdate & { sourceFileId: number })[] = []
     let matched = 0
 
     for (const sourceEntry of sourceEntries) {
@@ -76,13 +93,14 @@ export async function runMergeWorker(
       const existing = keyMap.get(sourceKey)
 
       if (existing) {
-        // skip-if-equal: nothing changed for this row.
-        if (existing.targetKey === targetKey) continue
+        // skip-if-equal: nothing changed for this row (file pointer stays too).
+        if (existing.targetKey === targetKey && existing.sourceFileId === targetFileId) continue
         updates.push({
           id: existing.id,
           targetText,
           targetTextKey: targetKey,
-          uid: sourceEntry.contentuid
+          uid: sourceEntry.contentuid,
+          sourceFileId: targetFileId
         })
       } else {
         const [text1, text2] = swapped ? [targetText, sourceText] : [sourceText, targetText]
@@ -94,7 +112,8 @@ export async function runMergeWorker(
           textLanguage1Key: dictionaryTextKey(text1),
           textLanguage2Key: dictionaryTextKey(text2),
           modName: input.modName,
-          uid: sourceEntry.contentuid
+          uid: sourceEntry.contentuid,
+          sourceFileId: targetFileId
         })
       }
     }
