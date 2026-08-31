@@ -12,6 +12,7 @@
     "aiQuotaExhausted": "A cota deste provedor de IA acabou (diária ou de faturamento). A tradução parou — tente mais tarde ou troque de provedor. Os detalhes completos estão nos logs da aplicação.",
     "invalidProvider": "Provedor de tradução desconhecido.",
     "noValidXml": "Nenhum XML válido foi encontrado no arquivo selecionado.",
+    "mixedFormats": "Este mod traz as mesmas strings em arquivos XML e LOCA. Importe um formato por vez.",
     "invalidFormat": "Formato de entrada inválido.",
     "fileLoadFailed": "Falha ao carregar o arquivo selecionado.",
     "saveFailed": "Falha ao salvar as traduções."

@@ -19,5 +19,6 @@
     "bg3LanguageFolder": "BG3 language folder",
     "searchLanguageFolder": "Search folder...",
     "noLanguageFolderFound": "No folder found."
-  }
+  },
+  "exportLanguageTip": "Pick the localization folder that matches the language you play with. The game replaces strings by UUID inside Localization/{language}/ — if your language is not supported by the game, keep English (unsupported languages fall back to it). Files exported as .loca are named after this language (e.g. english.loca)."
 }
