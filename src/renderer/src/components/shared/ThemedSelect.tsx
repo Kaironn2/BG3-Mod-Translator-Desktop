@@ -171,7 +171,7 @@ export function ThemedSelect({
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={resolvedSearchPlaceholder}
-                  className="flex-1 bg-transparent text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
+                  className="flex-1 bg-transparent text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
                 />
               </div>
             )}
@@ -189,7 +189,7 @@ export function ThemedSelect({
                         closeMenu()
                       }}
                       className={cn(
-                        'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs transition-all',
+                        'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-all',
                         active
                           ? 'bg-amber-400/10 text-amber-400'
                           : option.highlight
@@ -198,17 +198,17 @@ export function ThemedSelect({
                       )}
                     >
                       <span className="flex-1 truncate">{option.label}</span>
-                      {option.mark && (
-                        <span className="shrink-0 rounded border border-amber-500/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-400">
-                          {option.mark}
-                        </span>
-                      )}
                       {option.badge && (
                         <span className="font-mono text-[10px] text-neutral-500">
                           {option.badge}
                         </span>
                       )}
                       {active && <Check size={12} />}
+                      {option.mark && (
+                        <span className="shrink-0 rounded border border-amber-500/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-400">
+                          {option.mark}
+                        </span>
+                      )}
                     </button>
                   )
                 })
@@ -234,8 +234,8 @@ export function ThemedSelect({
         className={cn(
           'flex h-9.5 w-full cursor-pointer items-center gap-2.5 rounded-md border px-3 text-left text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50',
           open
-            ? 'border-amber-500 bg-[#0f1114] shadow-[0_0_0_3px_rgba(245,158,11,0.15)]'
-            : 'border-[#1f2329] bg-[#0f1114] hover:border-neutral-600',
+            ? 'border-amber-500 bg-[#131518] shadow-[0_0_0_3px_rgba(245,158,11,0.15)]'
+            : 'border-[#1f2329] bg-[#131518] hover:border-neutral-600',
           accent || selected?.highlight ? 'text-amber-400' : 'text-neutral-200',
           triggerClassName
         )}
@@ -243,11 +243,6 @@ export function ThemedSelect({
         <span className="flex-1 truncate font-medium">
           {selected?.label ?? resolvedPlaceholder}
         </span>
-        {selected?.mark && (
-          <span className="shrink-0 rounded border border-amber-500/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-400">
-            {selected.mark}
-          </span>
-        )}
         {selected?.badge && (
           <span
             className={cn(
@@ -256,6 +251,11 @@ export function ThemedSelect({
             )}
           >
             {selected.badge}
+          </span>
+        )}
+        {selected?.mark && (
+          <span className="shrink-0 rounded border border-amber-500/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-400">
+            {selected.mark}
           </span>
         )}
         {triggerAdornment}

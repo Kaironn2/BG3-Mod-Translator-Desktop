@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { UpdaterState } from '@/types'
 
 const EMPTY_STATE: UpdaterState = {
@@ -18,6 +18,9 @@ const EMPTY_STATE: UpdaterState = {
 
 interface UpdaterSessionValue {
   state: UpdaterState
+  // True only while a check started from this renderer is running. Background
+  // (startup/scheduled) checks must not disable the manual button.
+  checking: boolean
   check: () => Promise<void>
   install: () => Promise<void>
   ackChangelog: () => Promise<void>
@@ -27,15 +30,35 @@ const UpdaterSessionContext = createContext<UpdaterSessionValue | null>(null)
 
 export function UpdaterProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const [state, setState] = useState<UpdaterState>(EMPTY_STATE)
+  const [checking, setChecking] = useState(false)
+  // Ref mirrors `checking` so the push listener can read the current value
+  // without re-subscribing on every toggle.
+  const checkingRef = useRef(false)
 
   useEffect(() => {
     void window.api.updater.getState().then(setState)
-    return window.api.updater.onState(setState)
+    return window.api.updater.onState((next) => {
+      setState(next)
+      if (next.status !== 'checking' && checkingRef.current) {
+        // A check started here has settled (up-to-date / available / error /
+        // downloading). Re-enable the manual button immediately.
+        checkingRef.current = false
+        setChecking(false)
+      }
+    })
   }, [])
 
   const check = useCallback(async () => {
-    const next = await window.api.updater.check()
-    setState(next)
+    if (checkingRef.current) return
+    checkingRef.current = true
+    setChecking(true)
+    try {
+      const next = await window.api.updater.check()
+      setState(next)
+    } finally {
+      checkingRef.current = false
+      setChecking(false)
+    }
   }, [])
 
   const install = useCallback(async () => {
@@ -48,8 +71,8 @@ export function UpdaterProvider({ children }: { children: React.ReactNode }): Re
   }, [])
 
   const value = useMemo(
-    () => ({ state, check, install, ackChangelog }),
-    [state, check, install, ackChangelog]
+    () => ({ state, checking, check, install, ackChangelog }),
+    [state, checking, check, install, ackChangelog]
   )
 
   return <UpdaterSessionContext.Provider value={value}>{children}</UpdaterSessionContext.Provider>

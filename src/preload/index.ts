@@ -328,6 +328,13 @@ const api: AppApi = {
       fileType?: 'xml' | 'loca'
     }): Promise<void> => ipcRenderer.invoke('xml:export', params),
 
+    exportPerSourceFile: (params: {
+      outputDir: string
+      entries: { uid: string; version: string; source: string; target: string; matchType: string }[]
+      fallbackFileName: string
+      fileType?: 'xml' | 'loca'
+    }): Promise<string[]> => ipcRenderer.invoke('xml:exportPerSourceFile', params),
+
     onLoadProgress: (cb: (data: import('./api-types').XmlLoadProgress) => void): UnsubscribeFn =>
       on('xml:load:progress', cb)
   },

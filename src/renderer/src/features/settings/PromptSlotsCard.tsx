@@ -28,7 +28,7 @@ function VarChecklist({ prompt }: { prompt: string }): React.JSX.Element {
             className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-mono text-[11px] ${
               present
                 ? 'bg-amber-500/12 text-amber-400'
-                : 'border border-red-500/40 bg-red-500/10 text-red-400'
+                : 'border border-red-500/30 bg-red-500/10 text-red-400'
             }`}
           >
             {present ? <Check size={11} /> : <AlertTriangle size={11} />}
@@ -39,7 +39,7 @@ function VarChecklist({ prompt }: { prompt: string }): React.JSX.Element {
       {unknown.map((v) => (
         <span
           key={`unknown-${v}`}
-          className="inline-flex items-center gap-1 rounded border border-red-500/40 bg-red-500/10 px-2 py-0.5 font-mono text-[11px] text-red-400 line-through"
+          className="inline-flex items-center gap-1 rounded border border-red-500/30 bg-red-500/10 px-2 py-0.5 font-mono text-[11px] text-red-400 line-through"
         >
           <AlertTriangle size={11} />
           {`{${v}}`}
@@ -53,12 +53,12 @@ function PromptTip(): React.JSX.Element {
   const { t } = useAppTranslation(['ai'])
   return (
     <span className="group relative inline-flex">
-      <span className="inline-flex h-4.5 w-4.5 cursor-help items-center justify-center rounded-full border border-neutral-600 font-mono text-[11px] font-bold text-neutral-400">
+      <span className="inline-flex h-4.5 w-4.5 cursor-help items-center justify-center rounded-full border border-neutral-500 font-mono text-[11px] font-bold text-neutral-400">
         ?
       </span>
-      <span className="pointer-events-none absolute top-[calc(100%+8px)] left-1/2 z-50 w-80 -translate-x-1/2 rounded-lg border border-neutral-700 bg-neutral-900 px-3.5 py-3 text-xs leading-relaxed text-neutral-300 opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+      <span className="pointer-events-none absolute top-[calc(100%+8px)] left-1/2 z-50 w-80 -translate-x-1/2 rounded-lg border border-[#1f2329] bg-[#131518] px-3.5 py-3 text-xs leading-relaxed text-neutral-300 opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
         {t('slots.tooltip.text')}
-        <span className="mt-2 block rounded-md border border-neutral-800 bg-[#0a0a0c] px-2.5 py-2 font-mono whitespace-pre-wrap text-neutral-400">
+        <span className="mt-2 block rounded-md border border-[#1f2329] bg-[#0f1114] px-2.5 py-2 font-mono whitespace-pre-wrap text-neutral-400">
           {t('slots.tooltip.example')}
         </span>
       </span>
@@ -198,7 +198,7 @@ export function PromptSlotsCard(): React.JSX.Element {
             className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm transition-colors ${
               selectedId === slot.id
                 ? 'border-amber-500/60 bg-amber-500/10 text-amber-400'
-                : 'border-neutral-800 bg-[#0a0a0c] text-neutral-300 hover:border-neutral-700'
+                : 'border-[#1f2329] bg-[#0f1114] text-neutral-300 hover:border-[#252a32]'
             }`}
           >
             <span className="font-mono text-[10px] text-neutral-500">
@@ -219,13 +219,13 @@ export function PromptSlotsCard(): React.JSX.Element {
               if (e.key === 'Escape') cancelNaming()
             }}
             onBlur={() => void confirmName()}
-            className="w-44 rounded-md border border-amber-500 bg-[#0a0a0c] px-2.5 py-1.5 text-sm text-neutral-200 focus:outline-none"
+            className="w-44 rounded-md border border-amber-500 bg-[#0f1114] px-2.5 py-1.5 text-sm text-neutral-200 focus:outline-none"
           />
         ) : (
           <button
             type="button"
             onClick={openNaming}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-dashed border-neutral-700 px-2.5 py-1.5 text-sm text-neutral-400 transition-colors hover:border-amber-500 hover:text-amber-400"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-dashed border-neutral-600 px-2.5 py-1.5 text-sm text-neutral-400 transition-colors hover:border-amber-500 hover:text-amber-400"
           >
             <Plus size={13} /> {t('slots.newSlot')}
           </button>
@@ -242,7 +242,7 @@ export function PromptSlotsCard(): React.JSX.Element {
       <VarChecklist prompt={draft} />
 
       {showVarsError && (
-        <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2.5 text-sm text-red-300">
+        <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-300">
           <AlertTriangle size={15} className="mt-0.5 shrink-0 text-red-400" />
           <div className="flex flex-col gap-0.5">
             <strong>{t('slots.cannotSave')}</strong>
@@ -292,7 +292,7 @@ export function PromptSlotsCard(): React.JSX.Element {
             <button
               type="button"
               onClick={() => void deleteSlot()}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-neutral-800 px-4 py-2 text-sm text-neutral-300 transition-colors hover:bg-neutral-800"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-[#1f2329] bg-[#0f1114] px-4 py-2 text-sm text-neutral-300 transition-colors hover:border-[#252a32]"
             >
               <Trash2 size={13} /> {t('slots.delete')}
             </button>

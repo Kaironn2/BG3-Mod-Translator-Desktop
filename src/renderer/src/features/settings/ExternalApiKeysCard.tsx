@@ -62,7 +62,7 @@ function ApiKeyRow({
   }, [focused, keyValue, lastSavedRef])
 
   return (
-    <div className="rounded-lg border border-neutral-800 bg-[#0a0a0c]">
+    <div className="rounded-lg border border-[#1f2329] bg-[#0f1114]">
       <div className="grid grid-cols-[150px_1fr] items-center gap-3 p-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
@@ -82,7 +82,7 @@ function ApiKeyRow({
           </div>
         </div>
 
-        <div className="flex min-w-0 items-center gap-1 rounded-md border border-neutral-800 bg-[#0a0a0c] px-3 transition-colors focus-within:border-amber-500">
+        <div className="flex min-w-0 items-center gap-1 rounded-md border border-[#1f2329] bg-[#0f1114] px-3 transition-colors focus-within:border-amber-500">
           <input
             type={show ? 'text' : 'password'}
             value={draft}

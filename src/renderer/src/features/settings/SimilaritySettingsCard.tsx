@@ -16,7 +16,7 @@ function FieldRow({
 }): React.JSX.Element {
   return (
     <div
-      className={`flex items-center justify-between gap-5 border-b border-neutral-800/70 py-3 first:pt-0 last:border-b-0 last:pb-0 ${
+      className={`flex items-center justify-between gap-5 border-b border-[#1f2329] py-3 first:pt-0 last:border-b-0 last:pb-0 ${
         disabled ? 'pointer-events-none opacity-45' : ''
       }`}
     >
@@ -48,9 +48,7 @@ export function SimilaritySettingsCard(): React.JSX.Element {
           type="button"
           onClick={() => void set('ai_similarity_enabled', String(!similarity.enabled))}
           className={`relative h-5.5 w-9.5 cursor-pointer rounded-full border transition-colors ${
-            similarity.enabled
-              ? 'border-amber-500 bg-amber-500'
-              : 'border-neutral-600 bg-neutral-800'
+            similarity.enabled ? 'border-amber-500 bg-amber-500' : 'border-neutral-500 bg-[#252a32]'
           }`}
         >
           <span
@@ -66,23 +64,23 @@ export function SimilaritySettingsCard(): React.JSX.Element {
         description={t('similarity.countDesc')}
         disabled={!similarity.enabled}
       >
-        <div className="inline-flex items-center overflow-hidden rounded-md border border-neutral-800 bg-[#0a0a0c]">
+        <div className="inline-flex items-center overflow-hidden rounded-md border border-[#1f2329] bg-[#0f1114]">
           <button
             type="button"
             onClick={() => setCount(similarity.count - 1)}
             disabled={similarity.count <= 1}
-            className="flex h-8 w-7 cursor-pointer items-center justify-center text-neutral-300 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:text-neutral-600"
+            className="flex h-8 w-7 cursor-pointer items-center justify-center text-neutral-300 hover:bg-[#181b1f] disabled:cursor-not-allowed disabled:text-neutral-600"
           >
             −
           </button>
-          <span className="min-w-8 border-x border-neutral-800 text-center font-mono text-sm text-neutral-200 tabular-nums">
+          <span className="min-w-8 border-x border-[#1f2329] text-center font-mono text-sm text-neutral-200 tabular-nums">
             {similarity.count}
           </span>
           <button
             type="button"
             onClick={() => setCount(similarity.count + 1)}
             disabled={similarity.count >= 10}
-            className="flex h-8 w-7 cursor-pointer items-center justify-center text-neutral-300 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:text-neutral-600"
+            className="flex h-8 w-7 cursor-pointer items-center justify-center text-neutral-300 hover:bg-[#181b1f] disabled:cursor-not-allowed disabled:text-neutral-600"
           >
             +
           </button>

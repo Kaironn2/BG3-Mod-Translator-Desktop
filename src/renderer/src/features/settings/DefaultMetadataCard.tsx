@@ -1,0 +1,170 @@
+import { IdCard } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { LanguageSelect } from '@/components/shared/LanguageSelect'
+import { ThemedSelect } from '@/components/shared/ThemedSelect'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
+import { compareLanguagesOfficialFirst } from '@/lib/languageOptions'
+import { isOfficialBg3Language, type ConfigKey, toBg3LanguageFolder } from '@/types'
+import { SettingsSectionCard } from './SettingsSectionCard'
+import { useDebouncedPersist } from './useDebouncedPersist'
+
+interface DefaultMetadataCardProps {
+  config: Record<string, string>
+  set: (key: ConfigKey, value: string) => Promise<void>
+}
+
+function AutosaveTextField({
+  label,
+  value,
+  placeholder,
+  onSave
+}: {
+  label: string
+  value: string
+  placeholder?: string
+  onSave: (value: string) => void
+}): React.JSX.Element {
+  const [draft, setDraft] = useState(value)
+  const [focused, setFocused] = useState(false)
+  const { onInput, flush, lastSavedRef } = useDebouncedPersist(onSave)
+
+  useEffect(() => {
+    lastSavedRef.current = value
+    if (!focused) setDraft(value)
+  }, [focused, lastSavedRef, value])
+
+  return (
+    <label className="flex w-full flex-col gap-1">
+      <span className="text-xs text-neutral-400">{label}</span>
+      <input
+        type="text"
+        value={draft}
+        placeholder={placeholder}
+        onChange={(event) => {
+          setDraft(event.target.value)
+          onInput(event.target.value)
+        }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false)
+          flush(draft)
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.currentTarget.blur()
+        }}
+        className="rounded-md border border-[#1f2329] bg-[#0f1114] px-3 py-2.5 text-sm text-neutral-200 placeholder-neutral-600 transition-all focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 focus:outline-none"
+      />
+    </label>
+  )
+}
+
+export function DefaultMetadataCard({ config, set }: DefaultMetadataCardProps): React.JSX.Element {
+  const { t } = useAppTranslation(['settings', 'toasts'])
+  const [bg3Languages, setBg3Languages] = useState<
+    { value: string; label: string; highlight: boolean; mark?: string }[]
+  >([])
+
+  useEffect(() => {
+    window.api.language.getAll().then((languages) => {
+      const officialMark = t('badges.official', { ns: 'common' })
+      const mapped = [...languages]
+        .sort(compareLanguagesOfficialFirst)
+        .map((language) => {
+          const folder = toBg3LanguageFolder(language.code, language.name)
+          const official = isOfficialBg3Language(language.code)
+          const label = t(`languages.${language.code}`)
+          return {
+            value: language.code,
+            label,
+            searchText: `${label} ${language.name} ${language.code} ${folder}`,
+            highlight: official,
+            mark: official ? officialMark : undefined
+          }
+        })
+      setBg3Languages(mapped)
+    })
+  }, [t])
+
+  const handleDefaultChange = async (
+    key: ConfigKey,
+    code: string,
+    label: string
+  ): Promise<void> => {
+    await set(key, code)
+    toast.success(t('settings.saved', { ns: 'toasts', label }))
+  }
+
+  return (
+    <SettingsSectionCard
+      title={t('sections.metadata')}
+      subtitle={t('sections.metadataSubtitle')}
+      icon={<IdCard size={16} />}
+    >
+      <div className="mb-5">
+        <AutosaveTextField
+          label={t('fields.defaultAuthor')}
+          value={config.author ?? ''}
+          placeholder={t('placeholders.author')}
+          onSave={(value) => {
+            void set('author', value)
+          }}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <LanguageSelect
+          label={t('fields.defaultSourceLanguage')}
+          value={config.last_source_lang ?? ''}
+          onChange={(code) => {
+            void handleDefaultChange(
+              'last_source_lang',
+              code,
+              t('fields.defaultSourceLanguage')
+            )
+          }}
+          className="w-full"
+        />
+        <LanguageSelect
+          label={t('fields.defaultTargetLanguage')}
+          value={config.last_target_lang ?? ''}
+          onChange={(code) => {
+            void handleDefaultChange(
+              'last_target_lang',
+              code,
+              t('fields.defaultTargetLanguage')
+            )
+          }}
+          className="w-full"
+        />
+      </div>
+      <div className="mt-5">
+        <span
+          title={t('fields.defaultExportLanguageTip')}
+          className="mb-1.5 flex w-fit cursor-help items-center gap-1 text-xs text-neutral-400"
+        >
+          {t('fields.defaultExportLanguage')}
+          <span className="inline-flex items-center text-neutral-500 hover:text-neutral-300">
+            ⓘ
+          </span>
+        </span>
+        <ThemedSelect
+          className="w-full"
+          value={config.default_export_language ?? ''}
+          onChange={(code) => {
+            void handleDefaultChange(
+              'default_export_language',
+              code,
+              t('fields.defaultExportLanguage')
+            )
+          }}
+          placeholder={t('placeholders.defaultExportLanguage')}
+          searchable
+          searchPlaceholder={t('placeholders.searchLanguage', { ns: 'common' })}
+          emptyLabel={t('placeholders.noLanguageFound', { ns: 'common' })}
+          options={bg3Languages}
+        />
+      </div>
+      <div className="mt-4 text-right text-xs text-neutral-500">{t('autoSaved')}</div>
+    </SettingsSectionCard>
+  )
+}

@@ -20,13 +20,16 @@ import {
 
 export const UPDATE_CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000
 export const UPDATE_STARTUP_DELAY_MS = 20_000
-const MIN_MANUAL_CHECK_GAP_MS = 15_000
+// A manual click pauses the background schedule; the next automatic check fires
+// this long after the manual check finishes, then the regular interval resumes.
+const AUTO_RESCHEDULE_AFTER_MANUAL_MS = 60_000
+// Never let one hung request (proxy/DNS stall) lock the updater in 'checking'.
+const CHECK_TIMEOUT_MS = 60_000
 
 let getWindow: () => BrowserWindow | null = () => null
 let configured = false
 let checkTimer: NodeJS.Timeout | null = null
 let inFlight: Promise<void> | null = null
-let lastCheckAt = 0
 let downloadedVersion: string | null = null
 
 let state: UpdaterState = {
@@ -82,8 +85,16 @@ export async function checkForAppUpdate(
   reason: 'manual' | 'scheduled' | 'startup'
 ): Promise<UpdaterState> {
   if (state.channel !== 'installed') return state
-  if (isBusy()) return state
-  if (reason === 'manual' && Date.now() - lastCheckAt < MIN_MANUAL_CHECK_GAP_MS) return state
+  if (isBusy()) {
+    // A scheduled tick colliding with in-flight work (e.g. a manual check or a
+    // download) must not kill the recurrence chain.
+    if (reason !== 'manual') scheduleCheck(UPDATE_CHECK_INTERVAL_MS)
+    return state
+  }
+
+  // A manual click resets the background schedule: pause any pending automatic
+  // check and re-arm it only after this check settles.
+  if (reason === 'manual') stopBackgroundUpdateChecks()
 
   const run = (async () => {
     setState({ status: 'checking', errorCode: null })
@@ -96,8 +107,7 @@ export async function checkForAppUpdate(
     }
 
     try {
-      const result = await autoUpdater.checkForUpdates()
-      lastCheckAt = Date.now()
+      const result = await withTimeout(autoUpdater.checkForUpdates(), CHECK_TIMEOUT_MS)
       const checkedAt = new Date().toISOString()
       if (!result?.isUpdateAvailable) {
         setState({
@@ -134,6 +144,9 @@ export async function checkForAppUpdate(
     await run
   } finally {
     if (inFlight === run) inFlight = null
+    // Manual clicks re-arm the schedule on a short fuse; automated checks fall
+    // back to the regular 4h interval.
+    scheduleCheck(reason === 'manual' ? AUTO_RESCHEDULE_AFTER_MANUAL_MS : UPDATE_CHECK_INTERVAL_MS)
   }
   return state
 }
@@ -268,12 +281,32 @@ function detectChannel(): UpdaterChannel {
   return 'installed'
 }
 
-function scheduleCheck(delayMs: number): void {
-  if (checkTimer) clearTimeout(checkTimer)
-  checkTimer = setTimeout(() => {
-    void checkForAppUpdate(delayMs === UPDATE_STARTUP_DELAY_MS ? 'startup' : 'scheduled').finally(
-      () => scheduleCheck(UPDATE_CHECK_INTERVAL_MS)
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const err = new Error(`updater check timed out after ${timeoutMs}ms`)
+      logError('updater.check', err, { timeoutMs })
+      reject(err)
+    }, timeoutMs)
+    timer.unref?.()
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (err) => {
+        clearTimeout(timer)
+        reject(err)
+      }
     )
+  })
+}
+
+function scheduleCheck(delayMs: number): void {
+  stopBackgroundUpdateChecks()
+  checkTimer = setTimeout(() => {
+    checkTimer = null
+    void checkForAppUpdate(delayMs === UPDATE_STARTUP_DELAY_MS ? 'startup' : 'scheduled')
   }, delayMs)
   checkTimer.unref?.()
 }

@@ -326,6 +326,19 @@ export function completeTranslationImport(
   const mergedXmlEntries = mergedEntries.map(({ entry }) => entry)
   const xmlPath = path.join(modDir, 'translation_merged.xml')
   writeLocalizationXml(mergedXmlEntries, xmlPath)
+  // Keep per-file identity for the merged session: write a side map so the
+  // xml-load worker can restore the original file name per entry. This keeps
+  // the grid column and per-file export correct without keeping N separate
+  // files or extra DB lookups per entry.
+  const sourceMapPath = path.join(modDir, 'translation_source_map.json')
+  if (fileNamesInOrder.length > 1) {
+    const map = mergedEntries.map((item) => item.fileName)
+    fs.writeFileSync(sourceMapPath, JSON.stringify(map), 'utf-8')
+  } else {
+    try {
+      fs.unlinkSync(sourceMapPath)
+    } catch {}
+  }
 
   repos.mod.upsert(params.modName, {
     totalStrings: mergedXmlEntries.length,
@@ -432,7 +445,11 @@ export async function exportTranslatedPackage(
           version: entry.version,
           text: encodeEntities(entry.target || entry.source)
         }))
-        writeLocalizationXml(locEntries, path.join(localizationDir, group.fileName))
+        // pak/zip with xml must always be .xml even if the source was .loca
+        const outName = group.fileName.toLowerCase().endsWith('.loca')
+          ? group.fileName.replace(/\.loca$/i, '.xml')
+          : group.fileName
+        writeLocalizationXml(locEntries, path.join(localizationDir, outName))
       }
     }
 

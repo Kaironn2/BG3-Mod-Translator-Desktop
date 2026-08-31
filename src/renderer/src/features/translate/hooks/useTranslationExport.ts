@@ -21,6 +21,37 @@ export function useTranslationExport(session: TranslationSession, languages: Lan
     const targetLanguage = languages.find((language) => language.code === targetLang)
     const folder = languageToBg3Folder(targetLanguage, targetLang)
     const base = exportFileBaseName(modName || 'translation', targetLang)
+
+    // Multiple known source files -> one file per original file in a chosen
+    // folder (single-file sessions keep the plain save dialog). For xml the
+    // output is always .xml; for explicit loca it is .loca.
+    const sourceFileCount = new Set(
+      entries
+        .map((entry) => entry.sourceFile?.trim().toLowerCase())
+        .filter((name): name is string => !!name && /^[^\\/]+\.(xml|loca)$/i.test(name))
+    ).size
+    if (sourceFileCount > 1) {
+      const outputDir = await window.api.fs.openFolder()
+      if (!outputDir) return
+      setIsExporting(true)
+      try {
+        const ext = useLoca ? '.loca' : '.xml'
+        const written = await window.api.xml.exportPerSourceFile({
+          outputDir,
+          entries,
+          fallbackFileName: `${base}${ext}`,
+          fileType: useLoca ? 'loca' : 'xml'
+        })
+        const key = useLoca ? 'translate.locaFilesExported' : 'translate.xmlFilesExported'
+        toast.success(t(key, { ns: 'toasts', count: written.length }))
+      } catch (err) {
+        toast.error(getLocalizedErrorMessage(err, t))
+      } finally {
+        setIsExporting(false)
+      }
+      return
+    }
+
     const outputPath = await window.api.fs.saveDialog({
       defaultName: useLoca ? `${folder.toLowerCase()}.loca` : `${base}.xml`,
       filters: [{ name: useLoca ? 'LOCA' : 'XML', extensions: [useLoca ? 'loca' : 'xml'] }]
@@ -33,7 +64,9 @@ export function useTranslationExport(session: TranslationSession, languages: Lan
         entries,
         fileType: useLoca ? 'loca' : 'xml'
       })
-      toast.success(t(useLoca ? 'translate.locaExported' : 'translate.xmlExported', { ns: 'toasts' }))
+      toast.success(
+        t(useLoca ? 'translate.locaExported' : 'translate.xmlExported', { ns: 'toasts' })
+      )
     } catch (err) {
       toast.error(getLocalizedErrorMessage(err, t))
     }

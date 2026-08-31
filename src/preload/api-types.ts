@@ -579,6 +579,12 @@ export interface XmlApi {
     entries: XmlEntry[]
     fileType?: 'xml' | 'loca'
   }): Promise<void>
+  exportPerSourceFile(params: {
+    outputDir: string
+    entries: XmlEntry[]
+    fallbackFileName: string
+    fileType?: 'xml' | 'loca'
+  }): Promise<string[]>
   onLoadProgress(cb: (data: XmlLoadProgress) => void): UnsubscribeFn
 }
 
