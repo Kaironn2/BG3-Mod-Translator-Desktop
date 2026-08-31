@@ -2,6 +2,7 @@ import { Copy, FolderOpen, Settings, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { AiProvidersCard } from '@/features/settings/AiProvidersCard'
+import { DefaultMetadataCard } from '@/features/settings/DefaultMetadataCard'
 import { ExternalApiKeysCard } from '@/features/settings/ExternalApiKeysCard'
 import { PreferencesCard } from '@/features/settings/PreferencesCard'
 import { PromptSlotsCard } from '@/features/settings/PromptSlotsCard'
@@ -13,8 +14,8 @@ import { useAppTranslation } from '@/i18n/useAppTranslation'
 
 function SettingsCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-neutral-800/80 bg-[#141416]">
-      <div className="border-b border-neutral-800/50 px-6 py-4">
+    <div className="overflow-hidden rounded-xl border border-[#1f2329] bg-[#131518]">
+      <div className="border-b border-[#1f2329] px-6 py-4">
         <h2 className="text-sm font-medium text-neutral-200">{title}</h2>
       </div>
       <div className="p-6">{children}</div>
@@ -73,6 +74,7 @@ export function SettingsPage(): React.JSX.Element {
         </div>
 
         <PreferencesCard config={config} set={set} />
+        <DefaultMetadataCard config={config} set={set} />
         <UpdatesCard />
         <ExternalApiKeysCard config={config} set={set} />
         <AiProvidersCard />
@@ -80,14 +82,14 @@ export function SettingsPage(): React.JSX.Element {
         <SimilaritySettingsCard />
 
         <SettingsCard title={t('sections.debugLogs')}>
-          <div className="rounded-md border border-neutral-800/80 bg-[#0a0a0c] p-3 font-mono text-xs break-all text-neutral-400">
+          <div className="rounded-md border border-[#1f2329] bg-[#0f1114] p-3 font-mono text-xs break-all text-neutral-400">
             {logPath}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={handleOpenLog}
-              className="inline-flex items-center gap-2 rounded-md border border-neutral-800 bg-neutral-900 px-4 py-2 text-sm text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
+              className="inline-flex items-center gap-2 rounded-md border border-[#1f2329] bg-[#0f1114] px-4 py-2 text-sm text-neutral-300 transition-colors hover:border-[#252a32] hover:text-neutral-100"
             >
               <FolderOpen size={15} />
               {t('actions.open', { ns: 'common' })}
@@ -95,7 +97,7 @@ export function SettingsPage(): React.JSX.Element {
             <button
               type="button"
               onClick={handleCopyLogPath}
-              className="inline-flex items-center gap-2 rounded-md border border-neutral-800 bg-neutral-900 px-4 py-2 text-sm text-neutral-300 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
+              className="inline-flex items-center gap-2 rounded-md border border-[#1f2329] bg-[#0f1114] px-4 py-2 text-sm text-neutral-300 transition-colors hover:border-[#252a32] hover:text-neutral-100"
             >
               <Copy size={15} />
               {t('actions.copyPath', { ns: 'common' })}
@@ -103,7 +105,7 @@ export function SettingsPage(): React.JSX.Element {
             <button
               type="button"
               onClick={handleClearLog}
-              className="inline-flex items-center gap-2 rounded-md border border-red-900/70 bg-red-950/40 px-4 py-2 text-sm text-red-300 transition-colors hover:bg-red-950"
+              className="inline-flex items-center gap-2 rounded-md border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300 transition-colors hover:bg-red-500/20"
             >
               <Trash2 size={15} />
               {t('actions.clear', { ns: 'common' })}

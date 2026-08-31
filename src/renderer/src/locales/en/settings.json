@@ -4,7 +4,9 @@
   "autoSaved": "Changes are saved automatically",
   "sections": {
     "preferences": "Application preferences",
-    "preferencesSubtitle": "Interface language, author name and default translation languages.",
+    "preferencesSubtitle": "Language and app-wide preferences.",
+    "metadata": "Default metadata",
+    "metadataSubtitle": "Pre-fill values for new translation sessions and exports.",
     "apiKeys": "API keys",
     "apiKeysSubtitle": "Keys for DeepL and Google Translate. Saved automatically.",
     "debugLogs": "Debug logs"

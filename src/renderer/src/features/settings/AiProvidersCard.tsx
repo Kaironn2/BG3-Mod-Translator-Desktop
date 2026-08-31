@@ -59,7 +59,7 @@ function Stepper({
   }
 
   return (
-    <div className="inline-flex items-center overflow-hidden rounded-md border border-neutral-800 bg-[#0a0a0c]">
+    <div className="inline-flex items-center overflow-hidden rounded-md border border-[#1f2329] bg-[#0f1114]">
       <button
         type="button"
         onClick={() => onChange(value - 1)}
@@ -79,7 +79,7 @@ function Stepper({
         onKeyDown={(event) => {
           if (event.key === 'Enter') event.currentTarget.blur()
         }}
-        className="h-8 w-12 border-x border-neutral-800 bg-transparent text-center font-mono text-sm text-neutral-200 tabular-nums focus:outline-none"
+        className="h-8 w-12 border-x border-[#1f2329] bg-transparent text-center font-mono text-sm text-neutral-200 tabular-nums focus:outline-none"
       />
       <button
         type="button"
@@ -155,7 +155,7 @@ function ProviderRow({
   return (
     <div
       className={`rounded-lg border transition-colors ${
-        active ? 'border-amber-500/60 bg-amber-500/5' : 'border-neutral-800 bg-[#0a0a0c]'
+        active ? 'border-amber-500/60 bg-amber-500/5' : 'border-[#1f2329] bg-[#0f1114]'
       }`}
     >
       <div className="grid grid-cols-[18px_150px_1fr_minmax(140px,180px)_28px] items-center gap-3 p-3">
@@ -164,7 +164,7 @@ function ProviderRow({
           onClick={onSelect}
           title={t('providers.useThis')}
           className={`flex h-4.5 w-4.5 cursor-pointer items-center justify-center rounded-full border transition-colors ${
-            active ? 'border-amber-500' : 'border-neutral-600 hover:border-neutral-400'
+            active ? 'border-amber-500' : 'border-neutral-500 hover:border-neutral-300'
           }`}
         >
           {active && <span className="h-2 w-2 rounded-full bg-amber-500" />}
@@ -192,7 +192,7 @@ function ProviderRow({
           </div>
         </button>
 
-        <div className="flex min-w-0 items-center gap-1 rounded-md border border-neutral-800 bg-[#0a0a0c] px-3 transition-colors focus-within:border-amber-500">
+        <div className="flex min-w-0 items-center gap-1 rounded-md border border-[#1f2329] bg-[#0f1114] px-3 transition-colors focus-within:border-amber-500">
           <input
             type={show ? 'text' : 'password'}
             value={draft}
@@ -236,7 +236,7 @@ function ProviderRow({
       </div>
 
       {expanded ? (
-        <div className="space-y-3 border-t border-neutral-800/80 px-3 py-3">
+        <div className="space-y-3 border-t border-[#1f2329] px-3 py-3">
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             <div className="flex items-center gap-3">
               <span className="text-xs text-neutral-400">{t('providers.concurrency')}</span>
