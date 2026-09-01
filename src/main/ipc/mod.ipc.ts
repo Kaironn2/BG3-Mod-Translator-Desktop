@@ -20,7 +20,7 @@ import {
   upsertMetaForMod
 } from '../services/translation-import.service'
 import { findLocalizationXmls } from '../services/xml-parser.service'
-import { extract } from '../services/zip.service'
+import { createZip, extract } from '../services/zip.service'
 import { findPakFiles } from '../utils/findPakFiles'
 
 interface ExtractPayload {
@@ -91,7 +91,22 @@ export function registerModHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle('mod:pack', async (_event, payload: PackPayload) => {
     const { inputFolder, outputPath } = payload
     fs.mkdirSync(path.dirname(outputPath), { recursive: true })
-    await packMod(inputFolder, outputPath)
+    const ext = path.extname(outputPath).toLowerCase()
+    if (ext === '.zip') {
+      // Pack to a temp .pak then wrap as zip (same pattern as exportTranslatedPackage).
+      const tempDir = path.join(path.dirname(outputPath), `.icosa_pack_${Date.now()}`)
+      fs.mkdirSync(tempDir, { recursive: true })
+      try {
+        const pakName = `${path.basename(outputPath, '.zip')}.pak`
+        const pakPath = path.join(tempDir, pakName)
+        await packMod(inputFolder, pakPath)
+        createZip(tempDir, outputPath)
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true })
+      }
+    } else {
+      await packMod(inputFolder, outputPath)
+    }
     setConfigValue('last_pack_path', outputPath)
     return { success: true, pakPath: outputPath }
   })

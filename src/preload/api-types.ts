@@ -489,6 +489,11 @@ export interface ModApi {
     inputFolder: string
     outputPath: string
   }): Promise<{ success: boolean; pakPath: string }>
+  getLastPaths(): Promise<{ lastExtractPath: string; lastPackPath: string }>
+  suggestPackFileName(params: {
+    inputFolder: string
+    format: 'pak' | 'zip'
+  }): Promise<string | null>
   getAll(params?: { lang1?: string; lang2?: string }): Promise<ModInfo[]>
   upsert(params: {
     name: string
@@ -646,6 +651,7 @@ export interface FsApi {
   }): Promise<string | null>
   openFolder(): Promise<string | null>
   getPathForFile(file: File): string
+  openInShell(targetPath: string): Promise<{ success: boolean; error?: string }>
 }
 
 export interface LogApi {
