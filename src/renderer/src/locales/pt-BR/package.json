@@ -1,7 +1,9 @@
 {
   "title": "Criar pacote",
+  "dropLabel": "Arraste e solte a pasta de entrada",
   "inputFolder": "Pasta de entrada",
   "selectInputFolder": "Selecionar pasta para empacotar...",
+  "outputFormat": "Formato de saída",
   "outputFile": "Arquivo de saída",
   "saveAsPak": "Salvar como .pak...",
   "saveAs": "Salvar como {{format}}...",
@@ -12,16 +14,6 @@
   "usingDefaultPath": "Usando caminho padrão",
   "create": "Criar pacote",
   "creating": "Empacotando...",
-  "steps": {
-    "folder": "Pasta",
-    "output": "Saída",
-    "folderDescription": "Escolha a pasta com os arquivos descompactados do mod que será empacotado.",
-    "outputDescription": "Escolha onde o pacote será gerado, como .pak ou .zip."
-  },
-  "bottomBar": {
-    "idle": "Selecione a pasta de entrada e o arquivo de saída para criar o pacote",
-    "ready": "Pronto para criar o pacote"
-  },
   "logs": {
     "created": "Pacote criado: {{path}}",
     "error": "Erro: {{message}}"

@@ -1,6 +1,5 @@
 {
   "title": "Extrair mod",
-  "inputFile": "Arquivo do mod",
   "dropLabel": "Solte seu arquivo .zip ou .pak aqui",
   "outputFolder": "Pasta de saída",
   "selectOutputFolder": "Selecionar pasta de saída...",
@@ -10,16 +9,6 @@
   "openLastSaved": "Abrir último salvo",
   "extract": "Extrair",
   "extracting": "Extraindo...",
-  "steps": {
-    "file": "Arquivo",
-    "output": "Saída",
-    "fileDescription": "Solte seu arquivo .zip ou .pak aqui ou procure no computador. Arquivos ZIP são descompactados automaticamente.",
-    "outputDescription": "Escolha onde os arquivos descompactados serão gravados. A importação para tradução analisa todas as pastas de idioma por conta própria."
-  },
-  "bottomBar": {
-    "idle": "Informe o arquivo do mod e a pasta de saída para extrair",
-    "ready": "Pronto para extrair"
-  },
   "logs": {
     "success": "Extração concluída com sucesso.",
     "foundXml": "{{count}} arquivo(s) de localização encontrados:",

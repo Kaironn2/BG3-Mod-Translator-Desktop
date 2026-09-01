@@ -101,6 +101,8 @@
   },
   "dragDrop": {
     "defaultLabel": "Arraste e solte seu arquivo aqui",
+    "orBrowse": "ou clique para procurar",
+    "folderOnly": "Solte uma pasta, não um arquivo",
     "acceptedFormats": "Formatos aceitos: .{{formats}}"
   },
   "window": {
