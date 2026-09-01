@@ -101,6 +101,8 @@
   },
   "dragDrop": {
     "defaultLabel": "Drag and drop your file here",
+    "orBrowse": "or click to browse",
+    "folderOnly": "Drop a folder, not a file",
     "acceptedFormats": "Accepted formats: .{{formats}}"
   },
   "window": {

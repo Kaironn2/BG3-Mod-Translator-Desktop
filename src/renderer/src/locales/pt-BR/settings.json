@@ -7,6 +7,8 @@
     "preferencesSubtitle": "Idioma e preferências do aplicativo.",
     "metadata": "Metadados padrão",
     "metadataSubtitle": "Valores pré-preenchidos para novas sessões de tradução e exportações.",
+    "packagePaths": "Pastas das ferramentas de pacote",
+    "packagePathsSubtitle": "Pastas de saída padrão para Extrair mod e Criar pacote. Com um caminho definido, essas páginas podem descompactar ou empacotar direto nele.",
     "apiKeys": "Chaves de API",
     "apiKeysSubtitle": "Chaves do DeepL e do Google Translate. Salvas automaticamente.",
     "debugLogs": "Logs de depuração"
@@ -19,11 +21,14 @@
     "defaultTargetLanguage": "Idioma de destino padrão",
     "defaultExportLanguage": "Idioma de exportação padrão (BG3)",
     "defaultExportLanguageTip": "Pré-seleciona a pasta de idioma do BG3 sempre que você exportar um pacote, evitando escolher toda vez. Escolha o idioma em que você joga — idiomas não suportados pelo jogo devem exportar como English.",
+    "defaultExtractPath": "Pasta padrão de extração (descompactar .pak/.zip)",
+    "defaultPackPath": "Pasta padrão de pacotes (criar .pak/.zip)",
     "appLanguage": "Idioma do aplicativo"
   },
   "placeholders": {
     "author": "Seu nome",
-    "defaultExportLanguage": "Selecione o idioma do jogo..."
+    "defaultExportLanguage": "Selecione o idioma do jogo...",
+    "noPathSet": "Nenhuma pasta definida"
   },
   "apiKeys": {
     "connected": "conectado",

@@ -53,16 +53,21 @@ export function writeLocalizationXml(entries: LocalizationEntry[], outputPath: s
   fs.writeFileSync(outputPath, lines.join('\n'), 'utf-8')
 }
 
-// Returns every localization file (.xml or .loca) inside any Localization/{langFolder}/
-// folder below dir. Binary .loca files are only matched in the exact language folder:
-// the game only loads them when named as the language (e.g. brazilianportuguese.loca).
-export function findLocalizationXmls(dir: string, langFolder: string): string[] {
+// Returns localization files (.xml or .loca) below dir. With langFolder set, only
+// files inside any Localization/{langFolder}/ folder match (binary .loca files are
+// only valid when named as the language, e.g. brazilianportuguese.loca). Without
+// langFolder (plain "unpack" flow), every .xml under any Localization/ folder counts.
+export function findLocalizationXmls(dir: string, langFolder?: string): string[] {
   const results: string[] = []
   collectLocalizationFiles(dir, langFolder, results)
   return results.sort((a, b) => a.localeCompare(b))
 }
 
-function collectLocalizationFiles(dir: string, langFolder: string, results: string[]): void {
+function collectLocalizationFiles(
+  dir: string,
+  langFolder: string | undefined,
+  results: string[]
+): void {
   if (!fs.existsSync(dir)) return
 
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -81,7 +86,11 @@ function collectLocalizationFiles(dir: string, langFolder: string, results: stri
   }
 }
 
-function isInsideLanguageFolder(filePath: string, langFolder: string): boolean {
+function isInsideLanguageFolder(filePath: string, langFolder: string | undefined): boolean {
+  // No language filter (plain unpack): any Localization/ folder counts, xml only.
+  if (langFolder === undefined) {
+    return filePath.split(/[\\/]/).includes('Localization')
+  }
   const parts = filePath.split(/[\\/]/)
   return parts.some((part, index) => part === 'Localization' && parts[index + 1] === langFolder)
 }

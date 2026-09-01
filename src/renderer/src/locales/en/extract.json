@@ -3,11 +3,15 @@
   "dropLabel": "Drop your .zip or .pak file here",
   "outputFolder": "Output folder",
   "selectOutputFolder": "Select output folder...",
+  "useDefaultPath": "Use default path",
+  "configuredInSettings": "configured in Settings",
+  "openDefaultPath": "Open default path",
+  "openLastSaved": "Open last saved",
   "extract": "Extract",
   "extracting": "Extracting...",
   "logs": {
     "success": "Extracted successfully.",
-    "foundXml": "Found {{count}} localization XML(s):",
+    "foundXml": "Found {{count}} localization file(s):",
     "error": "Error: {{message}}"
   }
 }

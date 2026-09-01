@@ -1,9 +1,17 @@
 {
   "title": "Create package",
+  "dropLabel": "Drag and drop your input folder",
   "inputFolder": "Input folder",
   "selectInputFolder": "Select folder to package...",
-  "outputFile": "Output .pak file",
+  "outputFormat": "Output format",
+  "outputFile": "Output file",
   "saveAsPak": "Save as .pak...",
+  "saveAs": "Save as {{format}}...",
+  "useDefaultPath": "Use default path",
+  "configuredInSettings": "configured in Settings",
+  "openDefaultPath": "Open default path",
+  "openLastSaved": "Open last saved",
+  "usingDefaultPath": "Using default path",
   "create": "Create package",
   "creating": "Packing...",
   "logs": {

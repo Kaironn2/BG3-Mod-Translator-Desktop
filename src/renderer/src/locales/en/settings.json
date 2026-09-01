@@ -7,6 +7,8 @@
     "preferencesSubtitle": "Language and app-wide preferences.",
     "metadata": "Default metadata",
     "metadataSubtitle": "Pre-fill values for new translation sessions and exports.",
+    "packagePaths": "Package tool paths",
+    "packagePathsSubtitle": "Default output folders for Extract mod and Create package. With a path set, those pages can unpack or pack straight into it.",
     "apiKeys": "API keys",
     "apiKeysSubtitle": "Keys for DeepL and Google Translate. Saved automatically.",
     "debugLogs": "Debug logs"
@@ -19,11 +21,14 @@
     "defaultTargetLanguage": "Default target language",
     "defaultExportLanguage": "Default export language (BG3)",
     "defaultExportLanguageTip": "Pre-selects the BG3 language folder whenever you export a package, so you don't have to pick it every time. Choose the language you play with — languages not supported by the game should export as English.",
+    "defaultExtractPath": "Default extract folder (unpack .pak/.zip)",
+    "defaultPackPath": "Default package folder (create .pak/.zip)",
     "appLanguage": "Application language"
   },
   "placeholders": {
     "author": "Your name",
-    "defaultExportLanguage": "Select the in-game language..."
+    "defaultExportLanguage": "Select the in-game language...",
+    "noPathSet": "No folder set"
   },
   "apiKeys": {
     "connected": "connected",

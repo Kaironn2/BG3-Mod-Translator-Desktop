@@ -1,9 +1,17 @@
 {
   "title": "Criar pacote",
+  "dropLabel": "Arraste e solte a pasta de entrada",
   "inputFolder": "Pasta de entrada",
   "selectInputFolder": "Selecionar pasta para empacotar...",
-  "outputFile": "Arquivo .pak de saída",
+  "outputFormat": "Formato de saída",
+  "outputFile": "Arquivo de saída",
   "saveAsPak": "Salvar como .pak...",
+  "saveAs": "Salvar como {{format}}...",
+  "useDefaultPath": "Usar caminho padrão",
+  "configuredInSettings": "configurado nas Configurações",
+  "openDefaultPath": "Abrir caminho padrão",
+  "openLastSaved": "Abrir último salvo",
+  "usingDefaultPath": "Usando caminho padrão",
   "create": "Criar pacote",
   "creating": "Empacotando...",
   "logs": {
