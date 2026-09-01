@@ -11,8 +11,8 @@
     "error": "Error: {{message}}"
   },
   "exportModal": {
-    "title": "Export package",
-    "description": "Folder also defines the folder structure and XML file name.",
+    "title": "Export translation",
+    "description": "Choose the format and review the export settings.",
     "folderHint": "Use letters, numbers, _ or - only",
     "versionHint": "Use the format 1.2.3.4",
     "version64": "Version64 {{value}}",

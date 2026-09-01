@@ -11,8 +11,8 @@ import { useBatchTranslation } from '../hooks/useBatchTranslation'
 import { useDictionarySave } from '../hooks/useDictionarySave'
 import { useLoadedEditorShortcuts } from '../hooks/useLoadedEditorShortcuts'
 import { useTranslationExport } from '../hooks/useTranslationExport'
-import { languageToBg3Folder } from '../utils/exportNames'
 import type { TranslationSession } from '../types'
+import { languageToBg3Folder } from '../utils/exportNames'
 import { EditorHeader } from './EditorHeader'
 import { PackageExportModal } from './PackageExportModal'
 
@@ -53,7 +53,6 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
 
   useLoadedEditorShortcuts({
     onSave: dictionarySave.saveAll,
-    onCycleExportFormat: exportFlow.cycleExportFormat,
     onOpenExport: exportFlow.openExport
   })
 
@@ -64,7 +63,12 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
     window.api.config.get({ key: 'default_export_language' }).then((row) => {
       const code = row.value?.trim()
       if (!code) return
-      setDefaultExportFolder(languageToBg3Folder(languages.find((item) => item.code === code), code))
+      setDefaultExportFolder(
+        languageToBg3Folder(
+          languages.find((item) => item.code === code),
+          code
+        )
+      )
     })
   }, [languages])
 
@@ -82,10 +86,8 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
         pct={pct}
         batchCompleted={batch.batchCompleted}
         batchTotal={batch.batchTotal}
-        exportFormat={exportFlow.exportFormat}
         onViewModeChange={setViewMode}
         onSave={dictionarySave.saveAll}
-        onExportFormatChange={exportFlow.setExportFormat}
         onExport={exportFlow.openExport}
       />
 
@@ -137,7 +139,7 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
           isExporting={exportFlow.isExporting}
           tipText={t('exportModal.languageTip', { ns: 'translate' })}
           onCancel={exportFlow.closeExportModal}
-          onSubmit={exportFlow.submitPackageExport}
+          onSubmit={exportFlow.submitExport}
         />
       )}
 
