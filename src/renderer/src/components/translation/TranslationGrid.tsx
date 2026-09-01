@@ -49,14 +49,6 @@ function hasXmlTags(entry: TranslationSessionEntry): boolean {
   return /(<[^>]+>|\{[^}]+\})/.test(entry.source)
 }
 
-function KbdHint({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded border border-[#2a2f37] border-b-2 bg-[#181b1f] px-1 font-mono text-[10px] text-neutral-400">
-      {children}
-    </span>
-  )
-}
-
 function LangTag({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
   return (
     <span
@@ -111,7 +103,9 @@ export function TranslationGrid({
   const stackedParentRef = useRef<HTMLDivElement>(null)
 
   const hasLocaFiles = entries.some((entry) => entry.sourceFileType === 'loca')
-  const hasXmlFiles = entries.some((entry) => !entry.sourceFileType || entry.sourceFileType === 'xml')
+  const hasXmlFiles = entries.some(
+    (entry) => !entry.sourceFileType || entry.sourceFileType === 'xml'
+  )
 
   const counts = useMemo(() => {
     let translated = 0
@@ -169,7 +163,11 @@ export function TranslationGrid({
   }, [deferredFilter, deferredSearch, deferredSourceTab, clearSelection])
 
   // single source of truth for which entries "select-all" covers
-  const currentFilter: FilterSpec = { mode: deferredFilter, search: deferredSearch, sourceTab: deferredSourceTab }
+  const currentFilter: FilterSpec = {
+    mode: deferredFilter,
+    search: deferredSearch,
+    sourceTab: deferredSourceTab
+  }
 
   const totalPages = Math.max(1, Math.ceil(filteredEntries.length / pageSize))
 
@@ -431,13 +429,15 @@ export function TranslationGrid({
   const sourceTabs =
     hasLocaFiles && hasXmlFiles ? (
       <div className="flex shrink-0 items-center gap-1 rounded-md border border-[#1f2329] bg-[#131518] p-0.5">
-        {(
-          [
-            { mode: 'all' as SourceFileTab, label: t('grid.tabAll', { ns: 'translate' }), count: undefined },
-            { mode: 'xml' as SourceFileTab, label: '.xml', count: tabCounts.xml },
-            { mode: 'loca' as SourceFileTab, label: '.loca', count: tabCounts.loca }
-          ]
-        ).map((tab) => (
+        {[
+          {
+            mode: 'all' as SourceFileTab,
+            label: t('grid.tabAll', { ns: 'translate' }),
+            count: undefined
+          },
+          { mode: 'xml' as SourceFileTab, label: '.xml', count: tabCounts.xml },
+          { mode: 'loca' as SourceFileTab, label: '.loca', count: tabCounts.loca }
+        ].map((tab) => (
           <button
             key={tab.mode}
             type="button"
@@ -479,9 +479,6 @@ export function TranslationGrid({
             <X size={13} className="text-neutral-500 transition-colors hover:text-neutral-300" />
           </button>
         )}
-        <span className="inline-flex h-5 min-w-6 items-center justify-center rounded border border-[#252a32] bg-[#0f1114] px-1 font-mono text-[10px] text-neutral-500">
-          Ctrl F
-        </span>
       </div>
 
       {sourceTabs}
@@ -713,11 +710,6 @@ export function TranslationGrid({
                         >
                           <BookOpen size={11} /> {t('grid.applyDictionary', { ns: 'translate' })}
                         </button>
-                        <span className="ml-auto flex items-center gap-1 text-[11px] text-neutral-500">
-                          <KbdHint>Enter</KbdHint> {t('grid.next', { ns: 'translate' })}
-                          <span className="mx-1 text-neutral-700">-</span>
-                          <KbdHint>Shift Enter</KbdHint> {t('grid.newLine', { ns: 'translate' })}
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -917,11 +909,6 @@ export function TranslationGrid({
                             <Check size={11} /> {t('grid.markTranslated', { ns: 'translate' })}
                           </button>
                           <span className="flex-1" />
-                          <span className="flex items-center gap-1 text-[11px] text-neutral-500">
-                            <KbdHint>Enter</KbdHint> {t('grid.next', { ns: 'translate' })}
-                            <span className="mx-0.5 text-neutral-700">-</span>
-                            <KbdHint>Shift Enter</KbdHint> {t('grid.newLine', { ns: 'translate' })}
-                          </span>
                         </div>
                       </div>
 

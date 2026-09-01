@@ -7,6 +7,7 @@
     "undo": "Desfazer",
     "redo": "Refazer",
     "saveDictionary": "Salvar no dicionário (Ctrl+S)",
+    "exportFormat": "Formato de exportação",
     "remainingStrings": "{{count}} strings restantes",
     "dictionaryMatches": "{{count}} correspondências do dicionário disponíveis",
     "batch": "lote {{completed}}/{{total}}"
@@ -77,8 +78,6 @@
     "applyDictionary": "Aplicar dicionário",
     "copySource": "Copiar origem",
     "markTranslated": "Marcar como traduzida",
-    "next": "próxima",
-    "newLine": "nova linha",
     "entries": "{{count}} entradas",
     "containsTags": "contém tags",
     "dictionarySuggestion": "Dicionário sugere:",
@@ -142,7 +141,12 @@
     "defaultFileName": "traducao.xml"
   },
   "exportModal": {
-    "languageTip": "O jogo substitui as strings por UUID dentro de Localization/{idioma}/ — escolha a pasta correspondente ao idioma em que você joga. Se o seu idioma não é suportado pelo jogo, deixe English (idiomas não suportados usam o inglês). Exportações .loca recebem o nome desse idioma (ex.: english.loca)."
+    "languageTip": "O jogo substitui as strings por UUID dentro de Localization/{idioma}/ — escolha a pasta correspondente ao idioma em que você joga. Se o seu idioma não é suportado pelo jogo, deixe English (idiomas não suportados usam o inglês). Exportações .loca recebem o nome desse idioma (ex.: english.loca).",
+    "format": "Formato de exportação",
+    "formatXmlDescription": "Arquivo de tradução puro",
+    "formatLocaDescription": "Arquivo compilado do jogo",
+    "formatPakDescription": "Pacote instalável",
+    "formatZipDescription": "Pacote compactado"
   },
   "export": {
     "searchLanguageFolder": "Buscar pasta...",

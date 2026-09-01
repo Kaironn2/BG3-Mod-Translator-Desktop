@@ -1,14 +1,29 @@
 import { Download, Info, Loader2, Package, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { compareLanguagesOfficialFirst } from '@/lib/languageOptions'
 import { cn } from '@/lib/utils'
 import { isOfficialBg3Language, type Language, type ModMeta } from '@/types'
+import type { ExportFormat } from '../types'
 import { languageToBg3Folder } from '../utils/exportNames'
 import { applyVersion, formatVersion, version64FromText } from '../utils/metaVersion'
 import { MetaField } from './MetaField'
 import { btnBase, btnGhostIcon, btnPrimary } from './styles'
+
+const FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
+  { value: 'xml', label: 'XML' },
+  { value: 'loca', label: 'LOCA' },
+  { value: 'pak', label: 'PAK' },
+  { value: 'zip', label: 'ZIP' }
+]
+
+const FORMAT_DESCRIPTIONS: Record<ExportFormat, string> = {
+  xml: 'exportModal.formatXmlDescription',
+  loca: 'exportModal.formatLocaDescription',
+  pak: 'exportModal.formatPakDescription',
+  zip: 'exportModal.formatZipDescription'
+}
 
 interface PackageExportModalProps {
   meta: ModMeta
@@ -17,7 +32,7 @@ interface PackageExportModalProps {
   isExporting: boolean
   tipText?: string
   onCancel: () => void
-  onSubmit: (meta: ModMeta, languageFolder: string) => Promise<void>
+  onSubmit: (format: ExportFormat, meta: ModMeta, languageFolder: string) => Promise<void>
 }
 
 export function PackageExportModal({
@@ -29,15 +44,30 @@ export function PackageExportModal({
   onCancel,
   onSubmit
 }: PackageExportModalProps): React.JSX.Element {
-  const { t } = useAppTranslation(['package', 'common'])
+  const { t } = useAppTranslation(['translate', 'package', 'common'])
+  const [format, setFormat] = useState<ExportFormat>('xml')
   const [draft, setDraft] = useState(meta)
   const [version, setVersion] = useState(formatVersion(meta))
   const [languageFolder, setLanguageFolder] = useState(selectedLanguageFolder)
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onCancel()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
+
+  const isPackageFormat = format === 'pak' || format === 'zip'
   const version64 = version64FromText(version)
   const folderValid = /^[a-zA-Z0-9_-]+$/.test(draft.folder)
   const languageFolderValid = /^[a-zA-Z0-9]+$/.test(languageFolder)
-  const canExport = !!version64 && folderValid && languageFolderValid && !isExporting
+  const canExport =
+    (!isPackageFormat || (!!version64 && folderValid && languageFolderValid)) && !isExporting
   const officialMark = t('badges.official', { ns: 'common' })
   const languageFolderOptions = useMemo(() => {
     const mapped = [...languages].sort(compareLanguagesOfficialFirst).map((language) => {
@@ -65,7 +95,7 @@ export function PackageExportModal({
       })
     }
     return mapped
-  }, [languages, officialMark, selectedLanguageFolder])
+  }, [languages, officialMark, selectedLanguageFolder, t])
 
   const updateDraft = (key: keyof ModMeta, value: string) => {
     setDraft((current) => ({ ...current, [key]: value }))
@@ -80,17 +110,31 @@ export function PackageExportModal({
   const handleSubmit = async () => {
     const updated = applyVersion(draft, version)
     if (!updated || !canExport) return
-    await onSubmit(updated, languageFolder)
+    await onSubmit(format, updated, languageFolder)
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-6">
-      <div className="w-full max-w-180 rounded-xl border border-neutral-700 bg-[#0f1114] shadow-2xl overflow-hidden">
+    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop click-to-close, same as ModalShell
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onCancel()
+      }}
+    >
+      <div
+        className="w-full max-w-180 rounded-xl border border-neutral-700 bg-[#0f1114] shadow-2xl overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="flex items-center gap-3 px-5 h-12 border-b border-[#1f2329] bg-[#131518]">
           <Package size={15} className="text-amber-400" />
           <div className="flex-1 min-w-0">
-            <h2 className="m-0 text-sm font-semibold text-neutral-200">{t('exportModal.title')}</h2>
-            <p className="m-0 text-[11px] text-neutral-500">{t('exportModal.description')}</p>
+            <h2 className="m-0 text-sm font-semibold text-neutral-200">
+              {t('exportModal.title', { ns: 'package' })}
+            </h2>
+            <p className="m-0 text-[11px] text-neutral-500">
+              {t('exportModal.description', { ns: 'package' })}
+            </p>
           </div>
           <button type="button" className={btnGhostIcon} onClick={onCancel}>
             <X size={14} />
@@ -98,71 +142,108 @@ export function PackageExportModal({
         </div>
 
         <div className="p-5 grid grid-cols-2 gap-3.5">
-          <MetaField
-            label={t('fields.name', { ns: 'common' })}
-            value={draft.name}
-            onChange={(value) => updateDraft('name', value)}
-          />
-          <MetaField
-            label={t('fields.folder', { ns: 'common' })}
-            value={draft.folder}
-            onChange={(value) => updateDraft('folder', value)}
-            invalid={!folderValid}
-            hint={!folderValid ? t('exportModal.folderHint') : undefined}
-          />
-          <MetaField
-            label={t('fields.author', { ns: 'common' })}
-            value={draft.author}
-            onChange={(value) => updateDraft('author', value)}
-          />
-          <MetaField
-            label="UUID"
-            value={draft.uuid}
-            onChange={(value) => updateDraft('uuid', value)}
-          />
-          <div className="col-span-2">
-            <MetaField
-              label={t('fields.description', { ns: 'common' })}
-              value={draft.description}
-              onChange={(value) => updateDraft('description', value)}
-            />
-          </div>
-          <MetaField
-            label={t('fields.version', { ns: 'common' })}
-            value={version}
-            onChange={handleVersionChange}
-            invalid={!version64}
-            hint={
-              version64
-                ? t('exportModal.version64', { value: version64 })
-                : t('exportModal.versionHint')
-            }
-          />
-          <div className="flex flex-col gap-1.5">
+          <div className="col-span-2 flex flex-col gap-1.5">
             <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
-              {t('exportModal.bg3LanguageFolder')}
-              <span
-                title={tipText}
-                className="inline-flex cursor-help items-center text-neutral-500 hover:text-neutral-300"
-              >
-                <Info size={12} />
-              </span>
+              {t('exportModal.format')}
             </span>
-            <ThemedSelect
-              value={languageFolder}
-              onChange={setLanguageFolder}
-              className={cn(
-                'w-full',
-                languageFolderValid
-                  ? ''
-                  : '[&_button]:border-red-500 [&_button]:focus:border-red-400'
-              )}
-              options={languageFolderOptions}
-              searchable
-              searchPlaceholder={t('exportModal.searchLanguageFolder')}
-              emptyLabel={t('exportModal.noLanguageFolderFound')}
-            />
+            <div className="grid grid-cols-4 gap-2">
+              {FORMAT_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFormat(option.value)}
+                  className={cn(
+                    'flex cursor-pointer flex-col items-start gap-0.5 rounded-md border px-3 py-2 text-left transition-all',
+                    format === option.value
+                      ? 'border-amber-500 bg-amber-400/10'
+                      : 'border-[#1f2329] bg-[#131518] hover:border-neutral-600'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'text-xs font-semibold',
+                      format === option.value ? 'text-amber-400' : 'text-neutral-200'
+                    )}
+                  >
+                    {option.label}
+                  </span>
+                  <span className="text-[10px] leading-tight text-neutral-500">
+                    {t(FORMAT_DESCRIPTIONS[option.value])}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
+
+          {isPackageFormat && (
+            <>
+              <MetaField
+                label={t('fields.name', { ns: 'common' })}
+                value={draft.name}
+                onChange={(value) => updateDraft('name', value)}
+              />
+              <MetaField
+                label={t('fields.folder', { ns: 'common' })}
+                value={draft.folder}
+                onChange={(value) => updateDraft('folder', value)}
+                invalid={!folderValid}
+                hint={!folderValid ? t('exportModal.folderHint') : undefined}
+              />
+              <MetaField
+                label={t('fields.author', { ns: 'common' })}
+                value={draft.author}
+                onChange={(value) => updateDraft('author', value)}
+              />
+              <MetaField
+                label="UUID"
+                value={draft.uuid}
+                onChange={(value) => updateDraft('uuid', value)}
+              />
+              <div className="col-span-2">
+                <MetaField
+                  label={t('fields.description', { ns: 'common' })}
+                  value={draft.description}
+                  onChange={(value) => updateDraft('description', value)}
+                />
+              </div>
+              <MetaField
+                label={t('fields.version', { ns: 'common' })}
+                value={version}
+                onChange={handleVersionChange}
+                invalid={!version64}
+                hint={
+                  version64
+                    ? t('exportModal.version64', { value: version64 })
+                    : t('exportModal.versionHint')
+                }
+              />
+              <div className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                  {t('exportModal.bg3LanguageFolder')}
+                  <span
+                    title={tipText}
+                    className="inline-flex cursor-help items-center text-neutral-500 hover:text-neutral-300"
+                  >
+                    <Info size={12} />
+                  </span>
+                </span>
+                <ThemedSelect
+                  value={languageFolder}
+                  onChange={setLanguageFolder}
+                  className={cn(
+                    'w-full',
+                    languageFolderValid
+                      ? ''
+                      : '[&_button]:border-red-500 [&_button]:focus:border-red-400'
+                  )}
+                  options={languageFolderOptions}
+                  searchable
+                  searchPlaceholder={t('exportModal.searchLanguageFolder')}
+                  emptyLabel={t('exportModal.noLanguageFolderFound')}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-2.5 px-5 py-3 border-t border-[#1f2329] bg-[#131518]">

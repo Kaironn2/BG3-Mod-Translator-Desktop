@@ -2,13 +2,11 @@ import { useEffect, useEffectEvent } from 'react'
 
 interface LoadedEditorShortcutsOptions {
   onSave: () => Promise<void>
-  onCycleExportFormat: () => void
   onOpenExport: () => Promise<void>
 }
 
 export function useLoadedEditorShortcuts({
   onSave,
-  onCycleExportFormat,
   onOpenExport
 }: LoadedEditorShortcutsOptions): void {
   const handleShortcut = useEffectEvent((event: KeyboardEvent) => {
@@ -18,12 +16,6 @@ export function useLoadedEditorShortcuts({
     if (key === 's') {
       event.preventDefault()
       void onSave()
-      return
-    }
-
-    if (key === 't') {
-      event.preventDefault()
-      onCycleExportFormat()
       return
     }
 

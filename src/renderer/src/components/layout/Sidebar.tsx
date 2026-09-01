@@ -1,33 +1,38 @@
-import { BarChart3, BookOpen, Boxes, Languages, Merge, Package, PackageOpen, Settings } from 'lucide-react'
+import {
+  BarChart3,
+  BookOpen,
+  Boxes,
+  Languages,
+  Merge,
+  Package,
+  PackageOpen,
+  Settings
+} from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { SidebarUpdateControl } from '@/features/updater/SidebarUpdateControl'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { to: '/translate', icon: Languages, labelKey: 'translate', kbd: 'Ctrl 1' },
-  { to: '/dictionary', icon: BookOpen, labelKey: 'dictionary', kbd: 'Ctrl 2' },
-  { to: '/mods', icon: Boxes, labelKey: 'mods', kbd: 'Ctrl 3' },
-  { to: '/merge', icon: Merge, labelKey: 'merge', kbd: 'Ctrl 4' },
-  { to: '/extract', icon: PackageOpen, labelKey: 'extract', kbd: 'Ctrl 5' },
-  { to: '/package', icon: Package, labelKey: 'package', kbd: 'Ctrl 6' },
-  { to: '/metrics', icon: BarChart3, labelKey: 'metrics', kbd: 'Ctrl 8' }
+  { to: '/translate', icon: Languages, labelKey: 'translate' },
+  { to: '/dictionary', icon: BookOpen, labelKey: 'dictionary' },
+  { to: '/mods', icon: Boxes, labelKey: 'mods' },
+  { to: '/merge', icon: Merge, labelKey: 'merge' },
+  { to: '/extract', icon: PackageOpen, labelKey: 'extract' },
+  { to: '/package', icon: Package, labelKey: 'package' },
+  { to: '/metrics', icon: BarChart3, labelKey: 'metrics' }
 ] as const
 
-const FOOTER_ITEMS = [
-  { to: '/settings', icon: Settings, labelKey: 'settings', kbd: 'Ctrl 7' }
-] as const
+const FOOTER_ITEMS = [{ to: '/settings', icon: Settings, labelKey: 'settings' }] as const
 
 function NavItem({
   to,
   icon: Icon,
-  label,
-  kbd
+  label
 }: {
   to: string
   icon: React.ElementType
   label: string
-  kbd: string
 }) {
   return (
     <NavLink
@@ -51,12 +56,6 @@ function NavItem({
       >
         {label}
       </span>
-      <span
-        style={{ transition: 'opacity 120ms 60ms' }}
-        className="whitespace-nowrap font-mono text-[10px] text-neutral-600 opacity-0 group-hover/sidebar:opacity-100"
-      >
-        {kbd}
-      </span>
     </NavLink>
   )
 }
@@ -71,25 +70,13 @@ export function Sidebar(): React.JSX.Element {
     >
       <nav className="flex flex-1 flex-col gap-0.5 px-2 py-3">
         {NAV_ITEMS.map((item) => (
-          <NavItem
-            key={item.to}
-            to={item.to}
-            icon={item.icon}
-            kbd={item.kbd}
-            label={t(item.labelKey)}
-          />
+          <NavItem key={item.to} to={item.to} icon={item.icon} label={t(item.labelKey)} />
         ))}
       </nav>
 
       <div className="border-t border-[#1f2329] px-2 py-3">
         {FOOTER_ITEMS.map((item) => (
-          <NavItem
-            key={item.to}
-            to={item.to}
-            icon={item.icon}
-            kbd={item.kbd}
-            label={t(item.labelKey)}
-          />
+          <NavItem key={item.to} to={item.to} icon={item.icon} label={t(item.labelKey)} />
         ))}
         <SidebarUpdateControl />
       </div>

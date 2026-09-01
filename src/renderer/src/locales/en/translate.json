@@ -7,6 +7,7 @@
     "undo": "Undo",
     "redo": "Redo",
     "saveDictionary": "Save to dictionary (Ctrl+S)",
+    "exportFormat": "Export format",
     "remainingStrings": "{{count}} strings remaining",
     "dictionaryMatches": "{{count}} dictionary matches available",
     "batch": "batch {{completed}}/{{total}}"
@@ -77,8 +78,6 @@
     "applyDictionary": "Apply dictionary",
     "copySource": "Copy source",
     "markTranslated": "Mark as translated",
-    "next": "next",
-    "newLine": "new line",
     "entries": "{{count}} entries",
     "containsTags": "contains tags",
     "dictionarySuggestion": "Dictionary suggests:",
@@ -142,7 +141,12 @@
     "defaultFileName": "translation.xml"
   },
   "exportModal": {
-    "languageTip": "The game replaces strings by UUID inside Localization/{language}/ — choose the folder matching the language you play with. If your language isn't supported by the game, keep English (unsupported languages fall back to it). .loca exports are named after this language (e.g. english.loca)."
+    "languageTip": "The game replaces strings by UUID inside Localization/{language}/ — choose the folder matching the language you play with. If your language isn't supported by the game, keep English (unsupported languages fall back to it). .loca exports are named after this language (e.g. english.loca).",
+    "format": "Export format",
+    "formatXmlDescription": "Raw translation file",
+    "formatLocaDescription": "Compiled game file",
+    "formatPakDescription": "Installable package",
+    "formatZipDescription": "Compressed package"
   },
   "export": {
     "searchLanguageFolder": "Search folder...",

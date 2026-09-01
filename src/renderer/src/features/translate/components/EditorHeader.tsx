@@ -3,6 +3,7 @@ import {
   ArrowRight,
   ChevronRight,
   Columns2,
+  Download,
   Loader2,
   Redo2,
   Rows2,
@@ -11,18 +12,9 @@ import {
 } from 'lucide-react'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
-import type { ExportFormat, TranslationSession } from '../types'
-import { ExportControls } from './ExportControls'
-import { btnBase, btnGhostIcon } from './styles'
+import type { TranslationSession } from '../types'
+import { btnBase, btnGhostIcon, btnPrimary } from './styles'
 import { TranslationStats } from './TranslationStats'
-
-function ShortcutHint({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return (
-    <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded border border-[#2a2f37] border-b-2 bg-[#181b1f] px-1 font-mono text-[10px] text-neutral-400">
-      {children}
-    </span>
-  )
-}
 
 interface EditorHeaderProps {
   session: TranslationSession
@@ -36,10 +28,8 @@ interface EditorHeaderProps {
   pct: number
   batchCompleted: number
   batchTotal: number
-  exportFormat: ExportFormat
   onViewModeChange: (mode: 'side' | 'stacked') => void
   onSave: () => Promise<void>
-  onExportFormatChange: (format: ExportFormat) => void
   onExport: () => Promise<void>
 }
 
@@ -55,10 +45,8 @@ export function EditorHeader({
   pct,
   batchCompleted,
   batchTotal,
-  exportFormat,
   onViewModeChange,
   onSave,
-  onExportFormatChange,
   onExport
 }: EditorHeaderProps): React.JSX.Element {
   const { t } = useAppTranslation(['translate', 'common'])
@@ -122,24 +110,17 @@ export function EditorHeader({
 
           <button
             type="button"
-            className={cn(btnBase, isSaving && 'opacity-60 cursor-not-allowed')}
+            className={cn(btnGhostIcon, isSaving && 'opacity-60 cursor-not-allowed')}
             onClick={onSave}
             disabled={isSaving}
             title={t('editor.saveDictionary')}
           >
             {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save />}
-            {t('actions.save', { ns: 'common' })}
-            <ShortcutHint>Ctrl S</ShortcutHint>
           </button>
 
-          <ExportControls
-            exportFormat={exportFormat}
-            onFormatChange={onExportFormatChange}
-            onExport={onExport}
-          />
+          <ExportButton onExport={onExport} />
         </div>
       </div>
-
       <div className="flex items-end gap-8">
         <div className="flex-1 min-w-0">
           <h1 className="flex items-center gap-3.5 m-0 text-[32px] font-bold tracking-tight leading-none mb-2">
@@ -169,5 +150,21 @@ export function EditorHeader({
         />
       </div>
     </div>
+  )
+}
+
+function ExportButton({ onExport }: { onExport: () => Promise<void> }): React.JSX.Element {
+  const { t } = useAppTranslation(['translate', 'common'])
+
+  return (
+    <button
+      type="button"
+      className={btnPrimary}
+      onClick={onExport}
+      title={`${t('actions.export', { ns: 'common' })} (Ctrl+E)`}
+    >
+      <Download />
+      {t('actions.export', { ns: 'common' })}
+    </button>
   )
 }
