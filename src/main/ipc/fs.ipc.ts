@@ -1,4 +1,4 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron'
+import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 
 interface OpenDialogParams {
   filters?: Electron.FileFilter[]
@@ -35,5 +35,11 @@ export function registerFsHandlers(): void {
       properties: ['openDirectory']
     })
     return result.filePaths[0] ?? null
+  })
+
+  ipcMain.handle('fs:openInShell', async (_event, targetPath: string) => {
+    if (!targetPath) return
+    const result = await shell.openPath(targetPath)
+    return result === '' ? { success: true } : { success: false, error: result }
   })
 }

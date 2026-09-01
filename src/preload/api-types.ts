@@ -332,6 +332,10 @@ export type ConfigKey =
   | 'author'
   | 'dictionary_page_size'
   | 'default_export_language'
+  | 'default_extract_path'
+  | 'default_pack_path'
+  | 'last_extract_path'
+  | 'last_pack_path'
 
 export type UserErrorCode =
   | 'common.unknown'

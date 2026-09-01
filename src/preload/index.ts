@@ -185,7 +185,6 @@ const api: AppApi = {
     extract: (params: {
       inputPath: string
       outputPath: string
-      sourceLang?: string
     }): Promise<{ success: boolean; xmlFiles: string[] }> =>
       ipcRenderer.invoke('mod:extract', params),
 
@@ -193,6 +192,14 @@ const api: AppApi = {
       inputFolder: string
       outputPath: string
     }): Promise<{ success: boolean; pakPath: string }> => ipcRenderer.invoke('mod:pack', params),
+
+    getLastPaths: (): Promise<{ lastExtractPath: string; lastPackPath: string }> =>
+      ipcRenderer.invoke('mod:getLastPaths'),
+
+    suggestPackFileName: (params: {
+      inputFolder: string
+      format: 'pak' | 'zip'
+    }): Promise<string | null> => ipcRenderer.invoke('mod:suggestPackFileName', params),
 
     getAll: (params?: {
       lang1?: string
@@ -419,6 +426,9 @@ const api: AppApi = {
     }): Promise<string | null> => ipcRenderer.invoke('fs:saveDialog', params),
 
     openFolder: (): Promise<string | null> => ipcRenderer.invoke('fs:openFolder'),
+
+    openInShell: (targetPath: string): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('fs:openInShell', targetPath),
 
     // Replaces the deprecated file.path property (removed in Electron 32+)
     getPathForFile: (file: File): string => webUtils.getPathForFile(file)

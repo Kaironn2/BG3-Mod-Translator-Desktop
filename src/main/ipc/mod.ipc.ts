@@ -1,10 +1,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { eq, sql } from 'drizzle-orm'
 import { app, ipcMain } from 'electron'
+import { getDb } from '../database/connection'
 import type { RepositoryRegistry } from '../database/repositories/registry'
+import { config } from '../database/schema'
 import { packMod, unpackMod } from '../services/lslib.service'
 import type { MetaInfo } from '../services/lsx-parser.service'
 import { deleteMod, deleteMods } from '../services/mod-delete.service'
+import { suggestPackFileName } from '../services/pack-suggest.service'
 import { invalidateSimilarityCache } from '../services/similarity-client'
 import {
   completeTranslationImport as completeImport,
@@ -18,7 +22,6 @@ import {
 import { findLocalizationXmls } from '../services/xml-parser.service'
 import { extract } from '../services/zip.service'
 import { findPakFiles } from '../utils/findPakFiles'
-import { toBg3LanguageFolder } from '../utils/languages'
 
 interface ExtractPayload {
   inputPath: string
@@ -29,6 +32,23 @@ interface ExtractPayload {
 interface PackPayload {
   inputFolder: string
   outputPath: string
+}
+
+// Config read/write for last-used/default paths (same table as config.ipc).
+function getConfigValue(key: string): string {
+  const db = getDb()
+  const row = db.select().from(config).where(eq(config.key, key)).get() as
+    | { key: string; value: string | null }
+    | undefined
+  return row?.value ?? ''
+}
+
+function setConfigValue(key: string, value: string): void {
+  getDb()
+    .insert(config)
+    .values({ key, value })
+    .onConflictDoUpdate({ target: config.key, set: { value: sql`excluded.value` } })
+    .run()
 }
 
 export interface ModInfo {
@@ -43,14 +63,9 @@ function sanitizeModName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)
 }
 
-function languageFolder(repos: RepositoryRegistry, languageCode: string): string {
-  const language = repos.language.findByCode(languageCode)
-  return toBg3LanguageFolder(languageCode, language?.name)
-}
-
 export function registerModHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle('mod:extract', async (_event, payload: ExtractPayload) => {
-    const { inputPath, outputPath, sourceLang = 'en' } = payload
+    const { inputPath, outputPath } = payload
 
     const ext = path.extname(inputPath).toLowerCase()
 
@@ -65,7 +80,10 @@ export function registerModHandlers(repos: RepositoryRegistry): void {
     }
 
     await unpackMod(pakPath, outputPath)
-    const xmlFiles = findLocalizationXmls(outputPath, languageFolder(repos, sourceLang))
+    // Extract is now purely "unpack": report every localization XML regardless of
+    // language folder (translation import does its own language-agnostic scan).
+    const xmlFiles = findLocalizationXmls(outputPath)
+    setConfigValue('last_extract_path', outputPath)
 
     return { success: true, xmlFiles }
   })
@@ -74,8 +92,20 @@ export function registerModHandlers(repos: RepositoryRegistry): void {
     const { inputFolder, outputPath } = payload
     fs.mkdirSync(path.dirname(outputPath), { recursive: true })
     await packMod(inputFolder, outputPath)
+    setConfigValue('last_pack_path', outputPath)
     return { success: true, pakPath: outputPath }
   })
+
+  ipcMain.handle('mod:getLastPaths', () => ({
+    lastExtractPath: getConfigValue('last_extract_path'),
+    lastPackPath: getConfigValue('last_pack_path')
+  }))
+
+  ipcMain.handle(
+    'mod:suggestPackFileName',
+    (_event, params: { inputFolder: string; format: 'pak' | 'zip' }) =>
+      suggestPackFileName(repos, params.inputFolder, params.format)
+  )
 
   ipcMain.handle(
     'mod:prepareTranslationInput',

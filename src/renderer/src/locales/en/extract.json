@@ -1,13 +1,28 @@
 {
   "title": "Extract mod",
+  "inputFile": "Mod file",
   "dropLabel": "Drop your .zip or .pak file here",
   "outputFolder": "Output folder",
   "selectOutputFolder": "Select output folder...",
+  "useDefaultPath": "Use default path",
+  "configuredInSettings": "configured in Settings",
+  "openDefaultPath": "Open default path",
+  "openLastSaved": "Open last saved",
   "extract": "Extract",
   "extracting": "Extracting...",
+  "steps": {
+    "file": "File",
+    "output": "Output",
+    "fileDescription": "Drop your .zip or .pak file here or browse for it. ZIP archives are unpacked automatically.",
+    "outputDescription": "Choose where the unpacked files will be written. The translation import scans every language folder itself."
+  },
+  "bottomBar": {
+    "idle": "Provide the mod file and output folder to extract",
+    "ready": "Ready to extract"
+  },
   "logs": {
     "success": "Extracted successfully.",
-    "foundXml": "Found {{count}} localization XML(s):",
+    "foundXml": "Found {{count}} localization file(s):",
     "error": "Error: {{message}}"
   }
 }

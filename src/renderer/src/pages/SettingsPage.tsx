@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { AiProvidersCard } from '@/features/settings/AiProvidersCard'
 import { DefaultMetadataCard } from '@/features/settings/DefaultMetadataCard'
 import { ExternalApiKeysCard } from '@/features/settings/ExternalApiKeysCard'
+import { PackagePathsCard } from '@/features/settings/PackagePathsCard'
 import { PreferencesCard } from '@/features/settings/PreferencesCard'
 import { PromptSlotsCard } from '@/features/settings/PromptSlotsCard'
 import { SimilaritySettingsCard } from '@/features/settings/SimilaritySettingsCard'
@@ -75,6 +76,7 @@ export function SettingsPage(): React.JSX.Element {
 
         <PreferencesCard config={config} set={set} />
         <DefaultMetadataCard config={config} set={set} />
+        <PackagePathsCard config={config} set={set} />
         <UpdatesCard />
         <ExternalApiKeysCard config={config} set={set} />
         <AiProvidersCard />

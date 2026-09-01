@@ -2,10 +2,26 @@
   "title": "Create package",
   "inputFolder": "Input folder",
   "selectInputFolder": "Select folder to package...",
-  "outputFile": "Output .pak file",
+  "outputFile": "Output file",
   "saveAsPak": "Save as .pak...",
+  "saveAs": "Save as {{format}}...",
+  "useDefaultPath": "Use default path",
+  "configuredInSettings": "configured in Settings",
+  "openDefaultPath": "Open default path",
+  "openLastSaved": "Open last saved",
+  "usingDefaultPath": "Using default path",
   "create": "Create package",
   "creating": "Packing...",
+  "steps": {
+    "folder": "Folder",
+    "output": "Output",
+    "folderDescription": "Choose the folder containing the unpacked mod files to pack.",
+    "outputDescription": "Choose where the package will be written, as .pak or .zip."
+  },
+  "bottomBar": {
+    "idle": "Select an input folder and an output file to create the package",
+    "ready": "Ready to create package"
+  },
   "logs": {
     "created": "Package created: {{path}}",
     "error": "Error: {{message}}"
