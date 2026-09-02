@@ -7,7 +7,7 @@ Live DB path: `%APPDATA%/Icosa/icosa.db` for the installed app; `pnpm dev` (unpa
 ## Repo layout (tooling)
 
 - `scripts/` — build outputs only at the root (e.g. `scripts/*.test.cjs`, gitignored)
-- `scripts/dev/` — reusable dev CLIs (loca/pak inspect & convert, electron-runner); run with `pnpm dlx tsx scripts/dev/<name>.ts`
+- `scripts/dev/` — reusable dev CLIs (loca/pak inspect & convert, electron-runner, nexus-listing); run with `pnpm dlx tsx scripts/dev/<name>.ts`
 - `tests/` — integration / live / API smoke tests NOT in the unit suite (`pnpm test`); DB-level test runs via `pnpm test:db`
 - `bench/` — benchmarks + `bench-results/` (gitignored; can contain DB copies)
 
@@ -26,6 +26,7 @@ Read the matching skill **before** changing that area. Each skill lists checks t
 ## Layout
 
 - `src/main` — Electron main, IPC, SQLite, pipelines, workers
+- `src/main/services/nexus` — Nexus Mods API v3 client + Icosa release publisher (decoupled; reuse for future translation-pack flows)
 - `src/renderer` — React UI
 - `src/preload` — `window.api` bridge
 - `drizzle/` — SQL migrations (migrator splits on `--> statement-breakpoint` only)

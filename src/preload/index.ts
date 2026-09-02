@@ -358,10 +358,10 @@ const api: AppApi = {
 
     run: (params: {
       sourceImportId: string
-      sourceCandidateId: string
+      sourceCandidateIds: string[]
       sourceLang: string
       targetImportId: string
-      targetCandidateId: string
+      targetCandidateIds: string[]
       targetLang: string
       modName: string
     }) => ipcRenderer.invoke('merge:run', params),

@@ -16,7 +16,9 @@
   "language": "Idioma",
   "candidateSummary": {
     "xml": "XML",
-    "entries": "{{count}} entradas"
+    "loca": "LOCA",
+    "entries": "{{count}} entradas",
+    "filesSelected": "arquivos selecionados"
   },
   "nameStep": {
     "title": "Detalhes do merge",

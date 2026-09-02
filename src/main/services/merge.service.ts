@@ -2,16 +2,17 @@ import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { app } from 'electron'
 import type { RepositoryRegistry } from '../database/repositories/registry'
-import type { MergeProgress, MergeResult, MergeWorkerInput } from '../workers/merge.worker.runtime'
+import { resolveWorkerPath } from '../utils/worker-path'
+import type { MergeFileInput, MergeProgress, MergeResult, MergeWorkerInput } from '../workers/merge.worker.runtime'
 
-export type { MergeResult }
+export type { MergeFileInput, MergeResult }
 
 export type MergeProgressUpdate = Exclude<MergeProgress, { phase: 'done' } | { phase: 'error' }>
 
 export interface MergeXmlsParams {
-  sourceXmlPath: string
+  sourceFiles: MergeFileInput[]
   sourceLang: string
-  targetXmlPath: string
+  targetFiles: MergeFileInput[]
   targetLang: string
   modName: string
   onProgress?: (p: MergeProgressUpdate) => void
@@ -27,7 +28,7 @@ export function mergeXmls(
   const input: MergeWorkerInput = { ...rest, dbPath: getDbPath() }
 
   return new Promise<MergeResult>((resolve, reject) => {
-    const worker = new Worker(path.join(__dirname, 'merge.worker.js'), { workerData: input })
+    const worker = new Worker(resolveWorkerPath(__dirname, 'merge.worker.js'), { workerData: input })
 
     worker.on('message', (msg: MergeProgress) => {
       if (msg.phase === 'done') {

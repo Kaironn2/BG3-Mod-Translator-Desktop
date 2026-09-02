@@ -95,7 +95,7 @@ export function MergeToolScreen(): React.JSX.Element {
           prepared={pendingSlot.prepared}
           slotKey={setup.pendingSelection}
           onCancel={setup.closeSelection}
-          onSelect={setup.selectCandidate}
+          onSelect={setup.selectCandidates}
         />
       )}
     </>
@@ -106,7 +106,7 @@ interface PendingSelectionModalProps {
   prepared: PreparedTranslationInput
   slotKey: SlotKey
   onCancel: () => Promise<void>
-  onSelect: (slotKey: SlotKey, candidateId: string) => void
+  onSelect: (slotKey: SlotKey, candidateIds: string[]) => void
 }
 
 function PendingSelectionModal({
@@ -118,10 +118,11 @@ function PendingSelectionModal({
   return (
     <XmlSelectionModal
       prepared={prepared}
+      selectionMode="multi"
       onCancel={onCancel}
-      onSelect={async ([candidateId]) => {
-        if (!candidateId) return
-        onSelect(slotKey, candidateId)
+      onSelect={async (candidateIds) => {
+        if (candidateIds.length === 0) return
+        onSelect(slotKey, candidateIds)
       }}
     />
   )

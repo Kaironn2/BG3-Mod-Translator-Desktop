@@ -3,6 +3,7 @@ import { Worker } from 'node:worker_threads'
 import { app } from 'electron'
 import type { TranslationProvider } from '../../preload/api-types'
 import type { AiPipelineSimilarity } from '../pipelines/ai.pipeline'
+import { resolveWorkerPath } from '../utils/worker-path'
 import type {
   TranslateWorkerInput,
   TranslateWorkerProgress
@@ -33,7 +34,7 @@ export function runTranslatePipeline(params: TranslatePipelineParams): { cancel:
   }
 
   let settled = false
-  const worker = new Worker(path.join(__dirname, 'translate.worker.js'), { workerData: input })
+  const worker = new Worker(resolveWorkerPath(__dirname, 'translate.worker.js'), { workerData: input })
 
   worker.on('message', (msg: TranslateWorkerProgress) => {
     if (msg.phase === 'progress') {

@@ -36,7 +36,7 @@
     "invalidFormat": "Invalid format"
   },
   "merge": {
-    "invalidFormat": "Invalid format. Use .xml, .pak or .zip",
+    "invalidFormat": "{{fileName}}: invalid format. Use .xml, .pak or .zip",
     "merged": "{{matched}} entries merged",
     "mergedWithIgnored": "{{matched}} entries merged ({{ignored}} ignored)"
   },

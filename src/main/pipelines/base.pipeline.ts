@@ -11,6 +11,7 @@ import { ModRepository } from '../database/repositories/mod.repo'
 import { packMod, unpackMod } from '../services/lslib.service'
 import { createMeta, readAttributeValue, sanitizeMetaFolder } from '../services/lsx-parser.service'
 import { type SimilarEntry, SimilarityIndex } from '../services/similarity.service'
+import { isMergedXmlName } from '../services/translation-import.service'
 import {
   findLocalizationXmls,
   type LocalizationEntry,
@@ -189,7 +190,7 @@ export abstract class BasePipeline {
     // Multi-file loose import is stored as one merged xml plus a side map.
     // When the map exists, keep per-file identity in the output as well.
     let perEntryFiles: string[] | null = null
-    if (path.basename(ctx.filePath) === 'translation_merged.xml') {
+    if (isMergedXmlName(path.basename(ctx.filePath))) {
       try {
         const mapPath = path.join(path.dirname(ctx.filePath), 'translation_source_map.json')
         const raw = fs.readFileSync(mapPath, 'utf-8')

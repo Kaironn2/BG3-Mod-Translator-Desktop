@@ -85,6 +85,16 @@ If useful, leave a ⭐ at https://github.com/Kaironn2/BG3-Mod-Translator-Desktop
 
 Bullets are short English facts from the release, not PR URLs.
 
+## Nexus upload
+
+The same release also updates the two existing Nexus mod files (game-scoped id `15976`) with the zip artifacts. Service lives in `src/main/services/nexus` (`publishIcosaRelease`); verify listing only with `pnpm dlx tsx scripts/dev/nexus-listing.readonly.ts` (needs `NEXUS_API_KEY` from `.env`).
+
+- Files updated (both category **main**): `Icosa - Translation Tool - Portable` and `Icosa - Translation Tool - Windows Installer`.
+- Artifacts must be **zips** (`Icosa-X.Y.Z-windows-x64-setup.zip` / `Icosa-X.Y.Z-windows-x64-portable.zip` when present in `dist/`) — never raw executables.
+- Per file: resolve internal mod id via `getMod`, find the mod file by canonical name (or by latest version name — legacy display names still exist), chain via `previous_version_id` from the current latest version, `update_mod_version: true`, `archive_existing_file: false`.
+- Description = `dist/nexus-X.Y.Z` content fitted to the 255-char cap; per-variant note differentiates portable vs installer when needed.
+- **Write calls are user-gated**: ask before running `publishIcosaRelease`; the readonly listing script is always safe.
+
 ## Steps
 
 1. **Branch.** If HEAD is `main`/`master`, create `chore/release-X.Y.Z`.
@@ -123,7 +133,9 @@ Bullets are short English facts from the release, not PR URLs.
 
 9. Write `dist/nexus-X.Y.Z` (255-char cap).
 
-10. **Publish** only after upload succeeds: `gh release edit vX.Y.Z --draft=false`.
+10. **Nexus upload** (after publish or before — ask the user): zip installer + portable from `dist/` and run `publishIcosaRelease` (see "Nexus upload" above). Read-only pre-check: `pnpm dlx tsx scripts/dev/nexus-listing.readonly.ts`.
+
+11. **Publish** only after upload succeeds: `gh release edit vX.Y.Z --draft=false`.
 
 Do not merge the bump PR unless step 5 said yes.
 
@@ -146,3 +158,4 @@ No code signing is configured. The portable exe is unsigned (SmartScreen may war
 3. `gh release view vX.Y.Z --json isDraft,url,targetCommitish,assets` — after publish, `isDraft` is false, setup exe + `latest.yml` + blockmap + portable are listed, `targetCommitish` is `main` if the user asked to merge.
 4. `dist/nexus-X.Y.Z` exists and is ≤ 255 characters.
 5. Assets include the NSIS setup **and** `latest.yml`. Auto-update cannot work with only the portable exe.
+6. Nexus: listing script shows the new `X.Y.Z` as latest version on both files.

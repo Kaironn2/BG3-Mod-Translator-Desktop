@@ -16,7 +16,9 @@
   "language": "Language",
   "candidateSummary": {
     "xml": "XML",
-    "entries": "{{count}} entries"
+    "loca": "LOCA",
+    "entries": "{{count}} entries",
+    "filesSelected": "files selected"
   },
   "nameStep": {
     "title": "Merged mod",

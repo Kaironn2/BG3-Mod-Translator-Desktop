@@ -90,20 +90,39 @@ export function MergeFileStep({
         }}
       />
 
-      {slot.prepared && slot.candidateId && <CandidateSummary slot={slot} />}
+      {slot.prepared && slot.candidateIds.length > 0 && <CandidateSummary slot={slot} />}
     </SetupStepCard>
   )
 }
 
 function CandidateSummary({ slot }: { slot: MergeFileSlot }): React.JSX.Element | null {
   const { t } = useAppTranslation('merge')
-  const candidate = slot.prepared?.candidates.find((item) => item.id === slot.candidateId)
-  if (!candidate) return null
+  const selected = slot.prepared?.candidates.filter((item) => slot.candidateIds.includes(item.id))
+  if (!selected || selected.length === 0) return null
+  const totalStrings = selected.reduce((sum, candidate) => sum + candidate.stringCount, 0)
   return (
-    <div className="flex items-center gap-2 px-2 font-mono text-[11px] text-neutral-500">
-      <span className="text-amber-400">{t('candidateSummary.xml')}</span>
-      <span className="flex-1 truncate">{candidate.relativePath}</span>
-      <span>{t('candidateSummary.entries', { count: candidate.stringCount })}</span>
+    <div className="flex flex-col gap-1 px-2">
+      {selected.map((candidate) => (
+        <div
+          key={candidate.id}
+          className="flex items-center gap-2 font-mono text-[11px] text-neutral-500"
+        >
+          <span className="text-amber-400">
+            {candidate.fileType === 'loca'
+              ? t('candidateSummary.loca')
+              : t('candidateSummary.xml')}
+          </span>
+          <span className="flex-1 truncate">{candidate.relativePath}</span>
+          <span>{t('candidateSummary.entries', { count: candidate.stringCount })}</span>
+        </div>
+      ))}
+      {selected.length > 1 && (
+        <div className="flex items-center gap-2 font-mono text-[11px] text-neutral-400">
+          <span className="text-amber-400">{selected.length}</span>
+          <span className="flex-1 truncate">{t('candidateSummary.filesSelected')}</span>
+          <span>{t('candidateSummary.entries', { count: totalStrings })}</span>
+        </div>
+      )}
     </div>
   )
 }
