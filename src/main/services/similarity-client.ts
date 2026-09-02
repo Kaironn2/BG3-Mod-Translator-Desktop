@@ -1,5 +1,5 @@
-import path from 'node:path'
 import { Worker } from 'node:worker_threads'
+import { resolveWorkerPath } from '../utils/worker-path'
 import type { SimilarEntry } from './similarity.service'
 
 interface Pending<T> {
@@ -103,7 +103,7 @@ export class SimilarityClient {
       return
     }
 
-    const worker = new Worker(path.join(__dirname, 'similarity.worker.js'))
+    const worker = new Worker(resolveWorkerPath(__dirname, 'similarity.worker.js'))
     this.worker = worker
     this.ready = new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('similarity worker ready timeout')), 15_000)

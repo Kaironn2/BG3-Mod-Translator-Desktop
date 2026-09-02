@@ -7,6 +7,7 @@ import { app } from 'electron'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { config } from '../database/schema'
 import { cleanupTempDir, createTempDir } from '../utils/tempDir'
+import { resolveWorkerPath } from '../utils/worker-path'
 import type { PrepareInputProgress } from '../workers/prepare-input.worker.runtime'
 import {
   inspectXmlCandidate,
@@ -194,7 +195,7 @@ function pumpUnpackQueue(): void {
 function startUnpackWorker(job: UnpackJob): void {
   unpackRunning += 1
   job.running = true
-  const worker = new Worker(path.join(__dirname, 'prepare-input.worker.js'), {
+  const worker = new Worker(resolveWorkerPath(__dirname, 'prepare-input.worker.js'), {
     workerData: { inputPath: job.inputPath, tempDir: job.tempDir }
   })
   job.worker = worker
@@ -248,6 +249,28 @@ export function getStagedCandidate(
   const staged = stagedImports.get(importId)
   if (!staged) return undefined
   return staged.candidates.find((candidate) => candidate.id === candidateId)
+}
+
+/**
+ * Resolves multiple staged candidates preserving the caller's selection order.
+ * Returns an empty array when the session expired or no id matches.
+ */
+export function getStagedCandidates(
+  importId: string,
+  candidateIds: string[]
+): TranslationXmlCandidate[] {
+  const staged = stagedImports.get(importId)
+  if (!staged) return []
+  const byId = new Map(staged.candidates.map((candidate) => [candidate.id, candidate]))
+  const resolved: TranslationXmlCandidate[] = []
+  const seen = new Set<string>()
+  for (const id of candidateIds) {
+    if (seen.has(id)) continue
+    seen.add(id)
+    const candidate = byId.get(id)
+    if (candidate) resolved.push(candidate)
+  }
+  return resolved
 }
 
 export function discardTranslationInput(importId: string): void {
@@ -324,7 +347,14 @@ export function completeTranslationImport(
   }
 
   const mergedXmlEntries = mergedEntries.map(({ entry }) => entry)
-  const xmlPath = path.join(modDir, 'translation_merged.xml')
+  // Multi-file imports used to be stored as a fixed 'translation_merged.xml'.
+  // Name the merged file after the real content: single file keeps its own name;
+  // multiple files use "<first file>_merged.xml" so the lineage stays visible.
+  const storedName =
+    fileNamesInOrder.length > 1
+      ? `${fileNamesInOrder[0].replace(/\.(xml|loca)$/i, '')}_merged.xml`
+      : (fileNamesInOrder[0] ?? `${sanitizeStoredModName(params.modName)}.xml`)
+  const xmlPath = path.join(modDir, storedName)
   writeLocalizationXml(mergedXmlEntries, xmlPath)
   // Keep per-file identity for the merged session: write a side map so the
   // xml-load worker can restore the original file name per entry. This keeps
@@ -626,6 +656,15 @@ function readOriginalXmlName(
 
 export function getStoredModDir(modName: string): string {
   return path.join(app.getPath('userData'), 'icosa', 'mods', sanitizeStoredModName(modName))
+}
+
+/**
+ * Merged multi-file imports are stored as one xml named after the first source
+ * file ("<name>_merged.xml"); older builds saved them as 'translation_merged.xml'.
+ * Both names are treated as merged sessions (per-entry source map applies).
+ */
+export function isMergedXmlName(fileName: string): boolean {
+  return fileName === 'translation_merged.xml' || /_merged\.xml$/i.test(fileName)
 }
 
 function sanitizeStoredModName(name: string): string {
