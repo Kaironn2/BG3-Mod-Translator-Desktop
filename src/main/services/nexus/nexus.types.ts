@@ -54,9 +54,21 @@ export interface NexusUpload {
 }
 
 export interface NexusCreateUploadResponse {
-  id: string
-  state: NexusUpload['state']
-  presigned_url: string
+  data: {
+    id: string
+    state: NexusUpload['state']
+    presigned_url: string
+  }
+}
+
+export interface NexusCreateMultipartUploadResponse {
+  data: {
+    id: string
+    state: NexusUpload['state']
+    part_size_bytes: number
+    part_presigned_urls: string[]
+    complete_presigned_url: string
+  }
 }
 
 export interface NexusCreateUploadInput {
@@ -80,14 +92,16 @@ export interface NexusCreateVersionInput {
 }
 
 export interface NexusCreateVersionSuccess {
-  file: {
-    id: string
-    game_scoped_id: string
-    name: string
-    file_category: string
-  }
-  version: {
-    id: string
-    position: string
+  data: {
+    file: {
+      id: string
+      game_scoped_id: string
+      name: string
+      file_category: string
+    }
+    version: {
+      id: string
+      position: string
+    }
   }
 }

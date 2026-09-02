@@ -119,11 +119,8 @@ export async function publishIcosaRelease(
       message: `Uploading ${artifact.uploadFilename}`
     })
 
-    const { createUpload, uploadToPresignedUrl, finaliseUpload } = await import(
-      './nexus-upload-flow'
-    )
-    const uploadId = await createUpload(api, artifact.filePath, artifact.uploadFilename)
-    await uploadToPresignedUrl(api, uploadId, artifact.filePath, artifact.uploadFilename)
+    const { stageUpload, finaliseUpload } = await import('./nexus-upload-flow')
+    const uploadId = await stageUpload(api, artifact.filePath, artifact.uploadFilename)
     await finaliseUpload(api, uploadId)
 
     input.onProgress?.({
@@ -154,7 +151,7 @@ export async function publishIcosaRelease(
       modFileId: modFile.id,
       modFileName: targetName,
       previousVersionId,
-      newVersionId: result.version.id
+      newVersionId: result.data.version.id
     })
   }
 

@@ -22,6 +22,10 @@ interface RequestInput {
   skipAuthHeaders?: boolean
   rawBody?: Uint8Array
   headers?: Record<string, string>
+  /** When set, runs after a 2xx response and its result becomes the resolved value. */
+  pickHeaders?: (headers: Headers) => Record<string, string>
+  /** Skip JSON parsing of the response body (S3 returns XML/error text). */
+  skipJsonParse?: boolean
 }
 
 export class NexusClient {
@@ -71,6 +75,28 @@ export class NexusClient {
     })
   }
 
+  /** Raw request whose 2xx response headers are returned (S3 part ETags). */
+  requestWithResponse<T>(input: RequestInput): Promise<T> {
+    return this.request<T>(input)
+  }
+
+  /** POST raw XML body to a presigned URL (S3 multipart complete). */
+  async postXml(url: string, xml: string, timeoutMs?: number): Promise<void> {
+    await this.request<unknown>({
+      method: 'POST',
+      path: url,
+      url,
+      rawBody: Buffer.from(xml, 'utf-8'),
+      headers: {
+        'Content-Type': 'application/xml',
+        'Content-Length': String(Buffer.byteLength(xml, 'utf-8'))
+      },
+      skipAuthHeaders: true,
+      timeoutMs: timeoutMs ?? 60_000,
+      skipJsonParse: true
+    })
+  }
+
   private async request<T>(input: RequestInput): Promise<T> {
     const url = input.url ?? `${this.baseUrl}${input.path}`
     const controller = new AbortController()
@@ -100,10 +126,14 @@ export class NexusClient {
       if (!response.ok) {
         throw await this.toApiError(response)
       }
+      if (input.pickHeaders) {
+        return input.pickHeaders(response.headers) as T
+      }
       if (response.status === 204) return undefined as T
 
       const text = await response.text()
       if (!text) return undefined as T
+      if (input.skipJsonParse) return undefined as T
       try {
         return JSON.parse(text) as T
       } catch {
