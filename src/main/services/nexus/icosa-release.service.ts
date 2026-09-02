@@ -27,13 +27,9 @@ export interface NexusReleaseArtifact {
 
 export interface IcosaNexusReleaseInput {
   version: string
-  /** Text from dist/nexus-X.Y.Z (already <= 255 chars). Used when no per-file override applies. */
+  /** Text from dist/nexus-X.Y.Z; used as-is (line breaks kept, 255-cap enforced). */
   blurb: string
   artifacts: NexusReleaseArtifact[]
-  /** Optional extra note only for the portable file (255-cap respected). */
-  portableNote?: string
-  /** Optional extra note only for the installer file (255-cap respected). */
-  installerNote?: string
   onProgress?: (step: NexusReleaseStep) => void
 }
 
@@ -131,8 +127,7 @@ export async function publishIcosaRelease(
 
     const description = buildFileDescription({
       version,
-      summary: input.blurb,
-      variantNote: artifact.kind === 'portable' ? input.portableNote : input.installerNote
+      summary: input.blurb
     })
 
     const result = await api.createModFileVersion(modFile.id, {

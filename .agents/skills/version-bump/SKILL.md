@@ -92,7 +92,7 @@ The same release also updates the two existing Nexus mod files (game-scoped id `
 - Files updated (both category **main**): `Icosa - Translation Tool - Portable` and `Icosa - Translation Tool - Windows Installer`.
 - Artifacts must be **zips** (`Icosa-X.Y.Z-windows-x64-setup.zip` / `Icosa-X.Y.Z-windows-x64-portable.zip` when present in `dist/`) — never raw executables.
 - Per file: resolve internal mod id via `getMod`, find the mod file by canonical name (or by latest version name — legacy display names still exist), chain via `previous_version_id` from the current latest version, `update_mod_version: true`, `archive_existing_file: false`.
-- Description = `dist/nexus-X.Y.Z` content fitted to the 255-char cap; per-variant note differentiates portable vs installer when needed.
+- Description = `dist/nexus-X.Y.Z` content **as-is** (line breaks preserved; drop lines that exceed the 255-char cap). No "Icosa vX.Y.Z —" prefix and no per-variant suffix — the blurb already carries the version header and GitHub link.
 - **Write calls are user-gated**: ask before running `publishIcosaRelease`; the readonly listing script is always safe.
 
 ## Steps

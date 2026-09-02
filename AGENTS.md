@@ -26,7 +26,7 @@ Read the matching skill **before** changing that area. Each skill lists checks t
 ## Layout
 
 - `src/main` — Electron main, IPC, SQLite, pipelines, workers
-- `src/main/services/nexus` — Nexus Mods API v3 client + Icosa release publisher (decoupled; reuse for future translation-pack flows)
+- `src/main/services/nexus` — Nexus Mods API v3 client + Icosa release publisher (decoupled; reuse for future translation-pack flows). File descriptions use `dist/nexus-X.Y.Z` verbatim (line breaks kept, 255-char cap, no prefix/suffix).
 - `src/renderer` — React UI
 - `src/preload` — `window.api` bridge
 - `drizzle/` — SQL migrations (migrator splits on `--> statement-breakpoint` only)
