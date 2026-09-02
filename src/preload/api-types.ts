@@ -559,10 +559,10 @@ export interface MergeApi {
   discardInput(params: { importId: string }): Promise<{ success: boolean }>
   run(params: {
     sourceImportId: string
-    sourceCandidateId: string
+    sourceCandidateIds: string[]
     sourceLang: string
     targetImportId: string
-    targetCandidateId: string
+    targetCandidateIds: string[]
     targetLang: string
     modName: string
   }): Promise<MergeResult>

@@ -14,7 +14,7 @@ function emptySlot(lang: string): MergeFileSlot {
     fileName: null,
     lang,
     importId: null,
-    candidateId: null,
+    candidateIds: [],
     prepared: null,
     isDragging: false,
     isPreparing: false,
@@ -25,6 +25,18 @@ function emptySlot(lang: string): MergeFileSlot {
 
 function fileNameFromPath(filePath: string): string {
   return filePath.split(/[\\/]/).pop() ?? filePath
+}
+
+function commonDirectory(paths: string[]): string | null {
+  if (paths.length === 0) return null
+  const segments = paths.map((p) => p.split(/[\\/]/).slice(0, -1))
+  const first = segments[0]
+  let shared: string[] = [...first]
+  for (const parts of segments.slice(1)) {
+    shared = shared.filter((part, index) => parts[index] === part)
+    if (shared.length === 0) break
+  }
+  return shared.length > 0 ? shared.join('/') : null
 }
 
 function hasAcceptedExt(name: string): boolean {
@@ -56,7 +68,7 @@ export interface UseMergeSetupResult {
   browseFile: (slot: SlotKey) => Promise<void>
   dropFile: (slot: SlotKey, event: React.DragEvent) => Promise<void>
   clearFile: (slot: SlotKey) => Promise<void>
-  selectCandidate: (slot: SlotKey, candidateId: string) => void
+  selectCandidates: (slot: SlotKey, candidateIds: string[]) => void
   closeSelection: () => Promise<void>
   runMerge: () => Promise<void>
   reset: () => Promise<void>
@@ -127,13 +139,14 @@ export function useMergeSetup(): UseMergeSetupResult {
       if (prev && prev !== cleared) return prev
       const other: SlotKey = cleared === 'source' ? 'target' : 'source'
       const otherSlot = slotsRef.current[other]
-      if (otherSlot.prepared && !otherSlot.candidateId) return other
+      if (otherSlot.prepared && otherSlot.candidateIds.length === 0) return other
       return null
     })
   }, [])
 
   const prepare = useCallback(
-    async (key: SlotKey, filePath: string, fileName: string) => {
+    async (key: SlotKey, filePaths: string[]) => {
+      if (filePaths.length === 0) return
       const previous = getSlot(key)
       if (previous.prepareRequestId) {
         inflightRef.current[key] = null
@@ -147,65 +160,100 @@ export function useMergeSetup(): UseMergeSetupResult {
 
       const requestId = crypto.randomUUID()
       inflightRef.current[key] = requestId
+      const primaryPath = filePaths[0]
+      const primaryName = fileNameFromPath(primaryPath)
+      // Multiple loose files: show the common parent folder as the package name;
+      // a single file (or a zip/pak) keeps its own name.
+      const commonDir = filePaths.length > 1 ? commonDirectory(filePaths) : null
+      const displayFileName = commonDir ? `${fileNameFromPath(commonDir)} (${filePaths.length})` : primaryName
       updateSlot(key, (prev) => ({
         ...prev,
-        filePath,
-        fileName,
+        filePath: primaryPath,
+        fileName: displayFileName,
         importId: null,
-        candidateId: null,
+        candidateIds: [],
         prepared: null,
         isPreparing: true,
         prepareRequestId: requestId,
         prepareProgress: null
       }))
 
-      let prepared: PreparedTranslationInput
-      try {
-        prepared = await window.api.merge.prepareInput({ inputPath: filePath, requestId })
-      } catch (error) {
-        if (isPrepareCancelled(error) || inflightRef.current[key] !== requestId) return
-        inflightRef.current[key] = null
-        updateSlot(key, () => emptySlot(previous.lang))
-        toast.error(getLocalizedErrorMessage(error, t))
-        return
+      // Each package (or loose file) is staged as its own import session; the slot
+      // aggregates their candidates so the modal offers every xml/loca at once.
+      const aggregated: { importId: string; requiresSelection: boolean; candidates: PreparedTranslationInput['candidates'] } = {
+        importId: '',
+        requiresSelection: false,
+        candidates: []
       }
+      const stagedIds: string[] = []
+      for (const filePath of filePaths) {
+        let prepared: PreparedTranslationInput
+        try {
+          prepared = await window.api.merge.prepareInput({ inputPath: filePath, requestId })
+        } catch (error) {
+          if (isPrepareCancelled(error) || inflightRef.current[key] !== requestId) {
+            for (const id of stagedIds) {
+              await window.api.merge.discardInput({ importId: id }).catch(() => undefined)
+            }
+            return
+          }
+          inflightRef.current[key] = null
+          updateSlot(key, () => emptySlot(previous.lang))
+          toast.error(getLocalizedErrorMessage(error, t))
+          return
+        }
 
-      if (inflightRef.current[key] !== requestId) {
-        await window.api.merge.discardInput({ importId: prepared.importId }).catch(() => undefined)
-        return
+        if (inflightRef.current[key] !== requestId) {
+          await window.api.merge.discardInput({ importId: prepared.importId }).catch(() => undefined)
+          for (const id of stagedIds) {
+            await window.api.merge.discardInput({ importId: id }).catch(() => undefined)
+          }
+          return
+        }
+
+        stagedIds.push(prepared.importId)
+        aggregated.importId = prepared.importId
+        aggregated.requiresSelection = aggregated.requiresSelection || prepared.requiresSelection
+        aggregated.candidates.push(...prepared.candidates)
       }
 
       inflightRef.current[key] = null
-      const validCandidates = prepared.candidates.filter((candidate) => candidate.valid)
-      const autoCandidate = !prepared.requiresSelection
-        ? prepared.candidates[0]
-        : validCandidates.length === 1
-          ? validCandidates[0]
-          : null
+      // The LAST staged import owns the aggregate candidates: discarding it must
+      // drop every temp dir this slot created, so it is the session we hand over.
+      const aggregate: PreparedTranslationInput = {
+        importId: aggregated.importId,
+        requiresSelection: aggregated.requiresSelection || stagedIds.length > 1,
+        candidates: aggregated.candidates
+      }
+      const validCandidates = aggregate.candidates.filter((candidate) => candidate.valid)
+      const autoCandidateIds =
+        !aggregate.requiresSelection || validCandidates.length <= 1
+          ? validCandidates.slice(0, 1).map((candidate) => candidate.id)
+          : []
 
       updateSlot(key, (prev) => {
         if (prev.prepareRequestId !== requestId) return prev
         return {
           ...prev,
-          prepared,
-          importId: prepared.importId,
-          candidateId: autoCandidate?.id ?? null,
+          prepared: aggregate,
+          importId: aggregate.importId,
+          candidateIds: autoCandidateIds,
           isPreparing: false,
           prepareRequestId: null,
           prepareProgress: null
         }
       })
 
-      if (!autoCandidate) queueSelectionIfNeeded(key)
+      if (autoCandidateIds.length === 0 && validCandidates.length > 0) queueSelectionIfNeeded(key)
     },
     [getSlot, queueSelectionIfNeeded, t, updateSlot]
   )
 
   const browseFile = useCallback(
     async (key: SlotKey) => {
-      const paths = await window.api.fs.openDialog({ filters: FILE_FILTERS })
+      const paths = await window.api.fs.openDialog({ filters: FILE_FILTERS, multiple: true })
       if (paths.length === 0) return
-      await prepare(key, paths[0], fileNameFromPath(paths[0]))
+      await prepare(key, paths)
     },
     [prepare]
   )
@@ -214,14 +262,18 @@ export function useMergeSetup(): UseMergeSetupResult {
     async (key: SlotKey, event: React.DragEvent) => {
       event.preventDefault()
       updateSlot(key, (prev) => ({ ...prev, isDragging: false }))
-      const file = event.dataTransfer.files[0]
-      if (!file) return
-      if (!hasAcceptedExt(file.name)) {
-        toast.error(t('merge.invalidFormat', { ns: 'toasts' }))
-        return
+      const files = Array.from(event.dataTransfer.files)
+      const accepted: string[] = []
+      for (const file of files) {
+        if (!hasAcceptedExt(file.name)) {
+          toast.error(t('merge.invalidFormat', { ns: 'toasts', fileName: file.name }))
+          continue
+        }
+        const filePath = window.api.fs.getPathForFile(file)
+        if (filePath) accepted.push(filePath)
       }
-      const filePath = window.api.fs.getPathForFile(file)
-      await prepare(key, filePath, file.name)
+      if (accepted.length === 0) return
+      await prepare(key, accepted)
     },
     [prepare, t, updateSlot]
   )
@@ -244,9 +296,9 @@ export function useMergeSetup(): UseMergeSetupResult {
     [advanceSelection, getSlot, updateSlot]
   )
 
-  const selectCandidate = useCallback(
-    (key: SlotKey, candidateId: string) => {
-      updateSlot(key, (prev) => ({ ...prev, candidateId }))
+  const selectCandidates = useCallback(
+    (key: SlotKey, candidateIds: string[]) => {
+      updateSlot(key, (prev) => ({ ...prev, candidateIds }))
       advanceSelection(key)
     },
     [advanceSelection, updateSlot]
@@ -304,24 +356,25 @@ export function useMergeSetup(): UseMergeSetupResult {
     setPendingSelection(null)
   }, [])
 
-  const step1Done = !!source.lang && !!source.importId && !!source.candidateId
-  const step2Done = !!target.lang && !!target.importId && !!target.candidateId
+  const step1Done = !!source.lang && !!source.importId && source.candidateIds.length > 0
+  const step2Done = !!target.lang && !!target.importId && target.candidateIds.length > 0
   const step3Done = modName.trim().length > 0
 
   const ready = step1Done && step2Done && step3Done && source.lang !== target.lang && !isRunning
 
   const runMerge = useCallback(async () => {
     if (!ready) return
-    if (!source.importId || !source.candidateId || !target.importId || !target.candidateId) return
+    if (source.importId === null || source.candidateIds.length === 0) return
+    if (target.importId === null || target.candidateIds.length === 0) return
     setIsRunning(true)
     setProgress(null)
     try {
       const result: MergeResult = await window.api.merge.run({
         sourceImportId: source.importId,
-        sourceCandidateId: source.candidateId,
+        sourceCandidateIds: source.candidateIds,
         sourceLang: source.lang,
         targetImportId: target.importId,
-        targetCandidateId: target.candidateId,
+        targetCandidateIds: target.candidateIds,
         targetLang: target.lang,
         modName: modName.trim()
       })
@@ -365,7 +418,7 @@ export function useMergeSetup(): UseMergeSetupResult {
     browseFile,
     dropFile,
     clearFile,
-    selectCandidate,
+    selectCandidates,
     closeSelection,
     runMerge,
     reset

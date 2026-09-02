@@ -1,10 +1,11 @@
 import { ipcMain, type WebContents } from 'electron'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { type MergeResult, mergeXmls } from '../services/merge.service'
+import type { MergeFileInput } from '../workers/merge.worker.runtime'
 import {
   cancelUnpackJob,
   discardTranslationInput,
-  getStagedCandidate,
+  getStagedCandidates,
   type PreparedTranslationInput,
   prepareTranslationInput
 } from '../services/translation-import.service'
@@ -20,12 +21,31 @@ interface DiscardInputPayload {
 
 interface RunMergePayload {
   sourceImportId: string
-  sourceCandidateId: string
+  sourceCandidateIds: string[]
   sourceLang: string
   targetImportId: string
-  targetCandidateId: string
+  targetCandidateIds: string[]
   targetLang: string
   modName: string
+}
+
+function resolveMergeFiles(
+  importId: string,
+  candidateIds: string[],
+  side: 'Source' | 'Target'
+): MergeFileInput[] {
+  const candidates = getStagedCandidates(importId, candidateIds)
+  if (candidates.length === 0) {
+    throw new Error(`${side} import session expired. Select the file again.`)
+  }
+  if (candidates.some((candidate) => !candidate.valid)) {
+    throw new Error(`${side} XML has an invalid format`)
+  }
+  return candidates.map((candidate) => ({
+    xmlPath: candidate.absolutePath,
+    fileName: candidate.relativePath.split(/[\\/]/).pop() ?? candidate.relativePath,
+    fileType: candidate.fileType
+  }))
 }
 
 async function runMerge(
@@ -33,13 +53,8 @@ async function runMerge(
   sender: WebContents,
   payload: RunMergePayload
 ): Promise<MergeResult> {
-  const sourceCandidate = getStagedCandidate(payload.sourceImportId, payload.sourceCandidateId)
-  const targetCandidate = getStagedCandidate(payload.targetImportId, payload.targetCandidateId)
-
-  if (!sourceCandidate) throw new Error('Source import session expired. Select the file again.')
-  if (!targetCandidate) throw new Error('Target import session expired. Select the file again.')
-  if (!sourceCandidate.valid) throw new Error('Source XML has an invalid format')
-  if (!targetCandidate.valid) throw new Error('Target XML has an invalid format')
+  const sourceFiles = resolveMergeFiles(payload.sourceImportId, payload.sourceCandidateIds, 'Source')
+  const targetFiles = resolveMergeFiles(payload.targetImportId, payload.targetCandidateIds, 'Target')
 
   const modName = payload.modName.trim()
   if (!modName) throw new Error('Mod name is required')
@@ -49,9 +64,9 @@ async function runMerge(
 
   try {
     return await mergeXmls(repos, {
-      sourceXmlPath: sourceCandidate.absolutePath,
+      sourceFiles,
       sourceLang: payload.sourceLang,
-      targetXmlPath: targetCandidate.absolutePath,
+      targetFiles,
       targetLang: payload.targetLang,
       modName,
       onProgress: (p) => sender.send('merge:progress', p)

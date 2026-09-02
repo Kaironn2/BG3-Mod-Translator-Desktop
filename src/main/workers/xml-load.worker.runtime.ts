@@ -11,6 +11,7 @@ import { SourceFileRepository } from '../database/repositories/source-file.repo'
 import * as schema from '../database/schema'
 import { applySqlitePragmas } from '../database/sqlite-pragmas'
 import { unpackMod } from '../services/lslib.service'
+import { isMergedXmlName } from '../services/translation-import.service'
 import { decodeEntities } from '../services/xml-entities.service'
 import {
   findLocalizationXmls,
@@ -100,7 +101,8 @@ export async function runXmlLoadWorker(
       ]
       // Multi-file loose import is stored as one merged xml plus a side map
       // so the session keeps per-file identity without N files or DB joins.
-      if (path.basename(inputPath) === 'translation_merged.xml') {
+      // Legacy name 'translation_merged.xml' kept for sessions saved by older builds.
+      if (isMergedXmlName(path.basename(inputPath))) {
         try {
           const mapPath = path.join(path.dirname(inputPath), 'translation_source_map.json')
           const raw = await fs.promises.readFile(mapPath, 'utf-8')
