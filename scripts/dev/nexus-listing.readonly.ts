@@ -1,17 +1,17 @@
-import { NexusApi } from '../src/main/services/nexus/nexus.api'
+import { NexusApi } from '../../src/main/services/nexus/nexus.api'
 import {
   ICOSA_INSTALLER_FILE_NAME,
   ICOSA_NEXUS_GAME_SCOPED_ID,
   ICOSA_PORTABLE_FILE_NAME,
   NEXUS_GAME_DOMAIN
-} from '../src/main/services/nexus/nexus.constants'
-import { NexusClient } from '../src/main/services/nexus/nexus-client'
-import { buildFileDescription } from '../src/main/services/nexus/nexus-description'
+} from '../../src/main/services/nexus/nexus.constants'
+import { NexusClient } from '../../src/main/services/nexus/nexus-client'
+import { buildFileDescription } from '../../src/main/services/nexus/nexus-description'
 import {
   findModFileByLatestVersionName,
   findModFileByName,
   resolveLatestVersion
-} from '../src/main/services/nexus/nexus-mod-files'
+} from '../../src/main/services/nexus/nexus-mod-files'
 
 const key = process.env.NEXUS_API_KEY?.trim()
 if (!key) throw new Error('NEXUS_API_KEY missing')
