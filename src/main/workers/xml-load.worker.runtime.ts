@@ -11,12 +11,12 @@ import { SourceFileRepository } from '../database/repositories/source-file.repo'
 import * as schema from '../database/schema'
 import { applySqlitePragmas } from '../database/sqlite-pragmas'
 import { unpackMod } from '../services/lslib.service'
-import { isMergedXmlName } from '../services/translation-import.service'
 import { decodeEntities } from '../services/xml-entities.service'
 import {
   findLocalizationXmls,
-  parseLocalizationFile,
-  type LocalizationEntry
+  isMergedXmlName,
+  type LocalizationEntry,
+  parseLocalizationFile
 } from '../services/xml-parser.service'
 import { extract } from '../services/zip.service'
 import { findPakFiles } from '../utils/findPakFiles'
@@ -241,10 +241,4 @@ function readAllLocalizationFiles(
     throw new Error(`No localization files found for language "${sourceFolder}" in pak`)
   }
   return files
-}
-
-interface ParsedFile {
-  fileName: string
-  fileType: 'xml' | 'loca'
-  entries: LocalizationEntry[]
 }

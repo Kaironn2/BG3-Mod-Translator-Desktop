@@ -56,6 +56,7 @@ export function directoryIsWritable(dir: string): boolean {
 
 function applyUserDataPath(userData: string): void {
   fs.mkdirSync(userData, { recursive: true })
+  process.env.ICOSA_USER_DATA = userData
   app.setPath('userData', userData)
   app.setPath('sessionData', userData)
   try {
@@ -85,27 +86,32 @@ export function configurePortableUserData(): PortablePathState {
         blockedReason: null
       }
     }
+    const userData = app.getPath('userData')
+    process.env.ICOSA_USER_DATA = userData
     return {
       isPortable: false,
       unpackaged: false,
       exeDir: null,
-      userData: app.getPath('userData'),
+      userData,
       blockedReason: null
     }
   }
 
   if (isWindowsDesktopDirectory(exeDir, windowsDesktopDirectories())) {
+    const userData = app.getPath('userData')
+    process.env.ICOSA_USER_DATA = userData
     return {
       isPortable: true,
       unpackaged: false,
       exeDir,
-      userData: app.getPath('userData'),
+      userData,
       blockedReason: 'desktop'
     }
   }
 
   const userData = portableDataDir(exeDir)
   if (!directoryIsWritable(userData)) {
+    process.env.ICOSA_USER_DATA = userData
     return {
       isPortable: true,
       unpackaged: false,

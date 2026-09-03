@@ -9,6 +9,7 @@ import { config } from '../database/schema'
 import { cleanupTempDir, createTempDir } from '../utils/tempDir'
 import { resolveWorkerPath } from '../utils/worker-path'
 import type { PrepareInputProgress } from '../workers/prepare-input.worker.runtime'
+import { writeLocaFile } from './loca/loca-writer'
 import {
   inspectXmlCandidate,
   type TranslationXmlCandidate,
@@ -26,14 +27,13 @@ import {
   sanitizeMetaFolder,
   writeMeta
 } from './lsx-parser.service'
-import { encodeEntities, decodeEntities } from './xml-entities.service'
+import { decodeEntities, encodeEntities } from './xml-entities.service'
 import {
+  type LocalizationEntry,
   parseLocalizationFile,
-  writeLocalizationXml,
-  type LocalizationEntry
+  writeLocalizationXml
 } from './xml-parser.service'
 import { createZip } from './zip.service'
-import { writeLocaFile } from './loca/loca-writer'
 
 export type { TranslationXmlCandidate }
 
@@ -536,7 +536,7 @@ function groupEntriesForExport(
 
   const byLowerName = new Map<string, ExportFileGroup>()
   const order: string[] = []
-  let unfiled: ExportPackageEntry[] = []
+  const unfiled: ExportPackageEntry[] = []
 
   for (const entry of entries) {
     const rawName = entry.sourceFile?.trim()
@@ -656,15 +656,6 @@ function readOriginalXmlName(
 
 export function getStoredModDir(modName: string): string {
   return path.join(app.getPath('userData'), 'icosa', 'mods', sanitizeStoredModName(modName))
-}
-
-/**
- * Merged multi-file imports are stored as one xml named after the first source
- * file ("<name>_merged.xml"); older builds saved them as 'translation_merged.xml'.
- * Both names are treated as merged sessions (per-entry source map applies).
- */
-export function isMergedXmlName(fileName: string): boolean {
-  return fileName === 'translation_merged.xml' || /_merged\.xml$/i.test(fileName)
 }
 
 function sanitizeStoredModName(name: string): string {
