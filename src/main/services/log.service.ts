@@ -1,6 +1,5 @@
-import fs from 'fs'
-import { app, shell } from 'electron'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 
 type LogLevel = 'error' | 'warn' | 'info'
 
@@ -15,8 +14,24 @@ export interface LogPayload {
 const REDACTED = '[redacted]'
 const SENSITIVE_KEY_RE = /(key|secret|token|authorization|password)/i
 
+let customLogDir: string | null = null
+
+export function setLogDir(dir: string | null): void {
+  customLogDir = dir
+}
+
+export function getLogDir(): string {
+  if (customLogDir) return customLogDir
+  if (process.env.ICOSA_USER_DATA) {
+    return path.join(process.env.ICOSA_USER_DATA, 'logs')
+  }
+  throw new Error(
+    'ICOSA_USER_DATA environment variable is not set. Initialize userData path before logging.'
+  )
+}
+
 export function getLogPath(): string {
-  return path.join(app.getPath('userData'), 'logs', 'icosa-errors.log')
+  return path.join(getLogDir(), 'icosa-errors.log')
 }
 
 export function writeLog(payload: LogPayload): void {
@@ -44,11 +59,16 @@ export function logError(scope: string, err: unknown, meta?: unknown): void {
   })
 }
 
-export async function openLogFile(): Promise<void> {
+export async function openLogFile(
+  opener: (targetPath: string) => Promise<string | undefined>
+): Promise<void> {
+  if (!opener || typeof opener !== 'function') {
+    throw new Error('An opener callback is required to open the log file')
+  }
   const logPath = getLogPath()
   fs.mkdirSync(path.dirname(logPath), { recursive: true })
   if (!fs.existsSync(logPath)) fs.writeFileSync(logPath, '', 'utf-8')
-  const error = await shell.openPath(logPath)
+  const error = await opener(logPath)
   if (error) throw new Error(error)
 }
 

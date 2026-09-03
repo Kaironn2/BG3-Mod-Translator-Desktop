@@ -11,9 +11,9 @@ import { ModRepository } from '../database/repositories/mod.repo'
 import { packMod, unpackMod } from '../services/lslib.service'
 import { createMeta, readAttributeValue, sanitizeMetaFolder } from '../services/lsx-parser.service'
 import { type SimilarEntry, SimilarityIndex } from '../services/similarity.service'
-import { isMergedXmlName } from '../services/translation-import.service'
 import {
   findLocalizationXmls,
+  isMergedXmlName,
   type LocalizationEntry,
   parseLocalizationFile,
   writeLocalizationXml

@@ -94,3 +94,12 @@ function isInsideLanguageFolder(filePath: string, langFolder: string | undefined
   const parts = filePath.split(/[\\/]/)
   return parts.some((part, index) => part === 'Localization' && parts[index + 1] === langFolder)
 }
+
+/**
+ * Merged multi-file imports are stored as one xml named after the first source
+ * file ("<name>_merged.xml"); older builds saved them as 'translation_merged.xml'.
+ * Both names are treated as merged sessions (per-entry source map applies).
+ */
+export function isMergedXmlName(fileName: string): boolean {
+  return fileName === 'translation_merged.xml' || /_merged\.xml$/i.test(fileName)
+}
