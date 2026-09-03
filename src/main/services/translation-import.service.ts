@@ -3,7 +3,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { eq } from 'drizzle-orm'
-import { app } from 'electron'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { config } from '../database/schema'
 import { cleanupTempDir, createTempDir } from '../utils/tempDir'
@@ -655,7 +654,16 @@ function readOriginalXmlName(
 }
 
 export function getStoredModDir(modName: string): string {
-  return path.join(app.getPath('userData'), 'icosa', 'mods', sanitizeStoredModName(modName))
+  // Resolved from the environment instead of Electron's app so this module stays
+  // importable from worker_threads (pure Node.js, no 'electron' available).
+  // configurePortableUserData() sets ICOSA_USER_DATA before any caller runs.
+  const userData = process.env.ICOSA_USER_DATA
+  if (!userData) {
+    throw new Error(
+      'ICOSA_USER_DATA environment variable is not set. Initialize userData path before resolving stored mod directories.'
+    )
+  }
+  return path.join(userData, 'icosa', 'mods', sanitizeStoredModName(modName))
 }
 
 function sanitizeStoredModName(name: string): string {
