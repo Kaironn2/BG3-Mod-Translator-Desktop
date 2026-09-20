@@ -1,5 +1,23 @@
 {
   "newProject": "New translation project",
+  "hub": {
+    "title": "Choose a parser",
+    "subtitle": "Generic formats and game addons.",
+    "searchPlaceholder": "Search parsers...",
+    "searchEmpty": "No parsers match this search.",
+    "generic": "Generic",
+    "games": "Games",
+    "comingSoon": "Coming soon",
+    "back": "Parsers"
+  },
+  "csvColumns": {
+    "title": "CSV columns",
+    "description": "Map columns to the languages you picked. Target is optional if the file only has source text.",
+    "source": "Source",
+    "target": "Target (optional)",
+    "uid": "Key",
+    "none": "None"
+  },
   "editor": {
     "back": "Back",
     "sideBySide": "Side by side",
@@ -37,7 +55,7 @@
     },
     "fileCard": {
       "title": "Mod file",
-      "description": "Drop here or browse. Accepts .xml, .pak, .zip.",
+      "description": "Drop here or browse. Accepts {{extensions}}.",
       "dropZone": "File drop area",
       "dropPrompt": "Drag the mod file here",
       "browseFile": "Browse file",
@@ -170,7 +188,9 @@
     "formatXmlDescription": "Raw translation file",
     "formatLocaDescription": "Compiled game file",
     "formatPakDescription": "Installable package",
-    "formatZipDescription": "Compressed package"
+    "formatZipDescription": "Compressed package",
+    "formatCsvDescription": "Spreadsheet of source and target",
+    "formatJsonDescription": "JSON list of entries"
   },
   "export": {
     "searchLanguageFolder": "Search folder...",

@@ -1,9 +1,12 @@
-import { ArrowRight, File, Loader2 } from 'lucide-react'
+import type { ParserManifest } from '@shared/parsers/types'
+import { ArrowLeft, ArrowRight, File, Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 import { useTranslateSetup } from '../hooks/useTranslateSetup'
 import { useTranslationImport } from '../hooks/useTranslationImport'
 import type { TranslationSession } from '../types'
+import { CsvColumnMapCard } from './CsvColumnMapCard'
 import { FileInputCard } from './FileInputCard'
 import { LanguagePicker } from './LanguagePicker'
 import { ModSelectionCard } from './ModSelectionCard'
@@ -13,16 +16,23 @@ import { XmlSelectionModal } from './XmlSelectionModal'
 
 interface TranslateIdleScreenProps {
   session: TranslationSession
+  parser: ParserManifest
 }
 
-export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): React.JSX.Element {
+export function TranslateIdleScreen({
+  session,
+  parser
+}: TranslateIdleScreenProps): React.JSX.Element {
   const { t } = useAppTranslation(['translate', 'common'])
-  const setup = useTranslateSetup(session)
+  const navigate = useNavigate()
+  const setup = useTranslateSetup(session, parser)
   const importFlow = useTranslationImport({
     session,
     sourceLang: setup.sourceLang,
     targetLang: setup.targetLang,
-    modName: setup.modName
+    modName: setup.modName,
+    parserId: parser.id,
+    columnMap: setup.columnMap
   })
   const isLoading = session.phase === 'loading' || importFlow.isPreparing
   const baseLabel =
@@ -51,9 +61,20 @@ export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): Reac
     <>
       <div className="relative flex h-full min-h-0 flex-col">
         <div className="flex h-10 shrink-0 items-center gap-3 border-b border-[#1f2329] bg-[#131518] px-5">
+          <button
+            type="button"
+            className={btnBase}
+            onClick={() => {
+              session.resetSession()
+              navigate('/translate')
+            }}
+          >
+            <ArrowLeft size={13} />
+            {t('hub.back', { ns: 'translate' })}
+          </button>
           <span className="flex items-center gap-1.5 font-mono text-[12px] text-neutral-200">
             <File size={12} />
-            {t('newProject', { ns: 'translate' })}
+            {parser.name}
           </span>
           <span className="flex-1" />
           <span className="flex items-center gap-2 font-mono text-[11px]">
@@ -133,6 +154,7 @@ export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): Reac
             <SetupStepCard step="03">
               <FileInputCard
                 fileName={setup.fileName}
+                extensions={parser.extensions}
                 isDragging={setup.isDragging}
                 onBrowse={setup.handleBrowse}
                 onDragOver={(event) => {
@@ -143,6 +165,21 @@ export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): Reac
                 onDrop={setup.handleDrop}
                 onClear={setup.clearFile}
               />
+              {parser.id === 'csv' && setup.csvPreview && setup.csvPreview.headers.length > 0 ? (
+                <div>
+                  <h4 className="m-0 text-[13px] font-semibold text-neutral-200">
+                    {t('csvColumns.title', { ns: 'translate' })}
+                  </h4>
+                  <p className="mt-1 mb-3 text-xs text-neutral-500">
+                    {t('csvColumns.description', { ns: 'translate' })}
+                  </p>
+                  <CsvColumnMapCard
+                    headers={setup.csvPreview.headers}
+                    value={setup.columnMap}
+                    onChange={setup.setColumnMap}
+                  />
+                </div>
+              ) : null}
             </SetupStepCard>
           </div>
         </div>
@@ -158,7 +195,14 @@ export function TranslateIdleScreen({ session }: TranslateIdleScreenProps): Reac
                   })
                 : t('setup.idle', { ns: 'translate' })}
             </div>
-            <button type="button" className={btnBase} onClick={session.resetSession}>
+            <button
+              type="button"
+              className={btnBase}
+              onClick={() => {
+                session.resetSession()
+                navigate('/translate')
+              }}
+            >
               {t('actions.cancel', { ns: 'common' })}
             </button>
             <button

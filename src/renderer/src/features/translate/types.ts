@@ -1,4 +1,4 @@
 import type { useTranslationSession } from '@/context/TranslationSession'
 
-export type ExportFormat = 'xml' | 'loca' | 'pak' | 'zip'
+export type { ExportFormat } from '@shared/parsers/types'
 export type TranslationSession = ReturnType<typeof useTranslationSession>

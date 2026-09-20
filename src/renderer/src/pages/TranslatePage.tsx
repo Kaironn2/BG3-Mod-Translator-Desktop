@@ -1,12 +1,25 @@
+import { getParser } from '@shared/parsers/catalog'
 import { ArrowRight, ChevronRight, Columns2, FileText, Languages, Save } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Navigate, useParams } from 'react-router-dom'
 import { useTranslationSession } from '@/context/TranslationSession'
 import { TranslateIdleScreen } from '@/features/translate/components/TranslateIdleScreen'
 import { TranslateLoadedScreen } from '@/features/translate/components/TranslateLoadedScreen'
 
 export function TranslatePage(): React.JSX.Element {
+  const { parserId } = useParams<{ parserId: string }>()
+  const parser = parserId ? getParser(parserId) : undefined
   const session = useTranslationSession()
   const [showMountSkeleton, setShowMountSkeleton] = useState(session.phase === 'loaded')
+
+  useEffect(() => {
+    if (!parser || parser.status !== 'ready') return
+    if (session.phase === 'loaded' && session.parserId && session.parserId !== parser.id) {
+      session.resetSession()
+      return
+    }
+    if (session.parserId !== parser.id) session.setParserId(parser.id)
+  }, [parser, session.phase, session.parserId, session.resetSession, session.setParserId])
 
   useEffect(() => {
     if (session.phase !== 'loaded') {
@@ -19,8 +32,12 @@ export function TranslatePage(): React.JSX.Element {
     return () => window.clearTimeout(timeoutId)
   }, [session.phase])
 
+  if (!parser || parser.status !== 'ready') {
+    return <Navigate to="/translate" replace />
+  }
+
   if (session.phase === 'idle' || session.phase === 'loading') {
-    return <TranslateIdleScreen session={session} />
+    return <TranslateIdleScreen session={session} parser={parser} />
   }
 
   if (showMountSkeleton) {

@@ -1,5 +1,23 @@
 {
   "newProject": "Novo projeto de tradução",
+  "hub": {
+    "title": "Escolha um parser",
+    "subtitle": "Formatos genéricos e addons de jogos.",
+    "searchPlaceholder": "Buscar parsers...",
+    "searchEmpty": "Nenhum parser corresponde à busca.",
+    "generic": "Genéricos",
+    "games": "Jogos",
+    "comingSoon": "Em breve",
+    "back": "Parsers"
+  },
+  "csvColumns": {
+    "title": "Colunas do CSV",
+    "description": "As colunas são ligadas aos idiomas que você escolheu. Alvo é opcional se o arquivo só tem o texto de origem.",
+    "source": "Origem",
+    "target": "Alvo (opcional)",
+    "uid": "Chave",
+    "none": "Nenhuma"
+  },
   "editor": {
     "back": "Voltar",
     "sideBySide": "Lado a lado",
@@ -37,7 +55,7 @@
     },
     "fileCard": {
       "title": "Arquivo do mod",
-      "description": "Solte aqui ou procure. Aceita .xml, .pak, .zip.",
+      "description": "Solte aqui ou procure. Aceita {{extensions}}.",
       "dropZone": "Área de drop de arquivo",
       "dropPrompt": "Arraste o arquivo do mod aqui",
       "browseFile": "Buscar arquivo",
@@ -170,7 +188,9 @@
     "formatXmlDescription": "Arquivo de tradução puro",
     "formatLocaDescription": "Arquivo compilado do jogo",
     "formatPakDescription": "Pacote instalável",
-    "formatZipDescription": "Pacote compactado"
+    "formatZipDescription": "Pacote compactado",
+    "formatCsvDescription": "Planilha com origem e tradução",
+    "formatJsonDescription": "Lista JSON das entradas"
   },
   "export": {
     "searchLanguageFolder": "Buscar pasta...",

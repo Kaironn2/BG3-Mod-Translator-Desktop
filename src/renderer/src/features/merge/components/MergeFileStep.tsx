@@ -72,6 +72,7 @@ export function MergeFileStep({
 
       <FileInputCard
         fileName={slot.fileName}
+        extensions={['xml', 'loca', 'pak', 'zip']}
         isDragging={slot.isDragging}
         isPreparing={slot.isPreparing}
         preparingLabel={preparingLabel}

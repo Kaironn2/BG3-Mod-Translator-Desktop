@@ -5,6 +5,7 @@ import { btnBase, btnGhostIcon } from './styles'
 
 interface FileInputCardProps {
   fileName: string | null
+  extensions: string[]
   isDragging: boolean
   isPreparing?: boolean
   preparingLabel?: string
@@ -18,6 +19,7 @@ interface FileInputCardProps {
 
 export function FileInputCard({
   fileName,
+  extensions,
   isDragging,
   isPreparing = false,
   preparingLabel,
@@ -41,7 +43,10 @@ export function FileInputCard({
           {t('setup.fileCard.title', { ns: 'translate' })}
         </h3>
         <p className="text-xs text-neutral-500 mt-1 m-0">
-          {t('setup.fileCard.description', { ns: 'translate' })}
+          {t('setup.fileCard.description', {
+            ns: 'translate',
+            extensions: extensions.map((ext) => `.${ext}`).join(', ')
+          })}
         </p>
       </div>
 
@@ -77,12 +82,12 @@ export function FileInputCard({
               {t('setup.fileCard.dropPrompt', { ns: 'translate' })}
             </div>
             <div className="flex gap-1.5">
-              {['.xml', '.loca', '.pak', '.zip'].map((ext) => (
+              {extensions.map((ext) => (
                 <span
                   key={ext}
                   className="font-mono text-[10px] px-1.5 py-0.5 bg-[#131518] border border-[#1f2329] rounded text-neutral-500"
                 >
-                  {ext}
+                  .{ext}
                 </span>
               ))}
             </div>

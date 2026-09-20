@@ -7,6 +7,7 @@ import { MergeSessionProvider } from './context/MergeSession'
 import { ModDeleteSessionProvider } from './context/ModDeleteSession'
 import { TranslationSessionProvider } from './context/TranslationSession'
 import { UpdaterProvider } from './context/UpdaterSession'
+import { ParserHubPage } from './features/parsers/ParserHubPage'
 import { DictionaryPage } from './pages/DictionaryPage'
 import { EntryEditPage } from './pages/EntryEditPage'
 import { ExtractPage } from './pages/ExtractPage'
@@ -41,8 +42,9 @@ function App(): React.JSX.Element {
         >
           <Route index element={<Navigate to="/translate" replace />} />
           <Route element={<Outlet />}>
-            <Route path="/translate" element={<TranslatePage />} />
+            <Route path="/translate" element={<ParserHubPage />} />
             <Route path="/translate/entry/:uid" element={<EntryEditPage />} />
+            <Route path="/translate/:parserId" element={<TranslatePage />} />
           </Route>
           <Route path="/dictionary" element={<DictionaryPage />} />
           <Route path="/mods" element={<ManageModsPage />} />

@@ -31,6 +31,7 @@ interface EditorHeaderProps {
   onViewModeChange: (mode: 'side' | 'stacked') => void
   onSave: () => Promise<void>
   onExport: () => Promise<void>
+  onBack: () => void
 }
 
 export function EditorHeader({
@@ -47,14 +48,15 @@ export function EditorHeader({
   batchTotal,
   onViewModeChange,
   onSave,
-  onExport
+  onExport,
+  onBack
 }: EditorHeaderProps): React.JSX.Element {
   const { t } = useAppTranslation(['translate', 'common'])
 
   return (
     <div className="bg-[#0f1114] border-b border-[#1f2329] px-7 pt-5 pb-4 shrink-0">
       <div className="flex items-center gap-3 mb-4">
-        <button type="button" className={btnBase} onClick={session.resetSession}>
+        <button type="button" className={btnBase} onClick={onBack}>
           <ArrowLeft />
           {t('editor.back')}
         </button>

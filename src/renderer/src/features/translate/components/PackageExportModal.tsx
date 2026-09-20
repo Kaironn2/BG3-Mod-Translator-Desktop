@@ -11,31 +11,37 @@ import { applyVersion, formatVersion, version64FromText } from '../utils/metaVer
 import { MetaField } from './MetaField'
 import { btnBase, btnGhostIcon, btnPrimary } from './styles'
 
-const FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
-  { value: 'xml', label: 'XML' },
-  { value: 'loca', label: 'LOCA' },
-  { value: 'pak', label: 'PAK' },
-  { value: 'zip', label: 'ZIP' }
-]
+const FORMAT_LABELS: Record<ExportFormat, string> = {
+  xml: 'XML',
+  loca: 'LOCA',
+  pak: 'PAK',
+  zip: 'ZIP',
+  csv: 'CSV',
+  json: 'JSON'
+}
 
 const FORMAT_DESCRIPTIONS: Record<ExportFormat, string> = {
   xml: 'exportModal.formatXmlDescription',
   loca: 'exportModal.formatLocaDescription',
   pak: 'exportModal.formatPakDescription',
-  zip: 'exportModal.formatZipDescription'
+  zip: 'exportModal.formatZipDescription',
+  csv: 'exportModal.formatCsvDescription',
+  json: 'exportModal.formatJsonDescription'
 }
 
 interface PackageExportModalProps {
-  meta: ModMeta
+  formats: ExportFormat[]
+  meta: ModMeta | null
   languages: Language[]
   selectedLanguageFolder: string
   isExporting: boolean
   tipText?: string
   onCancel: () => void
-  onSubmit: (format: ExportFormat, meta: ModMeta, languageFolder: string) => Promise<void>
+  onSubmit: (format: ExportFormat, meta: ModMeta | null, languageFolder: string) => Promise<void>
 }
 
 export function PackageExportModal({
+  formats,
   meta,
   languages,
   selectedLanguageFolder,
@@ -45,10 +51,14 @@ export function PackageExportModal({
   onSubmit
 }: PackageExportModalProps): React.JSX.Element {
   const { t } = useAppTranslation(['translate', 'package', 'common'])
-  const [format, setFormat] = useState<ExportFormat>('xml')
+  const [format, setFormat] = useState<ExportFormat>(formats[0] ?? 'csv')
   const [draft, setDraft] = useState(meta)
-  const [version, setVersion] = useState(formatVersion(meta))
+  const [version, setVersion] = useState(meta ? formatVersion(meta) : '')
   const [languageFolder, setLanguageFolder] = useState(selectedLanguageFolder)
+
+  useEffect(() => {
+    if (!formats.includes(format)) setFormat(formats[0] ?? 'csv')
+  }, [format, formats])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -64,10 +74,11 @@ export function PackageExportModal({
 
   const isPackageFormat = format === 'pak' || format === 'zip'
   const version64 = version64FromText(version)
-  const folderValid = /^[a-zA-Z0-9_-]+$/.test(draft.folder)
+  const folderValid = /^[a-zA-Z0-9_-]+$/.test(draft?.folder ?? '')
   const languageFolderValid = /^[a-zA-Z0-9]+$/.test(languageFolder)
   const canExport =
-    (!isPackageFormat || (!!version64 && folderValid && languageFolderValid)) && !isExporting
+    (!isPackageFormat || (!!draft && !!version64 && folderValid && languageFolderValid)) &&
+    !isExporting
   const officialMark = t('badges.official', { ns: 'common' })
   const languageFolderOptions = useMemo(() => {
     const mapped = [...languages].sort(compareLanguagesOfficialFirst).map((language) => {
@@ -98,19 +109,26 @@ export function PackageExportModal({
   }, [languages, officialMark, selectedLanguageFolder, t])
 
   const updateDraft = (key: keyof ModMeta, value: string) => {
-    setDraft((current) => ({ ...current, [key]: value }))
+    setDraft((current) => (current ? { ...current, [key]: value } : current))
   }
 
   const handleVersionChange = (value: string) => {
     setVersion(value)
+    if (!draft) return
     const updated = applyVersion(draft, value)
     if (updated) setDraft(updated)
   }
 
   const handleSubmit = async () => {
-    const updated = applyVersion(draft, version)
-    if (!updated || !canExport) return
-    await onSubmit(format, updated, languageFolder)
+    if (!canExport) return
+    if (isPackageFormat) {
+      if (!draft) return
+      const updated = applyVersion(draft, version)
+      if (!updated) return
+      await onSubmit(format, updated, languageFolder)
+      return
+    }
+    await onSubmit(format, draft, languageFolder)
   }
 
   return (
@@ -146,15 +164,15 @@ export function PackageExportModal({
             <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
               {t('exportModal.format')}
             </span>
-            <div className="grid grid-cols-4 gap-2">
-              {FORMAT_OPTIONS.map((option) => (
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {formats.map((option) => (
                 <button
-                  key={option.value}
+                  key={option}
                   type="button"
-                  onClick={() => setFormat(option.value)}
+                  onClick={() => setFormat(option)}
                   className={cn(
                     'flex cursor-pointer flex-col items-start gap-0.5 rounded-md border px-3 py-2 text-left transition-all',
-                    format === option.value
+                    format === option
                       ? 'border-amber-500 bg-amber-400/10'
                       : 'border-[#1f2329] bg-[#131518] hover:border-neutral-600'
                   )}
@@ -162,20 +180,20 @@ export function PackageExportModal({
                   <span
                     className={cn(
                       'text-xs font-semibold',
-                      format === option.value ? 'text-amber-400' : 'text-neutral-200'
+                      format === option ? 'text-amber-400' : 'text-neutral-200'
                     )}
                   >
-                    {option.label}
+                    {FORMAT_LABELS[option]}
                   </span>
                   <span className="text-[10px] leading-tight text-neutral-500">
-                    {t(FORMAT_DESCRIPTIONS[option.value])}
+                    {t(FORMAT_DESCRIPTIONS[option])}
                   </span>
                 </button>
               ))}
             </div>
           </div>
 
-          {isPackageFormat && (
+          {isPackageFormat && draft && (
             <>
               <MetaField
                 label={t('fields.name', { ns: 'common' })}

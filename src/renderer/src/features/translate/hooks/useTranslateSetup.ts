@@ -1,5 +1,9 @@
+import { parserAcceptsExtension } from '@shared/parsers/catalog'
+import type { CsvColumnMap, ParserManifest } from '@shared/parsers/types'
 import { useEffect, useState } from 'react'
-import type { ModInfo } from '@/types'
+import { toast } from 'sonner'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
+import type { CsvProjectPreview, ModInfo } from '@/types'
 import type { TranslationSession } from '../types'
 
 const MODS_PER_PAGE = 6
@@ -8,7 +12,7 @@ function fileNameFromPath(path: string): string {
   return path.split(/[\\/]/).pop() ?? path
 }
 
-export function useTranslateSetup(session: TranslationSession) {
+export function useTranslateSetup(session: TranslationSession, parser: ParserManifest) {
   const [sourceLang, setSourceLangLocal] = useState(session.sourceLang)
   const [targetLang, setTargetLangLocal] = useState(session.targetLang)
   const [selectedMod, setSelectedMod] = useState<string | null>(null)
@@ -24,6 +28,13 @@ export function useTranslateSetup(session: TranslationSession) {
   const [modSearch, setModSearch] = useState('')
   const [modPage, setModPage] = useState(0)
   const [hasUserChosenMode, setHasUserChosenMode] = useState(false)
+  const [csvPreview, setCsvPreview] = useState<CsvProjectPreview | null>(null)
+  const [columnMap, setColumnMap] = useState<CsvColumnMap>({
+    sourceColumn: '',
+    targetColumn: null,
+    uidColumn: null
+  })
+  const { t } = useAppTranslation(['toasts', 'common'])
 
   const filteredMods = mods.filter((mod) =>
     mod.name.toLowerCase().includes(modSearch.toLowerCase())
@@ -38,7 +49,8 @@ export function useTranslateSetup(session: TranslationSession) {
   const modName = isNewMod ? newModName.trim() : (selectedMod ?? '')
   const step1Done = !!(sourceLang && targetLang && sourceLang !== targetLang)
   const step2Done = !!(isNewMod ? newModName.trim() : selectedMod)
-  const step3Done = !!filePath
+  const step3Done =
+    !!filePath && (parser.id !== 'csv' || Boolean(columnMap.sourceColumn))
   const ready = step1Done && step2Done && step3Done
 
   const srcLang = languages.find((language) => language.code === sourceLang)
@@ -66,12 +78,12 @@ export function useTranslateSetup(session: TranslationSession) {
     if (!selectedMod || !mods.some((mod) => mod.name === selectedMod)) {
       const defaultMod = mods[0] ?? null
       setSelectedMod(defaultMod?.name ?? null)
-      if (defaultMod?.lastFilePath) {
+      if (defaultMod?.lastFilePath && parserAcceptsExtension(parser, defaultMod.lastFilePath)) {
         setFilePath(defaultMod.lastFilePath)
         setFileName(fileNameFromPath(defaultMod.lastFilePath))
       }
     }
-  }, [hasUserChosenMode, mods, selectedMod])
+  }, [hasUserChosenMode, mods, parser, selectedMod])
 
   const handleSourceChange = (lang: string) => {
     setSourceLangLocal(lang)
@@ -89,7 +101,7 @@ export function useTranslateSetup(session: TranslationSession) {
     setSelectedMod(mod.name)
     setIsNewMod(false)
     setHasUserChosenMode(true)
-    if (mod.lastFilePath) {
+    if (mod.lastFilePath && parserAcceptsExtension(parser, mod.lastFilePath)) {
       setFilePath(mod.lastFilePath)
       setFileName(fileNameFromPath(mod.lastFilePath))
     }
@@ -100,9 +112,32 @@ export function useTranslateSetup(session: TranslationSession) {
     setModPage(0)
   }
 
+  useEffect(() => {
+    if (parser.id !== 'csv' || !filePath) {
+      setCsvPreview(null)
+      return
+    }
+    let cancelled = false
+    window.api.parser
+      .previewCsv({ filePath })
+      .then((preview) => {
+        if (cancelled) return
+        setCsvPreview(preview)
+        setColumnMap(preview.guessed)
+      })
+      .catch(() => {
+        if (cancelled) return
+        toast.error(t('translate.invalidFormat', { ns: 'toasts' }))
+        setCsvPreview(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [filePath, parser.id, t])
+
   const handleBrowse = async () => {
     const paths = await window.api.fs.openDialog({
-      filters: [{ name: 'Mod Files', extensions: ['xml', 'loca', 'pak', 'zip'] }]
+      filters: [{ name: parser.name, extensions: parser.extensions }]
     })
     if (paths.length > 0) {
       setFilePath(paths[0])
@@ -115,6 +150,10 @@ export function useTranslateSetup(session: TranslationSession) {
     setIsDragging(false)
     const file = event.dataTransfer.files[0]
     if (!file) return
+    if (!parserAcceptsExtension(parser, file.name)) {
+      toast.error(t('translate.invalidFormat', { ns: 'toasts' }))
+      return
+    }
     const path = window.api.fs.getPathForFile(file)
     setFilePath(path)
     setFileName(file.name)
@@ -123,6 +162,8 @@ export function useTranslateSetup(session: TranslationSession) {
   const clearFile = () => {
     setFilePath(null)
     setFileName(null)
+    setCsvPreview(null)
+    setColumnMap({ sourceColumn: '', targetColumn: null, uidColumn: null })
   }
 
   return {
@@ -162,6 +203,9 @@ export function useTranslateSetup(session: TranslationSession) {
     handleModSearchChange,
     handleBrowse,
     handleDrop,
-    clearFile
+    clearFile,
+    csvPreview,
+    columnMap,
+    setColumnMap
   }
 }

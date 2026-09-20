@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AlreadyTranslatedDialog } from '@/components/translation/AlreadyTranslatedDialog'
 import { BatchActionBar } from '@/components/translation/BatchActionBar'
 import { QuotaExceededDialog } from '@/components/translation/QuotaExceededDialog'
@@ -22,6 +23,7 @@ interface TranslateLoadedScreenProps {
 
 export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): React.JSX.Element {
   const { t } = useAppTranslation('translate')
+  const navigate = useNavigate()
   const [viewMode, setViewMode] = useState<'side' | 'stacked'>('side')
   const [languages, setLanguages] = useState<Language[]>([])
   const dictionarySave = useDictionarySave(session)
@@ -89,6 +91,10 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
         onViewModeChange={setViewMode}
         onSave={dictionarySave.saveAll}
         onExport={exportFlow.openExport}
+        onBack={() => {
+          session.resetSession()
+          navigate('/translate')
+        }}
       />
 
       <div className="flex-1 min-h-0">
@@ -129,8 +135,9 @@ export function TranslateLoadedScreen({ session }: TranslateLoadedScreenProps): 
         onClose={batch.cancelPending}
       />
 
-      {exportFlow.exportMeta && (
+      {exportFlow.exportOpen && (
         <PackageExportModal
+          formats={exportFlow.formats}
           meta={exportFlow.exportMeta}
           languages={languages}
           selectedLanguageFolder={

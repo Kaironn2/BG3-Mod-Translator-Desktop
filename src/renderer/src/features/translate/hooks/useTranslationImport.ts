@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { getLocalizedErrorMessage } from '@/i18n/errors'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
-import type { PreparedTranslationInput } from '@/types'
+import type { CsvColumnMap, PreparedTranslationInput } from '@/types'
 import type { TranslationSession } from '../types'
 
 interface UseTranslationImportParams {
@@ -10,13 +10,17 @@ interface UseTranslationImportParams {
   sourceLang: string
   targetLang: string
   modName: string
+  parserId: string
+  columnMap?: CsvColumnMap
 }
 
 export function useTranslationImport({
   session,
   sourceLang,
   targetLang,
-  modName
+  modName,
+  parserId,
+  columnMap
 }: UseTranslationImportParams) {
   const { t } = useAppTranslation(['toasts', 'common'])
   const [isPreparing, setIsPreparing] = useState(false)
@@ -30,7 +34,8 @@ export function useTranslationImport({
       targetLang
     })
     await session.loadSession(result.xmlPath, sourceLang, targetLang, modName, {
-      storedPath: result.xmlPath
+      storedPath: result.xmlPath,
+      parserId
     })
     setPreparedImport(null)
   }
@@ -40,6 +45,13 @@ export function useTranslationImport({
 
     try {
       setIsPreparing(true)
+      if (parserId === 'csv') {
+        await session.loadSession(filePath, sourceLang, targetLang, modName, {
+          parserId,
+          columnMap
+        })
+        return
+      }
       const prepared = await window.api.mod.prepareTranslationInput({ inputPath: filePath })
       const validCandidates = prepared.candidates.filter((candidate) => candidate.valid)
       if (prepared.requiresSelection) {

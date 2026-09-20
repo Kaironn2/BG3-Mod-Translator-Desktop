@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer } from 'react'
 import { i18n } from '@/i18n'
 import {
+  type CsvColumnMap,
   DEFAULT_SOURCE_LANG,
   DEFAULT_TARGET_LANG,
   type XmlEntry,
@@ -99,6 +100,7 @@ export interface TranslationSessionState {
   entries: TranslationSessionEntry[]
   selection: SelectionState
   modName: string
+  parserId: string | null
   sourceLang: string
   targetLang: string
   inputPath: string | null
@@ -132,6 +134,7 @@ type Action =
   | { type: 'SET_SOURCE_LANG'; lang: string }
   | { type: 'SET_TARGET_LANG'; lang: string }
   | { type: 'SET_INPUT_PATH'; path: string }
+  | { type: 'SET_PARSER_ID'; parserId: string | null }
   | { type: 'RESET' }
 
 function reducer(state: TranslationSessionState, action: Action): TranslationSessionState {
@@ -213,6 +216,8 @@ function reducer(state: TranslationSessionState, action: Action): TranslationSes
       return { ...state, targetLang: action.lang }
     case 'SET_INPUT_PATH':
       return { ...state, inputPath: action.path }
+    case 'SET_PARSER_ID':
+      return { ...state, parserId: action.parserId }
     case 'RESET':
       return {
         ...state,
@@ -221,7 +226,8 @@ function reducer(state: TranslationSessionState, action: Action): TranslationSes
         loadingProgress: null,
         entries: [],
         selection: EMPTY_EXPLICIT,
-        inputPath: null
+        inputPath: null,
+        parserId: null
       }
     default:
       return state
@@ -248,12 +254,13 @@ interface TranslationSessionContext extends TranslationSessionState {
     sourceLang: string,
     targetLang: string,
     modName: string,
-    options?: { storedPath?: string }
+    options?: { storedPath?: string; parserId?: string; columnMap?: CsvColumnMap }
   ) => Promise<void>
   updateEntry: (rowId: string, target: string) => void
   updateEntries: (updates: Array<{ rowId: string; target: string }>) => void
   markManual: (rowId: string) => void
   setModName: (name: string) => void
+  setParserId: (parserId: string | null) => void
   setSourceLang: (lang: string) => void
   setTargetLang: (lang: string) => void
   resetSession: () => void
@@ -273,6 +280,7 @@ export function TranslationSessionProvider({
     entries: [],
     selection: EMPTY_EXPLICIT,
     modName: '',
+    parserId: null,
     sourceLang: DEFAULT_SOURCE_LANG,
     targetLang: DEFAULT_TARGET_LANG,
     inputPath: null
@@ -291,7 +299,7 @@ export function TranslationSessionProvider({
       sourceLang: string,
       targetLang: string,
       modName: string,
-      options?: { storedPath?: string }
+      options?: { storedPath?: string; parserId?: string; columnMap?: CsvColumnMap }
     ) => {
       dispatch({
         type: 'SET_PHASE',
@@ -300,6 +308,7 @@ export function TranslationSessionProvider({
       })
       dispatch({ type: 'SET_INPUT_PATH', path: inputPath })
       dispatch({ type: 'SET_MOD_NAME', name: modName })
+      if (options?.parserId) dispatch({ type: 'SET_PARSER_ID', parserId: options.parserId })
       const storedPath =
         options?.storedPath ??
         (await window.api.mod.storeFile({ modName, filePath: inputPath })).storedPath
@@ -317,7 +326,8 @@ export function TranslationSessionProvider({
           inputPath: storedPath,
           sourceLang,
           targetLang,
-          modName
+          modName,
+          columnMap: options?.columnMap
         })
       } finally {
         unsub()
@@ -424,6 +434,10 @@ export function TranslationSessionProvider({
     dispatch({ type: 'SET_MOD_NAME', name })
   }, [])
 
+  const setParserId = useCallback((parserId: string | null) => {
+    dispatch({ type: 'SET_PARSER_ID', parserId })
+  }, [])
+
   const setSourceLang = useCallback((lang: string) => {
     dispatch({ type: 'SET_SOURCE_LANG', lang })
   }, [])
@@ -453,6 +467,7 @@ export function TranslationSessionProvider({
         updateEntries,
         markManual,
         setModName,
+        setParserId,
         setSourceLang,
         setTargetLang,
         resetSession
