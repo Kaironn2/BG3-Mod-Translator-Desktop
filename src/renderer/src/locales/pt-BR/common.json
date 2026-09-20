@@ -55,7 +55,7 @@
     "copyPath": "Copiar caminho",
     "delete": "Excluir",
     "discard": "Descartar",
-    "replace": "Replace",
+    "replace": "Substituir",
     "select": "Selecionar",
     "back": "Voltar",
     "next": "Próxima",
@@ -91,6 +91,14 @@
   },
   "badges": {
     "official": "Oficial"
+  },
+  "searchOptions": {
+    "matchCase": "Diferenciar maiúsculas (Alt+C)",
+    "matchWholeWord": "Palavra inteira (Alt+W)",
+    "scopePlaceholder": "Buscar em",
+    "scopeAll": "Tudo",
+    "scopeSource": "Origem",
+    "scopeTarget": "Destino"
   },
   "placeholders": {
     "select": "Selecionar",

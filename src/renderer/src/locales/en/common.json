@@ -92,6 +92,14 @@
   "badges": {
     "official": "Official"
   },
+  "searchOptions": {
+    "matchCase": "Match case (Alt+C)",
+    "matchWholeWord": "Match whole word (Alt+W)",
+    "scopePlaceholder": "Search in",
+    "scopeAll": "Everything",
+    "scopeSource": "Source",
+    "scopeTarget": "Target"
+  },
   "placeholders": {
     "select": "Select",
     "search": "Search...",

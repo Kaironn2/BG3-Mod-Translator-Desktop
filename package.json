@@ -31,8 +31,8 @@
     "build:mac": "electron-vite build && electron-builder --mac --publish never",
     "build:linux": "electron-vite build && electron-builder --linux --publish never",
     "db:studio": "drizzle-kit studio",
-    "test": "pnpm dlx tsx --test src/main/services/similarity.service.test.ts src/main/database/fts-query.test.ts src/main/services/ai/rate-limit.test.ts src/main/utils/icosa-paths.test.ts src/main/utils/portable-location.test.ts src/main/services/updater-trust.test.ts src/main/services/loca/loca.test.ts src/main/services/worker-bundle.test.ts",
-    "test:db": "pnpm dlx esbuild tests/source-file.test.ts --bundle --platform=node --external:electron --external:better-sqlite3 --format=cjs --outfile=scripts/source-file.test.cjs && electron scripts/dev/electron-runner.cjs scripts/source-file.test.cjs",
+    "test": "pnpm dlx tsx --test src/main/services/similarity.service.test.ts src/main/database/fts-query.test.ts src/main/utils/text-match.test.ts src/main/services/ai/rate-limit.test.ts src/main/utils/icosa-paths.test.ts src/main/utils/portable-location.test.ts src/main/services/updater-trust.test.ts src/main/services/loca/loca.test.ts src/main/services/worker-bundle.test.ts",
+    "test:db": "pnpm dlx esbuild tests/source-file.test.ts --bundle --platform=node --external:electron --external:better-sqlite3 --format=cjs --outfile=scripts/source-file.test.cjs && pnpm dlx esbuild tests/dictionary-search.test.ts --bundle --platform=node --external:electron --external:better-sqlite3 --format=cjs --outfile=scripts/dictionary-search.test.cjs && electron scripts/dev/electron-runner.cjs scripts/source-file.test.cjs && electron scripts/dev/electron-runner.cjs scripts/dictionary-search.test.cjs",
     "bench:similarity": "node bench/bench-similarity.mjs"
   },
   "dependencies": {
