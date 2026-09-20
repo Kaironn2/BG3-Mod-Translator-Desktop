@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 const timestamps = {
   createdAt: text('created_at').default(sql`(datetime('now'))`),
@@ -13,14 +13,28 @@ export const language = sqliteTable('language', {
   ...timestamps
 })
 
-export const mod = sqliteTable('mod', {
+export const game = sqliteTable('game', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').unique().notNull(),
-  totalStrings: integer('total_strings').default(0),
-  lastFilePath: text('last_file_path'),
-  priority: integer('priority'),
+  code: text('code').unique().notNull(),
+  name: text('name').notNull(),
   ...timestamps
 })
+
+export const mod = sqliteTable(
+  'mod',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    name: text('name').notNull(),
+    gameId: integer('game_id').references(() => game.id),
+    totalStrings: integer('total_strings').default(0),
+    lastFilePath: text('last_file_path'),
+    priority: integer('priority'),
+    ...timestamps
+  },
+  (table) => ({
+    mod_game_name_unique: uniqueIndex('mod_game_name_unique').on(table.gameId, table.name)
+  })
+)
 
 export const modMeta = sqliteTable('mod_meta', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -82,6 +96,7 @@ export const dictionary = sqliteTable(
     textLanguage1Key: text('text_language1_key').notNull().default(''),
     textLanguage2Key: text('text_language2_key').notNull().default(''),
     modName: text('mod_name').references(() => mod.name),
+    gameId: integer('game_id'),
     uid: text('uid'),
     // Original localization file this row came from (mod_source). New writes set it;
     // legacy rows stay NULL (= merged file) and every query must tolerate that.
@@ -162,6 +177,7 @@ export const translationRun = sqliteTable(
 )
 
 export type Language = typeof language.$inferSelect
+export type Game = typeof game.$inferSelect
 export type Mod = typeof mod.$inferSelect
 export type ModMeta = typeof modMeta.$inferSelect
 export type NewModMeta = typeof modMeta.$inferInsert

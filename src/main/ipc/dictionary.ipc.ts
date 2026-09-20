@@ -16,6 +16,7 @@ interface DictionaryFilters {
   matchWholeWord?: boolean
   searchField?: 'all' | 'source' | 'target'
   modName?: string
+  gameCode?: string
   sourceLang?: string
   targetLang?: string
 }
@@ -33,6 +34,7 @@ interface DictionaryMutationPayload {
   textLanguage2: string
   modName?: string | null
   uid?: string | null
+  gameCode?: string | null
 }
 
 export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
@@ -69,8 +71,8 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
   )
 
   ipcMain.handle('dictionary:create', (_event, entry: DictionaryMutationPayload) => {
-    persistMod(repos, entry.modName)
-    repos.dictionary.create(toRepoPayload(entry))
+    persistMod(repos, entry.modName, entry.gameCode)
+    repos.dictionary.create(toRepoPayload(repos, entry))
     invalidateSimilarity()
     return { success: true }
   })
@@ -78,24 +80,24 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
   ipcMain.handle(
     'dictionary:update',
     (_event, { id, entry }: { id: number; entry: DictionaryMutationPayload }) => {
-      persistMod(repos, entry.modName)
-      repos.dictionary.update(id, toRepoPayload(entry))
+      persistMod(repos, entry.modName, entry.gameCode)
+      repos.dictionary.update(id, toRepoPayload(repos, entry))
       invalidateSimilarity()
       return { success: true }
     }
   )
 
   ipcMain.handle('dictionary:upsert', (_event, entry: DictionaryMutationPayload) => {
-    persistMod(repos, entry.modName)
-    repos.dictionary.upsert(toRepoPayload(entry))
+    persistMod(repos, entry.modName, entry.gameCode)
+    repos.dictionary.upsert(toRepoPayload(repos, entry))
     invalidateSimilarity()
     return { success: true }
   })
 
   ipcMain.handle('dictionary:bulkUpsert', (_event, entries: DictionaryMutationPayload[]) => {
     if (entries.length === 0) return { count: 0 }
-    persistMod(repos, entries[0].modName)
-    repos.dictionary.bulkUpsert(entries.map(toRepoPayload))
+    persistMod(repos, entries[0].modName, entries[0].gameCode)
+    repos.dictionary.bulkUpsert(entries.map((entry) => toRepoPayload(repos, entry)))
     invalidateSimilarity()
     return { count: entries.length }
   })
@@ -242,19 +244,24 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
   )
 }
 
-function toRepoPayload(entry: DictionaryMutationPayload) {
+function toRepoPayload(repos: RepositoryRegistry, entry: DictionaryMutationPayload) {
   return {
     sourceLang: entry.language1,
     targetLang: entry.language2,
     sourceText: entry.textLanguage1,
     targetText: entry.textLanguage2,
     modName: entry.modName ?? null,
-    uid: entry.uid ?? null
+    uid: entry.uid ?? null,
+    gameId: repos.game.findByCode(entry.gameCode ?? 'bg3')?.id ?? null
   }
 }
 
-function persistMod(repos: RepositoryRegistry, modName?: string | null): void {
-  if (modName?.trim()) repos.mod.upsert(modName.trim())
+function persistMod(
+  repos: RepositoryRegistry,
+  modName?: string | null,
+  gameCode?: string | null
+): void {
+  if (modName?.trim()) repos.mod.upsert(modName.trim(), { gameCode: gameCode ?? 'bg3' })
 }
 
 function invalidateSimilarity(): void {

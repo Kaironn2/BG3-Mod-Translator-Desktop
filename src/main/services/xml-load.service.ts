@@ -22,6 +22,7 @@ export interface LoadXmlParams {
   targetLang: string
   modName?: string
   columnMap?: CsvColumnMap
+  gameCode?: string
   repos: RepositoryRegistry
   onProgress?: (p: XmlLoadProgressUpdate) => void
 }

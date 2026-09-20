@@ -8,6 +8,7 @@ import { app } from 'electron'
 import { logError } from '../services/log.service'
 import { dictionaryTextKey } from '../utils/dictionaryText'
 import * as schema from './schema'
+import { seedGames } from './seeds/games.seed'
 import { seedLanguages } from './seeds/languages.seed'
 import { seedPromptSlots } from './seeds/prompt-slots.seed'
 import { applySqlitePragmas } from './sqlite-pragmas'
@@ -76,6 +77,7 @@ function initDb(): void {
   _db = drizzle(_sqlite, { schema })
   migrate(_db, { migrationsFolder: getMigrationsFolder() })
   seedLanguages(_db)
+  seedGames(_db)
   seedPromptSlots(_db)
 }
 

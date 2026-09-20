@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import Database from 'better-sqlite3'
+import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { guessCsvColumns } from '../../shared/parsers/csv-columns'
 import type { CsvColumnMap } from '../../shared/parsers/types'
@@ -34,6 +35,7 @@ export interface XmlLoadWorkerInput {
   sourceFolder: string
   dbPath: string
   columnMap?: CsvColumnMap
+  gameCode?: string
 }
 
 export interface XmlEntry {
@@ -147,12 +149,14 @@ export async function runXmlLoadWorker(
     const result: XmlEntry[] = new Array(total)
 
     post({ phase: 'loading-cache' })
+    const gameId = resolveGameId(db, input.gameCode)
     const priorityMods = new ModRepository(db).getPriorityOrdered()
     const index = new DictionaryRepository(db).loadMatchIndex(
       sourceLang,
       targetLang,
       null,
-      priorityMods
+      priorityMods,
+      gameId
     )
 
     // Persist the per-file split: one mod_source row per file (getOrCreate is a single
@@ -161,7 +165,7 @@ export async function runXmlLoadWorker(
     if (modName) {
       const sourceRepo = new SourceFileRepository(db)
       const modRepo = new ModRepository(db)
-      modRepo.upsert(modName)
+      modRepo.upsert(modName, { gameCode: input.gameCode })
       if (perEntrySourceFiles) {
         const seen = new Map<string, string>()
         for (const name of perEntrySourceFiles) {
@@ -246,16 +250,18 @@ async function loadCsvProject(
   const result: XmlEntry[] = new Array(total)
 
   post({ phase: 'loading-cache' })
+  const gameId = resolveGameId(db, input.gameCode)
   const priorityMods = new ModRepository(db).getPriorityOrdered()
   const index = new DictionaryRepository(db).loadMatchIndex(
     input.sourceLang,
     input.targetLang,
     null,
-    priorityMods
+    priorityMods,
+    gameId
   )
 
   if (input.modName) {
-    new ModRepository(db).upsert(input.modName)
+    new ModRepository(db).upsert(input.modName, { gameCode: input.gameCode })
   }
 
   for (let cursor = 0; cursor < rows.length; cursor++) {
@@ -286,6 +292,15 @@ async function loadCsvProject(
   }
 
   post({ phase: 'done', result: { entries: result } })
+}
+
+function resolveGameId(db: ReturnType<typeof drizzle>, code?: string): number | null {
+  const row = db
+    .select({ id: schema.game.id })
+    .from(schema.game)
+    .where(eq(schema.game.code, code ?? 'bg3'))
+    .get() as { id: number } | undefined
+  return row?.id ?? null
 }
 
 // Every .xml AND .loca inside Localization/{sourceFolder}/ - the tab views are built

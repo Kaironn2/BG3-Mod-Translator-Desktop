@@ -14,6 +14,7 @@ interface LoadPayload {
   targetLang: string
   modName?: string
   columnMap?: CsvColumnMap
+  gameCode?: string
 }
 
 interface ExportPayload {

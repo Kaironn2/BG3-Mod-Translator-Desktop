@@ -1,19 +1,28 @@
-import { asc, eq, isNotNull, sql } from 'drizzle-orm'
+import { and, asc, eq, isNotNull, sql } from 'drizzle-orm'
 import type { drizzle } from 'drizzle-orm/better-sqlite3'
-import { dictionary, type Mod, mod, modMeta, translationRun } from '../schema'
+import { game, dictionary, type Mod, mod, modMeta, translationRun } from '../schema'
 
 type AppDb = ReturnType<typeof drizzle>
 
 export interface ModUpsertOptions {
   totalStrings?: number
   lastFilePath?: string
+  gameCode?: string
 }
 
 export class ModRepository {
   constructor(private db: AppDb) {}
 
-  findByName(name: string): Mod | undefined {
-    return this.db.select().from(mod).where(eq(mod.name, name)).get() as Mod | undefined
+  findByName(name: string, gameCode?: string): Mod | undefined {
+    if (!gameCode) {
+      return this.db.select().from(mod).where(eq(mod.name, name)).get() as Mod | undefined
+    }
+    const gameId = this.resolveGameId(gameCode)
+    return this.db
+      .select()
+      .from(mod)
+      .where(and(eq(mod.name, name), eq(mod.gameId, gameId)))
+      .get() as Mod | undefined
   }
 
   getAll(): Mod[] {
@@ -29,12 +38,13 @@ export class ModRepository {
   }
 
   upsert(name: string, options: ModUpsertOptions = {}): void {
-    const { totalStrings, lastFilePath } = options
+    const { totalStrings, lastFilePath, gameCode } = options
+    const gameId = this.resolveGameId(gameCode ?? 'bg3')
     this.db
       .insert(mod)
-      .values({ name, ...options })
+      .values({ name, gameId, totalStrings, lastFilePath })
       .onConflictDoUpdate({
-        target: mod.name,
+        target: [mod.gameId, mod.name],
         set: {
           ...(totalStrings !== undefined && { totalStrings }),
           ...(lastFilePath !== undefined && { lastFilePath }),
@@ -42,6 +52,14 @@ export class ModRepository {
         }
       })
       .run()
+  }
+
+  private resolveGameId(code: string): number {
+    const row = this.db.select({ id: game.id }).from(game).where(eq(game.code, code)).get() as
+      | { id: number }
+      | undefined
+    if (!row) throw new Error(`Unknown game: ${code}`)
+    return row.id
   }
 
   // Returns mod names ordered by priority ASC (1 = highest), then name for deterministic ties.
