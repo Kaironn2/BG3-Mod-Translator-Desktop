@@ -1,9 +1,9 @@
-import { and, asc, desc, eq, inArray, or, type SQL, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, getTableColumns, inArray, or, type SQL, sql } from 'drizzle-orm'
 import type { drizzle } from 'drizzle-orm/better-sqlite3'
 import { dictionaryTextKey, normalizeDictionaryText } from '../../utils/dictionaryText'
 import { normalizeLangs } from '../../utils/languages'
 import { isFtsTokenizable, toFtsQuery } from '../fts-query'
-import { type DictionaryEntry, dictionary, type NewDictionaryEntry } from '../schema'
+import { type DictionaryEntry, dictionary, game, type NewDictionaryEntry } from '../schema'
 import { buildTextMatchCondition } from '../text-search'
 
 type AppDb = ReturnType<typeof drizzle>
@@ -23,6 +23,7 @@ export interface DictionaryFilters {
   // the selected language direction (and the page's swap rule).
   searchField?: DictionarySearchField
   modName?: string
+  gameCode?: string
   sourceLang?: string
   targetLang?: string
 }
@@ -40,6 +41,7 @@ export interface UpsertParams {
   modName?: string | null
   uid?: string | null
   sourceFileId?: number | null
+  gameId?: number | null
 }
 
 export type DictionaryMatchType = 'mod-text' | 'text'
@@ -316,15 +318,14 @@ export class DictionaryRepository {
     sourceLang: string,
     targetLang: string,
     _modName?: string | null,
-    priorityMods?: readonly string[]
+    priorityMods?: readonly string[],
+    gameId?: number | null
   ): DictionaryMatchIndex {
     const [l1, l2, swapped] = normalizeLangs(sourceLang, targetLang)
 
-    const rows = this.db
-      .select()
-      .from(dictionary)
-      .where(and(eq(dictionary.language1, l1), eq(dictionary.language2, l2)))
-      .all() as DictionaryEntry[]
+    const filters = [eq(dictionary.language1, l1), eq(dictionary.language2, l2)]
+    if (gameId != null) filters.push(eq(dictionary.gameId, gameId))
+    const rows = this.db.select().from(dictionary).where(and(...filters)).all() as DictionaryEntry[]
 
     const byModUidKey = new Map<string, DictionaryEntry>()
     const byModKey = new Map<string, DictionaryEntry>()
@@ -694,7 +695,14 @@ export class DictionaryRepository {
 
   private queryList(filters: DictionaryFilters) {
     const where = this.buildFilterWhere(filters)
-    const query = this.db.select().from(dictionary)
+    const query = this.db
+      .select({
+        ...getTableColumns(dictionary),
+        gameCode: game.code,
+        gameName: game.name
+      })
+      .from(dictionary)
+      .leftJoin(game, eq(dictionary.gameId, game.id))
 
     if (where) {
       return query.where(where).orderBy(desc(dictionary.updatedAt), desc(dictionary.id))
@@ -707,8 +715,21 @@ export class DictionaryRepository {
     const conditions: SQL[] = []
     const text = filters.text?.trim()
     const modName = filters.modName?.trim()
+    const gameCode = filters.gameCode?.trim()
     const sourceLang = filters.sourceLang?.trim()
     const targetLang = filters.targetLang?.trim()
+
+    if (gameCode) {
+      // Resolve the code once here so every consumer (list, count, delete, replace)
+      // filters by dictionary.game_id and needs no join.
+      const gameRow = this.db
+        .select({ id: game.id })
+        .from(game)
+        .where(eq(game.code, gameCode))
+        .get() as { id: number } | undefined
+      // Unknown game code matches nothing.
+      conditions.push(eq(dictionary.gameId, gameRow?.id ?? -1))
+    }
 
     if (sourceLang && targetLang) {
       const [l1, l2] = normalizeLangs(sourceLang, targetLang)
@@ -892,7 +913,8 @@ export class DictionaryRepository {
       textLanguage2Key: dictionaryTextKey(text2),
       modName: params.modName?.trim() || null,
       uid: params.uid?.trim() || null,
-      sourceFileId: params.sourceFileId ?? null
+      sourceFileId: params.sourceFileId ?? null,
+      gameId: params.gameId ?? null
     }
   }
 }
