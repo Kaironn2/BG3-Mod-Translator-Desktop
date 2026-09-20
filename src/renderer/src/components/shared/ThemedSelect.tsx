@@ -15,9 +15,11 @@ export interface ThemedSelectOption {
 }
 
 interface MenuPosition {
-  top: number
+  top?: number
+  bottom?: number
   left: number
   width: number
+  maxHeight: number
 }
 
 interface ThemedSelectProps {
@@ -89,14 +91,14 @@ export function ThemedSelect({
       const spaceBelow = window.innerHeight - rect.bottom - MENU_GAP
       const spaceAbove = rect.top - MENU_GAP
       const shouldOpenAbove = spaceBelow < MENU_MAX_HEIGHT && spaceAbove > spaceBelow
-      const height = Math.min(MENU_MAX_HEIGHT, shouldOpenAbove ? spaceAbove : spaceBelow)
+      const maxHeight = Math.min(MENU_MAX_HEIGHT, shouldOpenAbove ? spaceAbove : spaceBelow)
 
       setMenuPosition({
-        top: shouldOpenAbove
-          ? Math.max(MENU_GAP, rect.top - MENU_GAP - Math.max(180, height))
-          : rect.bottom + MENU_GAP,
+        top: shouldOpenAbove ? undefined : rect.bottom + MENU_GAP,
+        bottom: shouldOpenAbove ? window.innerHeight - rect.top + MENU_GAP : undefined,
         left: rect.left,
-        width: Math.max(rect.width, menuMinWidth ?? rect.width)
+        width: Math.max(rect.width, menuMinWidth ?? rect.width),
+        maxHeight
       })
     }
 
@@ -160,8 +162,10 @@ export function ThemedSelect({
             )}
             style={{
               top: menuPosition.top,
+              bottom: menuPosition.bottom,
               left: menuPosition.left,
-              width: menuPosition.width
+              width: menuPosition.width,
+              maxHeight: menuPosition.maxHeight
             }}
           >
             {searchable && (
