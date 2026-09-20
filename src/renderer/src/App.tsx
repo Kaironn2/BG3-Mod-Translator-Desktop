@@ -48,8 +48,10 @@ function App(): React.JSX.Element {
           </Route>
           <Route path="/dictionary" element={<DictionaryPage />} />
           <Route path="/mods" element={<ManageModsPage />} />
-          <Route path="/extract" element={<ExtractPage />} />
-          <Route path="/package" element={<PackagePage />} />
+          <Route path="/extract" element={<ParserHubPage capability="extract" />} />
+          <Route path="/extract/:parserId" element={<ExtractPage />} />
+          <Route path="/package" element={<ParserHubPage capability="package" />} />
+          <Route path="/package/:parserId" element={<PackagePage />} />
           <Route path="/merge" element={<MergeToolPage />} />
           <Route path="/metrics" element={<MetricsPage />} />
           <Route path="/settings" element={<SettingsPage />} />

@@ -1,5 +1,8 @@
-import { parsersByKind, searchParsers } from '@shared/parsers/catalog'
-import type { ParserManifest } from '@shared/parsers/types'
+import {
+  parsersForCapability,
+  searchParsers
+} from '@shared/parsers/catalog'
+import type { ParserCapability, ParserManifest } from '@shared/parsers/types'
 import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -7,33 +10,53 @@ import { toast } from 'sonner'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { ParserCard } from './ParserCard'
 
-export function ParserHubPage(): React.JSX.Element {
+interface ParserHubPageProps {
+  capability?: ParserCapability
+}
+
+export function ParserHubPage({
+  capability = 'translate'
+}: ParserHubPageProps): React.JSX.Element {
   const { t } = useAppTranslation(['translate', 'toasts'])
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
-
-  const filtered = useMemo(() => searchParsers(query), [query])
+  const catalog = useMemo(() => parsersForCapability(capability), [capability])
+  const filtered = useMemo(() => searchParsers(query, catalog), [catalog, query])
   const filteredIds = useMemo(() => new Set(filtered.map((parser) => parser.id)), [filtered])
-  const generic = parsersByKind('generic').filter((parser) => filteredIds.has(parser.id))
-  const games = parsersByKind('game').filter((parser) => filteredIds.has(parser.id))
+  const generic = catalog.filter(
+    (parser) => parser.kind === 'generic' && filteredIds.has(parser.id)
+  )
+  const games = catalog.filter((parser) => parser.kind === 'game' && filteredIds.has(parser.id))
+  const titleKey =
+    capability === 'extract'
+      ? 'hub.extractTitle'
+      : capability === 'package'
+        ? 'hub.packageTitle'
+        : 'hub.title'
+  const subtitleKey =
+    capability === 'extract'
+      ? 'hub.extractSubtitle'
+      : capability === 'package'
+        ? 'hub.packageSubtitle'
+        : 'hub.subtitle'
 
   const openParser = (parser: ParserManifest) => {
     if (parser.status === 'comingSoon') {
       toast.info(t('translate.comingSoon', { ns: 'toasts', name: parser.name }))
       return
     }
-    navigate(`/translate/${parser.id}`)
+    const base =
+      capability === 'extract' ? '/extract' : capability === 'package' ? '/package' : '/translate'
+    navigate(`${base}/${parser.id}`)
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0 border-b border-[#1f2329] bg-[#131518] px-6 py-4">
         <h1 className="m-0 text-[15px] font-semibold tracking-tight text-neutral-200">
-          {t('hub.title', { ns: 'translate' })}
+          {t(titleKey, { ns: 'translate' })}
         </h1>
-        <p className="mt-1 mb-3 text-xs text-neutral-500">
-          {t('hub.subtitle', { ns: 'translate' })}
-        </p>
+        <p className="mt-1 mb-3 text-xs text-neutral-500">{t(subtitleKey, { ns: 'translate' })}</p>
         <label className="flex h-8 w-full max-w-md items-center gap-2 rounded-md border border-[#1f2329] bg-[#0f1114] px-3">
           <Search size={13} className="text-neutral-600" />
           <input

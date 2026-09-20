@@ -1,5 +1,7 @@
-import { Clock, FolderOpen, Loader2, PackageOpen } from 'lucide-react'
+import { getParser } from '@shared/parsers/catalog'
+import { ArrowLeft, Clock, FolderOpen, Loader2, PackageOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AmberCheckbox } from '@/components/shared/AmberCheckbox'
 import { FileDropZone } from '@/components/shared/FileDropZone'
@@ -8,7 +10,10 @@ import { getLocalizedErrorMessage } from '@/i18n/errors'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 
 export function ExtractPage(): React.JSX.Element {
-  const { t } = useAppTranslation(['extract', 'common', 'toasts'])
+  const { parserId } = useParams<{ parserId: string }>()
+  const parser = parserId ? getParser(parserId) : undefined
+  const navigate = useNavigate()
+  const { t } = useAppTranslation(['extract', 'common', 'toasts', 'translate'])
   const [inputPath, setInputPath] = useState('')
   const [outputPath, setOutputPath] = useState('')
   const [useDefault, setUseDefault] = useState(false)
@@ -65,11 +70,23 @@ export function ExtractPage(): React.JSX.Element {
     }
   }
 
+  if (!parser || parser.status !== 'ready' || !parser.capabilities.includes('extract')) {
+    return <Navigate to="/extract" replace />
+  }
+
   return (
     <div className="flex min-h-0 flex-1 justify-center overflow-y-auto px-12 py-10">
       <div className="flex w-full max-w-[520px] flex-col gap-6">
+        <button
+          type="button"
+          onClick={() => navigate('/extract')}
+          className="flex h-[30px] w-fit cursor-pointer items-center gap-1.5 rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200"
+        >
+          <ArrowLeft size={13} />
+          {t('hub.back', { ns: 'translate' })}
+        </button>
         <h1 className="m-0 text-[22px] font-semibold tracking-tight text-neutral-100">
-          {t('title')}
+          {t('title')} · {parser.name}
         </h1>
 
         <FileDropZone

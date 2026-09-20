@@ -5,6 +5,7 @@ import {
   getParser,
   PARSER_CATALOG,
   parserAcceptsExtension,
+  parsersForCapability,
   searchParsers
 } from './catalog'
 import { guessCsvColumns } from './csv-columns'
@@ -38,6 +39,14 @@ test('export formats keep parser natives then generic csv/json', () => {
   ])
   assert.deepEqual(exportFormatsFor(getParser('csv')!), ['csv', 'json'])
   assert.deepEqual(exportFormatsFor(getParser('until-then')!), ['csv', 'json'])
+})
+
+test('extract and package hubs only list games with those capabilities', () => {
+  assert.deepEqual(
+    parsersForCapability('extract').map((parser) => parser.id),
+    ['bg3', 'skyrim']
+  )
+  assert.equal(parsersForCapability('translate').some((parser) => parser.id === 'csv'), true)
 })
 
 test('parserAcceptsExtension uses the parser allow-list', () => {

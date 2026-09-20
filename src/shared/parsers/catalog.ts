@@ -1,4 +1,4 @@
-import type { ExportFormat, ParserManifest } from './types'
+import type { ExportFormat, ParserCapability, ParserManifest } from './types'
 
 export const GENERIC_EXPORT_FORMATS: ExportFormat[] = ['csv', 'json']
 
@@ -9,7 +9,8 @@ export const PARSER_CATALOG: ParserManifest[] = [
     kind: 'generic',
     status: 'ready',
     extensions: ['csv'],
-    nativeExportFormats: []
+    nativeExportFormats: [],
+    capabilities: ['translate']
   },
   {
     id: 'bg3',
@@ -17,7 +18,8 @@ export const PARSER_CATALOG: ParserManifest[] = [
     kind: 'game',
     status: 'ready',
     extensions: ['xml', 'loca', 'pak', 'zip'],
-    nativeExportFormats: ['xml', 'loca', 'pak', 'zip']
+    nativeExportFormats: ['xml', 'loca', 'pak', 'zip'],
+    capabilities: ['translate', 'extract', 'package']
   },
   {
     id: 'skyrim',
@@ -25,7 +27,8 @@ export const PARSER_CATALOG: ParserManifest[] = [
     kind: 'game',
     status: 'comingSoon',
     extensions: [],
-    nativeExportFormats: []
+    nativeExportFormats: [],
+    capabilities: ['translate', 'extract', 'package']
   },
   {
     id: 'until-then',
@@ -33,7 +36,8 @@ export const PARSER_CATALOG: ParserManifest[] = [
     kind: 'game',
     status: 'comingSoon',
     extensions: [],
-    nativeExportFormats: []
+    nativeExportFormats: [],
+    capabilities: ['translate']
   }
 ]
 
@@ -67,6 +71,13 @@ export function parserAcceptsExtension(parser: ParserManifest, fileName: string)
 
 function normalizeSearch(value: string): string {
   return value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+}
+
+export function parsersForCapability(capability: ParserCapability): ParserManifest[] {
+  if (capability === 'translate') return PARSER_CATALOG
+  return PARSER_CATALOG.filter(
+    (parser) => parser.kind === 'game' && parser.capabilities.includes(capability)
+  )
 }
 
 export function searchParsers(query: string, parsers = PARSER_CATALOG): ParserManifest[] {

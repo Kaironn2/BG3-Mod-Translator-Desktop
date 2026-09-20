@@ -1,5 +1,6 @@
 export type ParserKind = 'generic' | 'game'
 export type ParserStatus = 'ready' | 'comingSoon'
+export type ParserCapability = 'translate' | 'extract' | 'package'
 export type NativeExportFormat = 'xml' | 'loca' | 'pak' | 'zip'
 export type GenericExportFormat = 'csv' | 'json'
 export type ExportFormat = NativeExportFormat | GenericExportFormat
@@ -11,6 +12,7 @@ export interface ParserManifest {
   status: ParserStatus
   extensions: string[]
   nativeExportFormats: NativeExportFormat[]
+  capabilities: ParserCapability[]
 }
 
 export interface CsvColumnMap {

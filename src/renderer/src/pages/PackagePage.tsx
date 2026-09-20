@@ -1,5 +1,7 @@
-import { Clock, FolderOpen, Loader2, Package } from 'lucide-react'
+import { getParser } from '@shared/parsers/catalog'
+import { ArrowLeft, Clock, FolderOpen, Loader2, Package } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AmberCheckbox } from '@/components/shared/AmberCheckbox'
 import { FileDropZone } from '@/components/shared/FileDropZone'
@@ -11,7 +13,10 @@ import { cn } from '@/lib/utils'
 type PackFormat = 'pak' | 'zip'
 
 export function PackagePage(): React.JSX.Element {
-  const { t } = useAppTranslation(['package', 'common', 'toasts'])
+  const { parserId } = useParams<{ parserId: string }>()
+  const parser = parserId ? getParser(parserId) : undefined
+  const navigate = useNavigate()
+  const { t } = useAppTranslation(['package', 'common', 'toasts', 'translate'])
   const [inputFolder, setInputFolder] = useState('')
   const [outputFileName, setOutputFileName] = useState('')
   const [outputPath, setOutputPath] = useState('')
@@ -113,11 +118,23 @@ export function PackagePage(): React.JSX.Element {
     }
   }
 
+  if (!parser || parser.status !== 'ready' || !parser.capabilities.includes('package')) {
+    return <Navigate to="/package" replace />
+  }
+
   return (
     <div className="flex min-h-0 flex-1 justify-center overflow-y-auto px-12 py-10">
       <div className="flex w-full max-w-[520px] flex-col gap-6">
+        <button
+          type="button"
+          onClick={() => navigate('/package')}
+          className="flex h-[30px] w-fit cursor-pointer items-center gap-1.5 rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200"
+        >
+          <ArrowLeft size={13} />
+          {t('hub.back', { ns: 'translate' })}
+        </button>
         <h1 className="m-0 text-[22px] font-semibold tracking-tight text-neutral-100">
-          {t('title')}
+          {t('title')} · {parser.name}
         </h1>
 
         <FileDropZone
