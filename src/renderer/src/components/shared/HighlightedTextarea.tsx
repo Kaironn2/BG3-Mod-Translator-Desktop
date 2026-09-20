@@ -1,12 +1,15 @@
 import { forwardRef, useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { renderSource } from '@/utils/renderSource'
+import type { TextSearchOptions } from '@/utils/textSearch'
 
 interface HighlightedTextareaProps
   extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'value'> {
   value: string
   containerClassName?: string
   overlayClassName?: string
+  search?: string
+  searchOptions?: TextSearchOptions
 }
 
 export const HighlightedTextarea = forwardRef<HTMLTextAreaElement, HighlightedTextareaProps>(
@@ -20,6 +23,8 @@ export const HighlightedTextarea = forwardRef<HTMLTextAreaElement, HighlightedTe
       containerClassName,
       overlayClassName,
       placeholder,
+      search,
+      searchOptions,
       ...props
     },
     ref
@@ -46,7 +51,7 @@ export const HighlightedTextarea = forwardRef<HTMLTextAreaElement, HighlightedTe
           )}
         >
           {draft ? (
-            renderSource(draft, { variant: 'editor' })
+            renderSource(draft, { variant: 'editor', search, searchOptions })
           ) : (
             <span className="italic text-neutral-600">{placeholder}</span>
           )}

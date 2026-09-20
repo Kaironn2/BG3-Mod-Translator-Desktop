@@ -63,6 +63,9 @@
     "searchPlaceholder": "Search strings...",
     "all": "All",
     "tabAll": "All",
+    "fileAll": "All files",
+    "fileNone": "No file",
+    "replace": "Replace",
     "untranslated": "Untranslated",
     "translated": "Translated",
     "dictionary": "Dictionary matches",
@@ -93,6 +96,25 @@
       "next": "Next",
       "last": "Last"
     }
+  },
+  "replaceModal": {
+    "title": "Replace in translations",
+    "description": "Replace text in the {{language}} translations ({{scope}}).",
+    "scopeSelected": "{{count}} selected strings",
+    "scopeFiltered": "{{count}} strings in the current filter",
+    "scopeAll": "all {{count}} strings",
+    "find": "Find",
+    "findPlaceholder": "Text to search for",
+    "replaceWith": "Replace with",
+    "replacePlaceholder": "New text",
+    "matchCase": "Match case",
+    "matchWholeWord": "Match whole word",
+    "targetHint": "Find and replace always apply to the target language ({{language}}).",
+    "apply": "Apply replace",
+    "applying": "Applying...",
+    "discardTitle": "Discard changes?",
+    "discardDescription": "There are pending parameters in this replace. If you continue, they will be lost.",
+    "searchRequired": "Fill in the Find field"
   },
   "alreadyTranslatedDialog": {
     "title": "Already-translated entries selected",
