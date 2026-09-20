@@ -20,7 +20,8 @@ export default defineConfig({
           'import.worker': resolve('src/main/workers/import.worker.ts'),
           'prepare-input.worker': resolve('src/main/workers/prepare-input.worker.ts'),
           'similarity.worker': resolve('src/main/workers/similarity.worker.ts'),
-          'delete.worker': resolve('src/main/workers/delete.worker.ts')
+          'delete.worker': resolve('src/main/workers/delete.worker.ts'),
+          'replace.worker': resolve('src/main/workers/replace.worker.ts')
         }
       }
     }

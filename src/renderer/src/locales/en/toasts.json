@@ -16,7 +16,7 @@
     "deleted_one": "Entry removed",
     "deleted_other": "{{count}} entries removed",
     "replaceNone": "No matches found in the selected entries",
-    "replaceApplied": "Replace applied to {{count}} entries",
+    "replaceApplied": "Replacement applied to {{count}} entries",
     "csvExported": "CSV exported",
     "imported": "{{count}} entries imported"
   },
@@ -33,7 +33,9 @@
     "locaFilesExported_other": "{{count}} LOCA files exported successfully",
     "packageExported": "{{format}} exported successfully",
     "noValidXml": "No valid XML found",
-    "invalidFormat": "Invalid format"
+    "invalidFormat": "Invalid format",
+    "replaceNoMatch": "No matches found for the replacement",
+    "replaceApplied": "Replacement applied to {{count}} strings"
   },
   "merge": {
     "invalidFormat": "{{fileName}}: invalid format. Use .xml, .pak or .zip",

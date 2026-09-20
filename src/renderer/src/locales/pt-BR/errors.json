@@ -25,7 +25,8 @@
   },
   "dictionary": {
     "xlsxNotSupported": "Importação/exportação XLSX ainda não é suportada.",
-    "deleteInProgress": "Já existe uma exclusão em andamento. Aguarde ela terminar."
+    "deleteInProgress": "Já existe uma exclusão em andamento. Aguarde ela terminar.",
+    "replaceInProgress": "Já existe uma substituição em andamento. Aguarde ela terminar."
   },
   "package": {
     "versionFormatInvalid": "A versão deve usar o formato 1.2.3.4.",

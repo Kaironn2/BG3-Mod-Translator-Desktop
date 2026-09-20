@@ -5,11 +5,16 @@ import { getDbPath } from '../database/connection'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { runDelete } from '../services/delete.service'
 import { runImport, runPreviewImport } from '../services/import.service'
+import { runReplace } from '../services/replace.service'
 import { getSimilarityClient, invalidateSimilarityCache } from '../services/similarity-client'
 import { csvCell } from '../utils/csv'
+import type { DictionaryReplacePatch } from '../utils/dictionary-replace'
 
 interface DictionaryFilters {
   text?: string
+  matchCase?: boolean
+  matchWholeWord?: boolean
+  searchField?: 'all' | 'source' | 'target'
   modName?: string
   sourceLang?: string
   targetLang?: string
@@ -121,17 +126,43 @@ export function registerDictionaryHandlers(repos: RepositoryRegistry): void {
 
   ipcMain.handle(
     'dictionary:replaceByFilter',
-    (
-      _event,
+    async (
+      event,
       {
         filters,
         patch
       }: {
         filters: DictionaryFilters
-        patch: { findText: string; replaceText: string; column: 'language1' | 'language2' }
+        patch: DictionaryReplacePatch
       }
     ) => {
-      const result = repos.dictionary.updateTextByFilter(filters, patch)
+      const result = await runReplace({
+        job: { type: 'dictionary-filter', filters, patch },
+        onProgress: (p) => event.sender.send('dictionary:replace:progress', p)
+      })
+      invalidateSimilarity()
+      return result
+    }
+  )
+
+  ipcMain.handle(
+    'dictionary:replaceByIds',
+    async (
+      event,
+      {
+        ids,
+        filters,
+        patch
+      }: {
+        ids: number[]
+        filters: DictionaryFilters
+        patch: DictionaryReplacePatch
+      }
+    ) => {
+      const result = await runReplace({
+        job: { type: 'dictionary-ids', ids, filters, patch },
+        onProgress: (p) => event.sender.send('dictionary:replace:progress', p)
+      })
       invalidateSimilarity()
       return result
     }

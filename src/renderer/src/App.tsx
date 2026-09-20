@@ -2,6 +2,7 @@ import { HashRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { MainLayout } from './components/layout/MainLayout'
 import { DictionaryDeleteSessionProvider } from './context/DictionaryDeleteSession'
+import { DictionaryReplaceSessionProvider } from './context/DictionaryReplaceSession'
 import { MergeSessionProvider } from './context/MergeSession'
 import { ModDeleteSessionProvider } from './context/ModDeleteSession'
 import { TranslationSessionProvider } from './context/TranslationSession'
@@ -28,7 +29,9 @@ function App(): React.JSX.Element {
                 <MergeSessionProvider>
                   <ModDeleteSessionProvider>
                     <DictionaryDeleteSessionProvider>
-                      <MainLayout />
+                      <DictionaryReplaceSessionProvider>
+                        <MainLayout />
+                      </DictionaryReplaceSessionProvider>
                     </DictionaryDeleteSessionProvider>
                   </ModDeleteSessionProvider>
                 </MergeSessionProvider>

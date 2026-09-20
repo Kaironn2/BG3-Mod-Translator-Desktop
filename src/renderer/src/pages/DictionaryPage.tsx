@@ -9,18 +9,15 @@ import {
   Loader2,
   Pencil,
   Plus,
-  Search,
   Trash2,
   Upload,
-  Wifi,
-  X
+  Wifi
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { DictionaryEntryModal } from '@/components/dictionary/DictionaryEntryModal'
 import { DictionaryImportModal } from '@/components/dictionary/DictionaryImportModal'
 import { DictionaryReplaceModal } from '@/components/dictionary/DictionaryReplaceModal'
-import { applyTextReplace } from '@/components/dictionary/replace'
 import {
   decodeDictionaryTextForUi,
   encodeDictionaryTextForPersistence
@@ -33,8 +30,10 @@ import {
 } from '@/components/dictionary/types'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { ProgressBar } from '@/components/shared/ProgressBar'
+import { TextSearchInput } from '@/components/shared/TextSearchInput'
 import { ThemedSelect, type ThemedSelectOption } from '@/components/shared/ThemedSelect'
 import { useDictionaryDeleteSession } from '@/context/DictionaryDeleteSession'
+import { useDictionaryReplaceSession } from '@/context/DictionaryReplaceSession'
 import { useDebouncedFilter } from '@/hooks/useDebouncedFilter'
 import { getLocalizedErrorMessage } from '@/i18n/errors'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
@@ -43,6 +42,7 @@ import { cn } from '@/lib/utils'
 import {
   type DictionaryEntry,
   type DictionaryFilters,
+  type DictionarySearchField,
   isOfficialBg3Language,
   type Language
 } from '@/types'
@@ -86,6 +86,7 @@ const PAGE_SIZE_OPTIONS = [50, 100, 200, 500, 1000]
 export function DictionaryPage(): React.JSX.Element {
   const { t, currentLanguage } = useAppTranslation(['dictionary', 'common', 'toasts'])
   const deleteJob = useDictionaryDeleteSession()
+  const replaceJob = useDictionaryReplaceSession()
   const [result, setResult] = useState<DictionaryResultState>({
     items: [],
     total: 0,
@@ -101,6 +102,9 @@ export function DictionaryPage(): React.JSX.Element {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [text, setText] = useState('')
+  const [matchCase, setMatchCase] = useState(false)
+  const [matchWholeWord, setMatchWholeWord] = useState(false)
+  const [searchField, setSearchField] = useState<DictionarySearchField>('all')
   const [modName, setModName] = useState('')
   const [sourceLang, setSourceLang] = useState('')
   const [targetLang, setTargetLang] = useState('')
@@ -119,11 +123,14 @@ export function DictionaryPage(): React.JSX.Element {
   const filters = useMemo<DictionaryFilters>(
     () => ({
       text: debouncedText || undefined,
+      matchCase: debouncedText ? matchCase : undefined,
+      matchWholeWord: debouncedText ? matchWholeWord : undefined,
+      searchField: debouncedText ? searchField : undefined,
       modName: modName || undefined,
       sourceLang: sourceLang || undefined,
       targetLang: targetLang || undefined
     }),
-    [debouncedText, modName, sourceLang, targetLang]
+    [debouncedText, matchCase, matchWholeWord, modName, searchField, sourceLang, targetLang]
   )
 
   const normalizePageSize = useCallback((value: string | number | null | undefined): number => {
@@ -196,13 +203,22 @@ export function DictionaryPage(): React.JSX.Element {
     void loadEntries(filters, page, pageSize, { mode })
   }, [bootstrapping, filters, loadEntries, page, pageSize])
 
+  const openReplaceRef = useRef(() => {})
+
   useEffect(() => {
     const onFind = (event: KeyboardEvent) => {
       if (!event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) return
-      if (event.key.toLowerCase() !== 'f') return
-      event.preventDefault()
-      searchInputRef.current?.focus()
-      searchInputRef.current?.select()
+      const key = event.key.toLowerCase()
+      if (key === 'f') {
+        event.preventDefault()
+        searchInputRef.current?.focus()
+        searchInputRef.current?.select()
+        return
+      }
+      if (key === 'h') {
+        event.preventDefault()
+        openReplaceRef.current()
+      }
     }
 
     window.addEventListener('keydown', onFind)
@@ -309,10 +325,24 @@ export function DictionaryPage(): React.JSX.Element {
     }
   }, [displayEntries, result.total])
 
+  const searchFieldOptions = useMemo<ThemedSelectOption[]>(
+    () => [
+      { value: 'all', label: t('searchOptions.scopeAll', { ns: 'common' }) },
+      { value: 'source', label: t('searchOptions.scopeSource', { ns: 'common' }) },
+      { value: 'target', label: t('searchOptions.scopeTarget', { ns: 'common' }) }
+    ],
+    [t]
+  )
+
   const allFilteredSelected =
     displayEntries.length > 0 && displayEntries.every((entry) => selectedIds.has(entry.id))
   const hasFilters = Boolean(text || modName || sourceLang || targetLang)
+  const hasSearchOptions = Boolean(matchCase || matchWholeWord || searchField !== 'all')
   const selectedCount = selectionScope === 'all-filtered' ? result.total : selectedIds.size
+  openReplaceRef.current = () => {
+    if (selectedCount === 0 || deleteJob.running || replaceJob.running) return
+    setReplaceOpen(true)
+  }
   const pageStart = result.total === 0 ? 0 : (result.page - 1) * result.pageSize + 1
   const pageEnd = result.total === 0 ? 0 : pageStart + displayEntries.length - 1
 
@@ -400,82 +430,28 @@ export function DictionaryPage(): React.JSX.Element {
     deleteJob.acknowledge()
   }, [deleteJob.acknowledge, deleteJob.status, loadReferenceData, refreshCurrentPage])
 
+  useEffect(() => {
+    if (replaceJob.status !== 'done') return
+    setSelectedIds(new Set())
+    setSelectionScope('page')
+    void Promise.all([refreshCurrentPage(), loadReferenceData()])
+    replaceJob.acknowledge()
+  }, [loadReferenceData, refreshCurrentPage, replaceJob.acknowledge, replaceJob.status])
+
   const handleBatchReplace = async (draft: ReplaceDraft): Promise<boolean> => {
+    const patch = {
+      findText: draft.find,
+      replaceText: draft.replaceWith,
+      scope: draft.scope,
+      matchCase: draft.matchCase,
+      matchWholeWord: draft.matchWholeWord
+    }
     if (selectionScope === 'all-filtered') {
-      try {
-        let updated = 0
-        const columns: Array<'language1' | 'language2'> = []
-        if (draft.scope === 'source' || draft.scope === 'both') columns.push('language1')
-        if (draft.scope === 'target' || draft.scope === 'both') columns.push('language2')
-        for (const column of columns) {
-          const res = await window.api.dictionary.replaceByFilter(filters, {
-            findText: draft.find,
-            replaceText: draft.replaceWith,
-            column
-          })
-          updated += res.updated
-        }
-        if (updated === 0) {
-          toast.info(t('dictionary.replaceNone', { ns: 'toasts' }))
-          return false
-        }
-        toast.success(t('dictionary.replaceApplied', { ns: 'toasts', count: updated }))
-        setReplaceOpen(false)
-        setSelectionScope('page')
-        setSelectedIds(new Set())
-        await Promise.all([refreshCurrentPage(), loadReferenceData()])
-        return true
-      } catch (error) {
-        toast.error(getLocalizedErrorMessage(error, t))
-        return false
-      }
-    }
-
-    const selectedEntries = displayEntries.filter((entry) => selectedIds.has(entry.id))
-    const updates = selectedEntries
-      .map((entry) => {
-        const nextSource =
-          draft.scope === 'source' || draft.scope === 'both'
-            ? applyTextReplace(entry.sourceText, draft)
-            : entry.sourceText
-        const nextTarget =
-          draft.scope === 'target' || draft.scope === 'both'
-            ? applyTextReplace(entry.targetText, draft)
-            : entry.targetText
-
-        if (nextSource === entry.sourceText && nextTarget === entry.targetText) return null
-
-        return {
-          id: entry.id,
-          entry: {
-            language1: entry.sourceLang,
-            language2: entry.targetLang,
-            textLanguage1: encodeDictionaryTextForPersistence(nextSource),
-            textLanguage2: encodeDictionaryTextForPersistence(nextTarget),
-            modName: entry.modName || null,
-            uid: entry.uid || null
-          }
-        }
-      })
-      .filter((update): update is NonNullable<typeof update> => update !== null)
-
-    if (updates.length === 0) {
-      toast.info(t('dictionary.replaceNone', { ns: 'toasts' }))
-      return false
-    }
-
-    try {
-      for (const update of updates) {
-        await window.api.dictionary.update(update)
-      }
-      toast.success(t('dictionary.replaceApplied', { ns: 'toasts', count: updates.length }))
-      setReplaceOpen(false)
-      await Promise.all([refreshCurrentPage(), loadReferenceData()])
+      void replaceJob.startByFilter(filters, patch)
       return true
-    } catch (error) {
-      toast.error(getLocalizedErrorMessage(error, t))
-      return false
     }
+    void replaceJob.startByIds(Array.from(selectedIds), filters, patch)
+    return true
   }
 
   const handleExport = async () => {
@@ -582,25 +558,28 @@ export function DictionaryPage(): React.JSX.Element {
       </header>
 
       <div className="flex flex-wrap items-end gap-x-2 gap-y-3 border-b border-[#1f2329] bg-[#0f1114] px-4 py-3">
-        <div className="flex h-8 min-w-70 flex-1 self-end items-center gap-2 rounded-md border border-[#1f2329] bg-[#131518] px-3 focus-within:border-neutral-600">
-          <Search size={14} className="text-neutral-500" />
-          <input
-            ref={searchInputRef}
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            placeholder={t('filters.searchPlaceholder', { ns: 'dictionary' })}
-            className="min-w-0 flex-1 bg-transparent text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
-          />
-          {text && (
-            <button
-              type="button"
-              onClick={() => setText('')}
-              className="cursor-pointer text-neutral-500"
-            >
-              <X size={13} />
-            </button>
-          )}
-        </div>
+        <TextSearchInput
+          value={text}
+          onChange={setText}
+          placeholder={t('filters.searchPlaceholder', { ns: 'dictionary' })}
+          matchCase={matchCase}
+          onMatchCaseChange={setMatchCase}
+          matchWholeWord={matchWholeWord}
+          onMatchWholeWordChange={setMatchWholeWord}
+          inputRef={searchInputRef}
+          className="min-w-72 flex-1 self-end"
+          inputClassName="text-sm text-neutral-200"
+        />
+
+        <FilterSelect
+          label={t('searchOptions.scopePlaceholder', { ns: 'common' })}
+          value={searchField}
+          options={searchFieldOptions}
+          onChange={(value) => setSearchField(value as DictionarySearchField)}
+          className="w-36"
+          menuMinWidth={160}
+          t={t}
+        />
 
         <FilterSelect
           label={t('filters.mod', { ns: 'dictionary' })}
@@ -632,11 +611,14 @@ export function DictionaryPage(): React.JSX.Element {
 
         <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} t={t} />
 
-        {hasFilters && (
+        {(hasFilters || hasSearchOptions) && (
           <button
             type="button"
             onClick={() => {
               setText('')
+              setMatchCase(false)
+              setMatchWholeWord(false)
+              setSearchField('all')
               setModName('')
               setSourceLang('')
               setTargetLang('')
@@ -656,7 +638,7 @@ export function DictionaryPage(): React.JSX.Element {
           </span>
           <button
             type="button"
-            disabled={selectedCount === 0 || deleteJob.running}
+            disabled={selectedCount === 0 || deleteJob.running || replaceJob.running}
             onClick={() =>
               setPendingDelete(
                 selectionScope === 'all-filtered'
@@ -692,11 +674,14 @@ export function DictionaryPage(): React.JSX.Element {
           </button>
           <button
             type="button"
-            disabled={selectedCount === 0 || deleteJob.running}
+            disabled={selectedCount === 0 || deleteJob.running || replaceJob.running}
             onClick={() => setReplaceOpen(true)}
             className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-neutral-700 bg-[#131518] px-3 text-xs font-medium text-neutral-200 transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {t('actions.replace', { ns: 'common' })}
+            {replaceJob.running ? <Loader2 size={13} className="animate-spin" /> : null}
+            {replaceJob.running
+              ? t('dialogs.replacing', { ns: 'dictionary' })
+              : t('actions.replace', { ns: 'common' })}
           </button>
           <button
             type="button"
@@ -838,12 +823,30 @@ export function DictionaryPage(): React.JSX.Element {
                   </div>
                   <div className="min-w-0 self-start px-3 py-1.5">
                     <div className="line-clamp-2 wrap-break-word font-mono text-sm leading-5 text-neutral-100">
-                      {entry.sourceText ? renderSource(previewText(entry.sourceText)) : null}
+                      {entry.sourceText
+                        ? renderDictionaryPreview(
+                            entry.sourceText,
+                            debouncedText,
+                            matchCase,
+                            matchWholeWord,
+                            searchField,
+                            'source'
+                          )
+                        : null}
                     </div>
                   </div>
                   <div className="min-w-0 self-start px-3 py-1.5">
                     <div className="line-clamp-2 wrap-break-word font-mono text-sm leading-5 text-neutral-200">
-                      {entry.targetText ? renderSource(previewText(entry.targetText)) : null}
+                      {entry.targetText
+                        ? renderDictionaryPreview(
+                            entry.targetText,
+                            debouncedText,
+                            matchCase,
+                            matchWholeWord,
+                            searchField,
+                            'target'
+                          )
+                        : null}
                     </div>
                   </div>
                   <div className="min-w-0 self-start px-3 py-1.5">
@@ -872,7 +875,7 @@ export function DictionaryPage(): React.JSX.Element {
                     <div className="flex justify-end gap-1">
                       <button
                         type="button"
-                        disabled={deleteJob.running}
+                        disabled={deleteJob.running || replaceJob.running}
                         onClick={() => setEditingEntry(entry)}
                         className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-transparent text-neutral-400 transition-colors hover:border-[#252a32] hover:bg-[#131518] hover:text-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
                       >
@@ -880,7 +883,7 @@ export function DictionaryPage(): React.JSX.Element {
                       </button>
                       <button
                         type="button"
-                        disabled={deleteJob.running}
+                        disabled={deleteJob.running || replaceJob.running}
                         onClick={() =>
                           setPendingDelete({
                             ids: [entry.id],
@@ -941,7 +944,17 @@ export function DictionaryPage(): React.JSX.Element {
         </div>
       )}
 
-      <footer className="flex items-center gap-4 border-t border-[#1f2329] bg-[#0c0d0f] px-4 py-2 text-[11px] text-neutral-500">
+      <footer className="relative flex items-center gap-4 border-t border-[#1f2329] bg-[#0c0d0f] px-4 py-2 text-[11px] text-neutral-500">
+        {replaceJob.running && replaceJob.total > 0 && (
+          <div className="absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-[#1f2329]">
+            <div
+              className="h-full bg-amber-500 transition-all duration-200"
+              style={{
+                width: `${Math.min(100, Math.round((replaceJob.processed / replaceJob.total) * 100))}%`
+              }}
+            />
+          </div>
+        )}
         <span className="inline-flex items-center gap-1.5">
           <Wifi size={11} className="text-amber-400" />
           {t('status.connected', { ns: 'common' })}
@@ -1167,6 +1180,23 @@ function DictionaryLoadingOverlay({ mode }: { mode: DictionaryLoadingMode }): Re
 function previewText(text: string, max = PREVIEW_CHARS): string {
   if (text.length <= max) return text
   return `${text.slice(0, max)}…`
+}
+
+function renderDictionaryPreview(
+  text: string,
+  query: string,
+  matchCase: boolean,
+  matchWholeWord: boolean,
+  searchField: DictionarySearchField,
+  field: 'source' | 'target'
+): React.ReactNode {
+  const preview = previewText(text)
+  const search =
+    query.trim() && (searchField === 'all' || searchField === field) ? query : undefined
+  return renderSource(preview, {
+    search,
+    searchOptions: { matchCase, wholeWord: matchWholeWord }
+  })
 }
 
 function buildExportName(filters: DictionaryFilters): string {
