@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { PARSER_CATALOG } from '@shared/parsers/catalog'
 import { DictionaryEntryModal } from '@/components/dictionary/DictionaryEntryModal'
 import { DictionaryImportModal } from '@/components/dictionary/DictionaryImportModal'
 import { DictionaryReplaceModal } from '@/components/dictionary/DictionaryReplaceModal'
@@ -74,8 +75,8 @@ type DictionaryLoadingMode = 'overlay' | 'replace'
 
 const TABLE_HEADER =
   'select-none text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500'
-// grid-based virtualization (Option B) - 7 columns matching header and rows
-const GRID_COLS = '48px 72px 1fr 1fr 285px 112px 80px'
+// grid-based virtualization (Option B) - 8 columns matching header and rows
+const GRID_COLS = '48px 72px 1fr 1fr 140px 200px 112px 80px'
 // Compact enough for two clamped text lines plus mod badge + UID, without unused vertical gap.
 const ROW_HEIGHT = 60
 const PREVIEW_CHARS = 280
@@ -106,6 +107,7 @@ export function DictionaryPage(): React.JSX.Element {
   const [matchWholeWord, setMatchWholeWord] = useState(false)
   const [searchField, setSearchField] = useState<DictionarySearchField>('all')
   const [modName, setModName] = useState('')
+  const [gameCode, setGameCode] = useState('')
   const [sourceLang, setSourceLang] = useState('')
   const [targetLang, setTargetLang] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
@@ -127,10 +129,20 @@ export function DictionaryPage(): React.JSX.Element {
       matchWholeWord: debouncedText ? matchWholeWord : undefined,
       searchField: debouncedText ? searchField : undefined,
       modName: modName || undefined,
+      gameCode: gameCode || undefined,
       sourceLang: sourceLang || undefined,
       targetLang: targetLang || undefined
     }),
-    [debouncedText, matchCase, matchWholeWord, modName, searchField, sourceLang, targetLang]
+    [
+      debouncedText,
+      gameCode,
+      matchCase,
+      matchWholeWord,
+      modName,
+      searchField,
+      sourceLang,
+      targetLang
+    ]
   )
 
   const normalizePageSize = useCallback((value: string | number | null | undefined): number => {
@@ -272,6 +284,22 @@ export function DictionaryPage(): React.JSX.Element {
     [modOptions, result.total, t]
   )
 
+  const gameSelectOptions = useMemo<ThemedSelectOption[]>(() => {
+    const counts = new Map<string, number>()
+    for (const entry of displayEntries) {
+      if (entry.gameCode) counts.set(entry.gameCode, (counts.get(entry.gameCode) ?? 0) + 1)
+    }
+    return [
+      { value: '', label: t('filters.allGames', { ns: 'dictionary' }), badge: `${result.total}` },
+      ...PARSER_CATALOG.filter((parser) => parser.kind === 'game').map((parser) => ({
+        value: parser.id,
+        label: parser.name,
+        badge: `${counts.get(parser.id) ?? 0}`,
+        searchText: parser.name
+      }))
+    ]
+  }, [displayEntries, result.total, t])
+
   const officialMark = t('badges.official', { ns: 'common' })
 
   const sourceSelectOptions = useMemo<ThemedSelectOption[]>(
@@ -336,7 +364,7 @@ export function DictionaryPage(): React.JSX.Element {
 
   const allFilteredSelected =
     displayEntries.length > 0 && displayEntries.every((entry) => selectedIds.has(entry.id))
-  const hasFilters = Boolean(text || modName || sourceLang || targetLang)
+  const hasFilters = Boolean(text || modName || gameCode || sourceLang || targetLang)
   const hasSearchOptions = Boolean(matchCase || matchWholeWord || searchField !== 'all')
   const selectedCount = selectionScope === 'all-filtered' ? result.total : selectedIds.size
   openReplaceRef.current = () => {
@@ -357,7 +385,9 @@ export function DictionaryPage(): React.JSX.Element {
       sourceText: '',
       targetText: '',
       modName,
-      uid: ''
+      uid: '',
+      gameCode: '',
+      gameName: ''
     })
     setCreateOpen(true)
   }
@@ -370,7 +400,8 @@ export function DictionaryPage(): React.JSX.Element {
         textLanguage1: encodeDictionaryTextForPersistence(draft.sourceText),
         textLanguage2: encodeDictionaryTextForPersistence(draft.targetText),
         modName: draft.modName || null,
-        uid: draft.uid || null
+        uid: draft.uid || null,
+        gameCode: draft.gameCode || 'bg3'
       })
       toast.success(t('dictionary.created', { ns: 'toasts' }))
       setCreateOpen(false)
@@ -394,7 +425,8 @@ export function DictionaryPage(): React.JSX.Element {
           textLanguage1: encodeDictionaryTextForPersistence(draft.sourceText),
           textLanguage2: encodeDictionaryTextForPersistence(draft.targetText),
           modName: draft.modName || null,
-          uid: draft.uid || null
+          uid: draft.uid || null,
+          gameCode: draft.gameCode || 'bg3'
         }
       })
       toast.success(t('dictionary.updated', { ns: 'toasts' }))
@@ -582,6 +614,15 @@ export function DictionaryPage(): React.JSX.Element {
         />
 
         <FilterSelect
+          label={t('filters.game', { ns: 'dictionary' })}
+          value={gameCode}
+          options={gameSelectOptions}
+          onChange={setGameCode}
+          className="w-40"
+          menuMinWidth={200}
+          t={t}
+        />
+        <FilterSelect
           label={t('filters.mod', { ns: 'dictionary' })}
           value={modName}
           options={modSelectOptions}
@@ -620,6 +661,7 @@ export function DictionaryPage(): React.JSX.Element {
               setMatchWholeWord(false)
               setSearchField('all')
               setModName('')
+              setGameCode('')
               setSourceLang('')
               setTargetLang('')
             }}
@@ -725,10 +767,10 @@ export function DictionaryPage(): React.JSX.Element {
 
       <div className="relative min-h-0 flex-1">
         {/* grid-based virtualized layout (Option B) - avoids <table> absolute-positioning quirks */}
-        <div ref={scrollRef} className="icosa-scroll h-full overflow-auto">
+        <div ref={scrollRef} className="icosa-scroll h-full overflow-auto [scrollbar-gutter:stable]">
           {/* sticky header row */}
           <div
-            className="sticky top-0 z-10 grid border-b border-[#1f2329] bg-[#131518] pr-[var(--scrollbar-width,0px)]"
+            className="sticky top-0 z-10 grid border-b border-[#1f2329] bg-[#131518]"
             style={{ gridTemplateColumns: GRID_COLS }}
           >
             <div className={cn(TABLE_HEADER, 'px-3 py-2 text-center')}>
@@ -747,6 +789,9 @@ export function DictionaryPage(): React.JSX.Element {
             </div>
             <div className={cn(TABLE_HEADER, 'px-3 py-2 text-left')}>
               {t('table.targetText', { ns: 'dictionary' })}
+            </div>
+            <div className={cn(TABLE_HEADER, 'px-3 py-2 text-left')}>
+              {t('table.game', { ns: 'dictionary' })}
             </div>
             <div className={cn(TABLE_HEADER, 'px-3 py-2 text-left')}>
               {t('table.mod', { ns: 'dictionary' })}
@@ -848,6 +893,11 @@ export function DictionaryPage(): React.JSX.Element {
                           )
                         : null}
                     </div>
+                  </div>
+                  <div className="min-w-0 self-start px-3 py-1.5">
+                    <span className="block truncate text-xs text-neutral-300">
+                      {entry.gameName || t('table.noGame', { ns: 'dictionary' })}
+                    </span>
                   </div>
                   <div className="min-w-0 self-start px-3 py-1.5">
                     <div className="flex min-w-0 flex-col gap-0.5">
@@ -1203,6 +1253,7 @@ function buildExportName(filters: DictionaryFilters): string {
   const parts = ['dictionary']
   if (filters.sourceLang) parts.push(filters.sourceLang)
   if (filters.targetLang) parts.push(filters.targetLang)
+  if (filters.gameCode) parts.push(filters.gameCode)
   if (filters.modName) parts.push(filters.modName.replace(/[^a-zA-Z0-9._-]/g, '_'))
   return `${parts.join('_')}.csv`
 }
@@ -1248,6 +1299,8 @@ function toDisplayEntry(entry: DictionaryEntry, filters: DictionaryFilters): Dis
     targetText: decodeDictionaryTextForUi(swap ? entry.textLanguage1 : entry.textLanguage2),
     modName: entry.modName ?? '',
     uid: entry.uid ?? '',
+    gameCode: entry.gameCode ?? '',
+    gameName: entry.gameName ?? '',
     updatedAt: entry.updatedAt
   }
 }
@@ -1259,7 +1312,9 @@ function toEntryDraft(entry: DisplayEntry): EntryDraft {
     sourceText: entry.sourceText,
     targetText: entry.targetText,
     modName: entry.modName,
-    uid: entry.uid
+    uid: entry.uid,
+    gameCode: entry.gameCode,
+    gameName: entry.gameName
   }
 }
 

@@ -327,7 +327,8 @@ export function TranslationSessionProvider({
           sourceLang,
           targetLang,
           modName,
-          columnMap: options?.columnMap
+          columnMap: options?.columnMap,
+          gameCode: options?.parserId
         })
       } finally {
         unsub()

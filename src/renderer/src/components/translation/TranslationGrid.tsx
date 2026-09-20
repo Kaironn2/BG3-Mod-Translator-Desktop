@@ -98,7 +98,8 @@ export function TranslationGrid({
     clearSelection,
     sourceLang,
     targetLang,
-    modName
+    modName,
+    parserId
   } = session
   const [search, setSearch] = useState('')
   const [matchCase, setMatchCase] = useState(false)
@@ -345,7 +346,8 @@ export function TranslationGrid({
           textLanguage1: encodeEntities(entry.source),
           textLanguage2: encodeEntities(targetsByRow.get(entry.rowId) ?? ''),
           modName: modName || null,
-          uid: entry.uid || null
+          uid: entry.uid || null,
+          gameCode: parserId
         }))
 
       try {
@@ -365,7 +367,7 @@ export function TranslationGrid({
         return false
       }
     },
-    [entries, filterIsActive, modName, replaceRowIds, session, sourceLang, t, targetLang]
+    [entries, filterIsActive, modName, parserId, replaceRowIds, session, sourceLang, t, targetLang]
   )
 
   const allFiltered =

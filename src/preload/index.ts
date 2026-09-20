@@ -78,6 +78,7 @@ const api: AppApi = {
         matchWholeWord?: boolean
         searchField?: 'all' | 'source' | 'target'
         modName?: string
+        gameCode?: string
         sourceLang?: string
         targetLang?: string
       }
@@ -163,6 +164,7 @@ const api: AppApi = {
         matchWholeWord?: boolean
         searchField?: 'all' | 'source' | 'target'
         modName?: string
+        gameCode?: string
         sourceLang?: string
         targetLang?: string
       }
@@ -179,6 +181,7 @@ const api: AppApi = {
       matchWholeWord?: boolean
       searchField?: 'all' | 'source' | 'target'
       modName?: string
+      gameCode?: string
       sourceLang?: string
       targetLang?: string
     }): Promise<{ deleted: number }> => ipcRenderer.invoke('dictionary:deleteByFilter', filters),
@@ -190,6 +193,7 @@ const api: AppApi = {
         matchWholeWord?: boolean
         searchField?: 'all' | 'source' | 'target'
         modName?: string
+        gameCode?: string
         sourceLang?: string
         targetLang?: string
       },
@@ -205,6 +209,7 @@ const api: AppApi = {
         matchWholeWord?: boolean
         searchField?: 'all' | 'source' | 'target'
         modName?: string
+        gameCode?: string
         sourceLang?: string
         targetLang?: string
       },
@@ -354,6 +359,7 @@ const api: AppApi = {
       targetLang: string
       modName?: string
       columnMap?: import('./api-types').CsvColumnMap
+      gameCode?: string
     }): Promise<
       {
         uid: string

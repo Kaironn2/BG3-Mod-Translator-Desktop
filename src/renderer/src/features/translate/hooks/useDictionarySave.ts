@@ -8,7 +8,7 @@ import type { TranslationSession } from '../types'
 export function useDictionarySave(session: TranslationSession) {
   const { t } = useAppTranslation(['toasts', 'common'])
   const [isSaving, setIsSaving] = useState(false)
-  const { entries, sourceLang, targetLang, modName } = session
+  const { entries, sourceLang, targetLang, modName, parserId } = session
 
   const saveEntry = useCallback(
     async (rowId: string, target: string) => {
@@ -22,13 +22,14 @@ export function useDictionarySave(session: TranslationSession) {
           textLanguage1: encodeEntities(entry.source),
           textLanguage2: encodeEntities(target),
           modName: modName || null,
-          uid: entry.uid || null
+          uid: entry.uid || null,
+          gameCode: parserId
         })
       } catch (err) {
         toast.error(getLocalizedErrorMessage(err, t))
       }
     },
-    [entries, modName, sourceLang, targetLang]
+    [entries, modName, parserId, sourceLang, targetLang]
   )
 
   const saveAll = useCallback(async () => {
@@ -47,7 +48,8 @@ export function useDictionarySave(session: TranslationSession) {
           textLanguage1: encodeEntities(entry.source),
           textLanguage2: encodeEntities(entry.target),
           modName: modName || null,
-          uid: entry.uid || null
+          uid: entry.uid || null,
+          gameCode: parserId
         }))
       )
       toast.success(t('translate.savedCount', { ns: 'toasts', count: toSave.length }))
@@ -56,7 +58,7 @@ export function useDictionarySave(session: TranslationSession) {
     } finally {
       setIsSaving(false)
     }
-  }, [entries, modName, sourceLang, targetLang])
+  }, [entries, modName, parserId, sourceLang, targetLang])
 
   return { isSaving, saveEntry, saveAll }
 }

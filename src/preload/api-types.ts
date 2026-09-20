@@ -147,6 +147,9 @@ export interface DictionaryEntry {
   textLanguage2: string
   modName: string | null
   uid: string | null
+  gameId?: number | null
+  gameCode?: string | null
+  gameName?: string | null
   createdAt: string | null
   updatedAt: string | null
 }
@@ -158,6 +161,7 @@ export interface UpsertDictionaryPayload {
   textLanguage2: string
   modName?: string | null
   uid?: string | null
+  gameCode?: string | null
 }
 
 export interface SimilarEntry {
@@ -364,6 +368,7 @@ export interface DictionaryFilters {
   matchWholeWord?: boolean
   searchField?: DictionarySearchField
   modName?: string
+  gameCode?: string
   sourceLang?: string
   targetLang?: string
 }
@@ -605,6 +610,7 @@ export interface XmlApi {
     targetLang: string
     modName?: string
     columnMap?: CsvColumnMap
+    gameCode?: string
   }): Promise<XmlEntry[]>
   export(params: {
     outputPath: string

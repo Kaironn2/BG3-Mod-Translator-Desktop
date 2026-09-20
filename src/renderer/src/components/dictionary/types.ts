@@ -5,6 +5,8 @@ export interface EntryDraft {
   targetText: string
   modName: string
   uid: string
+  gameCode: string
+  gameName: string
 }
 
 export interface DisplayEntry extends EntryDraft {
@@ -28,7 +30,9 @@ export const EMPTY_ENTRY_DRAFT: EntryDraft = {
   sourceText: '',
   targetText: '',
   modName: '',
-  uid: ''
+  uid: '',
+  gameCode: '',
+  gameName: ''
 }
 
 export const EMPTY_REPLACE_DRAFT: ReplaceDraft = {
