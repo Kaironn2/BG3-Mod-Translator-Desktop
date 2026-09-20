@@ -6,7 +6,7 @@ import type { Language, MergeProgress, MergeResult, PreparedTranslationInput } f
 import type { MergeFileSlot, SlotKey } from '../types'
 
 const ACCEPTED_EXT = ['xml', 'loca', 'pak', 'zip']
-const FILE_FILTERS = [{ name: 'Mod Files', extensions: ACCEPTED_EXT }]
+const FILE_FILTERS = [{ name: 'Files', extensions: ACCEPTED_EXT }]
 
 function emptySlot(lang: string): MergeFileSlot {
   return {

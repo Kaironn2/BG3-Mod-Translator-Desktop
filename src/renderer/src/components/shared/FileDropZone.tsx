@@ -97,7 +97,7 @@ export function FileDropZone({
         return
       }
       const paths = await window.api.fs.openDialog({
-        filters: [{ name: 'Mod files', extensions: accept ?? [] }]
+        filters: [{ name: 'Files', extensions: accept ?? [] }]
       })
       if (paths[0]) onFile(paths[0])
     } finally {

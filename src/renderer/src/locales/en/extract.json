@@ -1,5 +1,5 @@
 {
-  "title": "Extract mod",
+  "title": "Extract package",
   "dropLabel": "Drop your .zip or .pak file here",
   "outputFolder": "Output folder",
   "selectOutputFolder": "Select output folder...",

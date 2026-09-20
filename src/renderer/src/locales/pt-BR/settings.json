@@ -8,7 +8,7 @@
     "metadata": "Metadados padrão",
     "metadataSubtitle": "Valores pré-preenchidos para novas sessões de tradução e exportações.",
     "packagePaths": "Pastas das ferramentas de pacote",
-    "packagePathsSubtitle": "Pastas de saída padrão para Extrair mod e Criar pacote. Com um caminho definido, essas páginas podem descompactar ou empacotar direto nele.",
+    "packagePathsSubtitle": "Pastas de saída padrão para Extrair pacote e Criar pacote. Com um caminho definido, essas páginas podem descompactar ou empacotar direto nele.",
     "apiKeys": "Chaves de API",
     "apiKeysSubtitle": "Chaves do DeepL e do Google Translate. Salvas automaticamente.",
     "debugLogs": "Logs de depuração"

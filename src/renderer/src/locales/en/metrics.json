@@ -36,7 +36,7 @@
     "column": {
       "date": "Date",
       "service": "Service",
-      "mod": "Mod",
+      "mod": "Project",
       "entries": "Entries",
       "chars": "Chars"
     },
@@ -50,7 +50,7 @@
       "title": "Entries per Day"
     },
     "modsTranslated": {
-      "title": "Mods Translated"
+      "title": "Projects translated"
     },
     "range": {
       "7d": "Last 7 days",

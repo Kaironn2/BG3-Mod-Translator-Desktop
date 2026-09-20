@@ -16,3 +16,4 @@ design/
 scripts/bench-results/
 bench/bench-results/
 *.test.cjs
+.playwright-mcp/

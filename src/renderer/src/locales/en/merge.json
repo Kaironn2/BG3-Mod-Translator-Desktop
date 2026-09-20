@@ -3,7 +3,7 @@
   "steps": {
     "source": "Source",
     "translated": "Translated",
-    "mod": "Mod"
+    "mod": "Project"
   },
   "sourceFile": {
     "title": "Source file",
@@ -21,9 +21,9 @@
     "filesSelected": "files selected"
   },
   "nameStep": {
-    "title": "Merged mod",
-    "description": "Choose the destination mod name for the merged output.",
-    "label": "Mod name",
+    "title": "Merged project",
+    "description": "Choose the destination project name for the merged output.",
+    "label": "Project name",
     "placeholder": "ex: Shared Translation Pack"
   },
   "preparing": {

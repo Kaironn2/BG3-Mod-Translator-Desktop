@@ -1,9 +1,9 @@
 {
   "translate": "Translate",
   "dictionary": "Dictionary",
-  "mods": "Manage Mods",
+  "mods": "Manage projects",
   "merge": "Merge translations",
-  "extract": "Extract mod",
+  "extract": "Extract package",
   "package": "Create package",
   "settings": "Settings",
   "metrics": "Metrics"

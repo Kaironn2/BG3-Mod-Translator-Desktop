@@ -1,33 +1,33 @@
 {
-  "title": "Gerenciar Mods",
-  "subtitle": "Exclua mods e defina a prioridade de carregamento do dicionário.",
-  "searchPlaceholder": "Buscar mod...",
+  "title": "Gerenciar projetos",
+  "subtitle": "Exclua projetos e defina a prioridade de carregamento do dicionário.",
+  "searchPlaceholder": "Buscar projeto...",
   "priority": {
     "heading": "Ordem de prioridade",
-    "empty": "Nenhum mod com prioridade. Promova um mod da lista abaixo.",
+    "empty": "Nenhum projeto com prioridade. Promova um projeto da lista abaixo.",
     "infoTitle": "Prioridade de carregamento do dicionário",
-    "infoBody": "Os mods listados aqui são consultados primeiro, em ordem, ao traduzir. A posição 1 tem a maior prioridade."
+    "infoBody": "Os projetos listados aqui são consultados primeiro, em ordem, ao traduzir. A posição 1 tem a maior prioridade."
   },
   "fallback": {
-    "heading": "Outros mods",
-    "empty": "Nenhum mod encontrado."
+    "heading": "Outros projetos",
+    "empty": "Nenhum projeto encontrado."
   },
   "actions": {
     "promote": "Adicionar à prioridade",
     "demote": "Remover da prioridade",
     "moveUp": "Mover para cima",
     "moveDown": "Mover para baixo",
-    "delete": "Excluir mod",
-    "select": "Selecionar mod",
+    "delete": "Excluir projeto",
+    "select": "Selecionar projeto",
     "positionLabel": "Posição",
     "dragDisabledWhileSearch": "Limpe a busca para reordenar"
   },
   "selection": {
     "selectAll": "Selecionar todos",
-    "selectVisible": "Selecionar mods visíveis",
+    "selectVisible": "Selecionar projetos visíveis",
     "selectSection": "Selecionar seção",
-    "count_one": "{{count}} mod selecionado",
-    "count_other": "{{count}} mods selecionados",
+    "count_one": "{{count}} projeto selecionado",
+    "count_other": "{{count}} projetos selecionados",
     "entries_one": "{{count}} entrada do dicionário será excluída.",
     "entries_other": "{{count}} entradas do dicionário serão excluídas.",
     "clear": "Limpar",
@@ -36,29 +36,29 @@
     "headerSummary": "{{mods}} selecionados · {{rows}} entradas"
   },
   "delete": {
-    "title": "Excluir mod",
-    "titleMany": "Excluir {{count}} mods",
-    "subject": "Tem certeza que deseja excluir o mod {{name}}?",
-    "subjectMany": "Tem certeza que deseja excluir estes {{count}} mods?",
+    "title": "Excluir projeto",
+    "titleMany": "Excluir {{count}} projetos",
+    "subject": "Tem certeza que deseja excluir o projeto {{name}}?",
+    "subjectMany": "Tem certeza que deseja excluir estes {{count}} projetos?",
     "moreNames": "e mais {{count}}",
     "loadingPreview": "Contando entradas do dicionário...",
     "impactRows_one": "{{count}} entrada do dicionário será removida.",
     "impactRows_other": "{{count}} entradas do dicionário serão removidas.",
     "impactFolder": "A pasta {{path}} será excluída.",
-    "impactFolderMissing": "Nenhuma pasta de mod no disco.",
-    "impactFolders_one": "{{count}} pasta de mod armazenada será excluída.",
-    "impactFolders_other": "{{count}} pastas de mod armazenadas serão excluídas.",
+    "impactFolderMissing": "Nenhuma pasta de projeto no disco.",
+    "impactFolders_one": "{{count}} pasta de projeto armazenada será excluída.",
+    "impactFolders_other": "{{count}} pastas de projeto armazenadas serão excluídas.",
     "irreversible": "Esta ação não pode ser desfeita.",
-    "confirm": "Excluir mod e entradas",
-    "confirmMany": "Excluir mods e entradas",
+    "confirm": "Excluir projeto e entradas",
+    "confirmMany": "Excluir projetos e entradas",
     "cancel": "Cancelar"
   },
   "toast": {
-    "deleted": "Mod \"{{name}}\" excluído.",
-    "deletedMany": "{{count}} mods excluídos ({{rows}} entradas do dicionário).",
-    "promoted": "Mod \"{{name}}\" promovido.",
-    "demoted": "Mod \"{{name}}\" removido da prioridade.",
+    "deleted": "Projeto \"{{name}}\" excluído.",
+    "deletedMany": "{{count}} projetos excluídos ({{rows}} entradas do dicionário).",
+    "promoted": "Projeto \"{{name}}\" promovido.",
+    "demoted": "Projeto \"{{name}}\" removido da prioridade.",
     "reordered": "Ordem de prioridade atualizada.",
-    "deleteFailed": "Falha ao excluir o mod."
+    "deleteFailed": "Falha ao excluir o projeto."
   }
 }

@@ -1,5 +1,5 @@
 {
-  "title": "Extrair mod",
+  "title": "Extrair pacote",
   "dropLabel": "Solte seu arquivo .zip ou .pak aqui",
   "outputFolder": "Pasta de saída",
   "selectOutputFolder": "Selecionar pasta de saída...",

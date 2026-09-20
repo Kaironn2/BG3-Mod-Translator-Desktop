@@ -8,7 +8,11 @@
     "generic": "Generic",
     "games": "Games",
     "comingSoon": "Coming soon",
-    "back": "Parsers"
+    "back": "Parsers",
+    "extractTitle": "Choose a game to extract",
+    "extractSubtitle": "Unpack localization files from a game package.",
+    "packageTitle": "Choose a game to package",
+    "packageSubtitle": "Pack localization files into a game package."
   },
   "csvColumns": {
     "title": "CSV columns",
@@ -33,7 +37,7 @@
   "setup": {
     "steps": {
       "languages": "Languages",
-      "mod": "Mod",
+      "mod": "Project",
       "file": "File"
     },
     "languagePair": {
@@ -43,21 +47,21 @@
       "target": "Target"
     },
     "modSelection": {
-      "title": "Mod",
-      "description": "Select an existing mod or create a new one.",
+      "title": "Project",
+      "description": "Select an existing project or create a new one.",
       "existing": "Existing",
       "new": "+ New",
-      "searchPlaceholder": "Search mod...",
-      "noMods": "No mods found. Create a new one.",
+      "searchPlaceholder": "Search project...",
+      "noMods": "No projects found. Create a new one.",
       "noSearchResults": "No results for this search.",
-      "modName": "Mod name",
+      "modName": "Project name",
       "modNamePlaceholder": "ex: Order of the Dracolich"
     },
     "fileCard": {
-      "title": "Mod file",
+      "title": "Project file",
       "description": "Drop here or browse. Accepts {{extensions}}.",
       "dropZone": "File drop area",
-      "dropPrompt": "Drag the mod file here",
+      "dropPrompt": "Drag the file here",
       "browseFile": "Browse file",
       "fileSelected": "File selected"
     },
@@ -66,10 +70,10 @@
     "openEditor": "Open editor",
     "loadingPreparingSession": "Preparing translation session...",
     "loadingEntries": "Loading XML entries...",
-    "loadingModData": "Updating mod data...",
+    "loadingModData": "Updating project data...",
     "loadingPreparingFile": "Preparing file to open the editor...",
     "loadingEditor": "Loading translation editor...",
-    "loadingUnpacking": "Unpacking mod files…",
+    "loadingUnpacking": "Unpacking files…",
     "loadingParsing": "Parsing localization XML…",
     "loadingCache": "Loading dictionary cache…",
     "loadingMatching": "Matching dictionary {{processed}} / {{total}}"
@@ -104,7 +108,7 @@
     "entries": "{{count}} entries",
     "containsTags": "contains tags",
     "dictionarySuggestion": "Dictionary suggests:",
-    "dictionaryTagMod": "1 term (mod)",
+    "dictionaryTagMod": "1 term (project)",
     "dictionaryTag": "1 term",
     "refreshView": "Refresh list",
     "refreshViewHidden": "{{count}} pending",
@@ -177,7 +181,7 @@
     "tabXml": "XML files",
     "tabLoca": "LOCA files",
     "useLoca": "Use LOCA",
-    "duplicateHint": "This mod ships the same strings as both .xml and .loca. Pick one format — importing both would duplicate entries."
+    "duplicateHint": "This project ships the same strings as both .xml and .loca. Pick one format — importing both would duplicate entries."
   },
   "loaded": {
     "defaultFileName": "translation.xml"

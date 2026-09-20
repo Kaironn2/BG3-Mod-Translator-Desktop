@@ -1,9 +1,9 @@
 {
   "translate": "Traduzir",
   "dictionary": "Dicionário",
-  "mods": "Gerenciar mods",
+  "mods": "Gerenciar projetos",
   "merge": "Mesclar traduções",
-  "extract": "Extrair mod",
+  "extract": "Extrair pacote",
   "package": "Criar pacote",
   "settings": "Configurações",
   "metrics": "Métricas"

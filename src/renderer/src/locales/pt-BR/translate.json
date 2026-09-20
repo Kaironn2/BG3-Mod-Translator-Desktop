@@ -8,7 +8,11 @@
     "generic": "Genéricos",
     "games": "Jogos",
     "comingSoon": "Em breve",
-    "back": "Parsers"
+    "back": "Parsers",
+    "extractTitle": "Escolha um jogo para extrair",
+    "extractSubtitle": "Descompacte arquivos de localização de um pacote do jogo.",
+    "packageTitle": "Escolha um jogo para empacotar",
+    "packageSubtitle": "Empacote arquivos de localização em um pacote do jogo."
   },
   "csvColumns": {
     "title": "Colunas do CSV",
@@ -33,7 +37,7 @@
   "setup": {
     "steps": {
       "languages": "Idiomas",
-      "mod": "Mod",
+      "mod": "Projeto",
       "file": "Arquivo"
     },
     "languagePair": {
@@ -43,21 +47,21 @@
       "target": "Destino"
     },
     "modSelection": {
-      "title": "Mod",
-      "description": "Selecione um mod existente ou crie um novo.",
+      "title": "Projeto",
+      "description": "Selecione um projeto existente ou crie um novo.",
       "existing": "Existente",
       "new": "+ Novo",
-      "searchPlaceholder": "Buscar mod...",
-      "noMods": "Nenhum mod encontrado. Crie um novo.",
+      "searchPlaceholder": "Buscar projeto...",
+      "noMods": "Nenhum projeto encontrado. Crie um novo.",
       "noSearchResults": "Nenhum resultado para a busca.",
-      "modName": "Nome do mod",
+      "modName": "Nome do projeto",
       "modNamePlaceholder": "ex: Order of the Dracolich"
     },
     "fileCard": {
-      "title": "Arquivo do mod",
+      "title": "Arquivo do projeto",
       "description": "Solte aqui ou procure. Aceita {{extensions}}.",
       "dropZone": "Área de drop de arquivo",
-      "dropPrompt": "Arraste o arquivo do mod aqui",
+      "dropPrompt": "Arraste o arquivo aqui",
       "browseFile": "Buscar arquivo",
       "fileSelected": "Arquivo selecionado"
     },
@@ -66,10 +70,10 @@
     "openEditor": "Abrir editor",
     "loadingPreparingSession": "Preparando sessão de tradução...",
     "loadingEntries": "Carregando entradas do XML...",
-    "loadingModData": "Atualizando dados do mod...",
+    "loadingModData": "Atualizando dados do projeto...",
     "loadingPreparingFile": "Preparando arquivo para abrir o editor...",
     "loadingEditor": "Carregando editor de tradução...",
-    "loadingUnpacking": "Descompactando arquivos do mod…",
+    "loadingUnpacking": "Descompactando arquivos…",
     "loadingParsing": "Lendo XML de localização…",
     "loadingCache": "Carregando cache do dicionário…",
     "loadingMatching": "Comparando dicionário {{processed}} / {{total}}"
@@ -104,7 +108,7 @@
     "entries": "{{count}} entradas",
     "containsTags": "contém tags",
     "dictionarySuggestion": "Dicionário sugere:",
-    "dictionaryTagMod": "1 termo (mod)",
+    "dictionaryTagMod": "1 termo (projeto)",
     "dictionaryTag": "1 termo",
     "refreshView": "Atualizar lista",
     "refreshViewHidden": "{{count}} pendente(s)",
@@ -177,7 +181,7 @@
     "tabXml": "Arquivos XML",
     "tabLoca": "Arquivos LOCA",
     "useLoca": "Usar LOCA",
-    "duplicateHint": "Este mod traz as mesmas strings em .xml e .loca. Escolha um único formato — importar os dois duplicaria as entradas."
+    "duplicateHint": "Este projeto traz as mesmas strings em .xml e .loca. Escolha um único formato — importar os dois duplicaria as entradas."
   },
   "loaded": {
     "defaultFileName": "traducao.xml"

@@ -51,7 +51,7 @@ export function DragDrop({ accept, onFile, label, className }: DragDropProps): R
 
   const handleBrowse = useCallback(async () => {
     setError(null)
-    const filters = [{ name: 'Mod files', extensions: accept }]
+    const filters = [{ name: 'Files', extensions: accept }]
     const paths = await window.api.fs.openDialog({ filters })
     if (paths[0]) onFile(paths[0])
   }, [accept, onFile])

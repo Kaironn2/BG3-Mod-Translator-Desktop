@@ -62,7 +62,7 @@ export function ProviderForm({
         value={fields.modName}
         onChange={(v) => onChange({ modName: v })}
         disabled={disabled}
-        placeholder="MyMod"
+        placeholder="My project"
       />
 
       <Field

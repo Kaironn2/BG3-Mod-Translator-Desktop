@@ -1,33 +1,33 @@
 {
-  "title": "Manage Mods",
-  "subtitle": "Delete mods and set the dictionary lookup priority.",
-  "searchPlaceholder": "Search mod...",
+  "title": "Manage projects",
+  "subtitle": "Delete projects and set the dictionary lookup priority.",
+  "searchPlaceholder": "Search project...",
   "priority": {
     "heading": "Priority order",
-    "empty": "No priority mods yet. Promote a mod from the list below.",
+    "empty": "No priority projects yet. Promote a project from the list below.",
     "infoTitle": "Dictionary lookup priority",
-    "infoBody": "Mods listed here are consulted first, in order, when translating. Position 1 is the highest priority."
+    "infoBody": "Projects listed here are consulted first, in order, when translating. Position 1 is the highest priority."
   },
   "fallback": {
-    "heading": "Other mods",
-    "empty": "No mods found."
+    "heading": "Other projects",
+    "empty": "No projects found."
   },
   "actions": {
     "promote": "Promote to priority",
     "demote": "Remove from priority",
     "moveUp": "Move up",
     "moveDown": "Move down",
-    "delete": "Delete mod",
-    "select": "Select mod",
+    "delete": "Delete project",
+    "select": "Select project",
     "positionLabel": "Position",
     "dragDisabledWhileSearch": "Clear search to reorder"
   },
   "selection": {
     "selectAll": "Select all",
-    "selectVisible": "Select visible mods",
+    "selectVisible": "Select visible projects",
     "selectSection": "Select section",
-    "count_one": "{{count}} mod selected",
-    "count_other": "{{count}} mods selected",
+    "count_one": "{{count}} project selected",
+    "count_other": "{{count}} projects selected",
     "entries_one": "{{count}} dictionary entry will be deleted.",
     "entries_other": "{{count}} dictionary entries will be deleted.",
     "clear": "Clear",
@@ -36,29 +36,29 @@
     "headerSummary": "{{mods}} selected · {{rows}} entries"
   },
   "delete": {
-    "title": "Delete mod",
-    "titleMany": "Delete {{count}} mods",
-    "subject": "Are you sure you want to delete the mod {{name}}?",
-    "subjectMany": "Are you sure you want to delete these {{count}} mods?",
+    "title": "Delete project",
+    "titleMany": "Delete {{count}} projects",
+    "subject": "Are you sure you want to delete the project {{name}}?",
+    "subjectMany": "Are you sure you want to delete these {{count}} projects?",
     "moreNames": "and {{count}} more",
     "loadingPreview": "Counting dictionary entries...",
     "impactRows_one": "{{count}} dictionary entry will be removed.",
     "impactRows_other": "{{count}} dictionary entries will be removed.",
     "impactFolder": "Folder {{path}} will be deleted.",
-    "impactFolderMissing": "No mod folder on disk.",
-    "impactFolders_one": "{{count}} stored mod folder will be deleted.",
-    "impactFolders_other": "{{count}} stored mod folders will be deleted.",
+    "impactFolderMissing": "No project folder on disk.",
+    "impactFolders_one": "{{count}} stored project folder will be deleted.",
+    "impactFolders_other": "{{count}} stored project folders will be deleted.",
     "irreversible": "This action cannot be undone.",
-    "confirm": "Delete mod and entries",
-    "confirmMany": "Delete mods and entries",
+    "confirm": "Delete project and entries",
+    "confirmMany": "Delete projects and entries",
     "cancel": "Cancel"
   },
   "toast": {
-    "deleted": "Mod \"{{name}}\" deleted.",
-    "deletedMany": "{{count}} mods deleted ({{rows}} dictionary entries).",
-    "promoted": "Mod \"{{name}}\" promoted.",
-    "demoted": "Mod \"{{name}}\" removed from priority.",
+    "deleted": "Project \"{{name}}\" deleted.",
+    "deletedMany": "{{count}} projects deleted ({{rows}} dictionary entries).",
+    "promoted": "Project \"{{name}}\" promoted.",
+    "demoted": "Project \"{{name}}\" removed from priority.",
     "reordered": "Priority order updated.",
-    "deleteFailed": "Failed to delete mod."
+    "deleteFailed": "Failed to delete project."
   }
 }

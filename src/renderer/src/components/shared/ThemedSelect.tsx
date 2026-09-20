@@ -15,8 +15,7 @@ export interface ThemedSelectOption {
 }
 
 interface MenuPosition {
-  top?: number
-  bottom?: number
+  top: number
   left: number
   width: number
   maxHeight: number
@@ -88,17 +87,11 @@ export function ThemedSelect({
       const rect = triggerRef.current?.getBoundingClientRect()
       if (!rect) return
 
-      const spaceBelow = window.innerHeight - rect.bottom - MENU_GAP
-      const spaceAbove = rect.top - MENU_GAP
-      const shouldOpenAbove = spaceBelow < MENU_MAX_HEIGHT && spaceAbove > spaceBelow
-      const maxHeight = Math.min(MENU_MAX_HEIGHT, shouldOpenAbove ? spaceAbove : spaceBelow)
-
       setMenuPosition({
-        top: shouldOpenAbove ? undefined : rect.bottom + MENU_GAP,
-        bottom: shouldOpenAbove ? window.innerHeight - rect.top + MENU_GAP : undefined,
+        top: rect.bottom + MENU_GAP,
         left: rect.left,
         width: Math.max(rect.width, menuMinWidth ?? rect.width),
-        maxHeight
+        maxHeight: MENU_MAX_HEIGHT
       })
     }
 
@@ -120,12 +113,14 @@ export function ThemedSelect({
       if (menuRef.current?.contains(target)) return
       setOpen(false)
       setQuery('')
+      setMenuPosition(null)
     }
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setOpen(false)
         setQuery('')
+        setMenuPosition(null)
         triggerRef.current?.focus()
       }
     }
@@ -147,6 +142,7 @@ export function ThemedSelect({
   const closeMenu = () => {
     setOpen(false)
     setQuery('')
+    setMenuPosition(null)
   }
 
   const menu =
@@ -156,32 +152,32 @@ export function ThemedSelect({
             ref={menuRef}
             role="listbox"
             id={listboxId}
-            className={cn(
-              'fixed z-[80] overflow-hidden rounded-lg border border-neutral-600 bg-[#131518] shadow-2xl',
-              menuClassName
-            )}
+          className={cn(
+            'fixed z-[80] flex flex-col overflow-hidden rounded-lg border border-neutral-600 bg-[#131518] shadow-2xl',
+            'overflow-x-clip',
+            menuClassName
+          )}
             style={{
               top: menuPosition.top,
-              bottom: menuPosition.bottom,
               left: menuPosition.left,
               width: menuPosition.width,
               maxHeight: menuPosition.maxHeight
             }}
           >
             {searchable && (
-              <div className="flex items-center gap-2 border-b border-[#1f2329] px-3 py-2.5 text-neutral-500">
+              <div className="flex shrink-0 items-center gap-2 border-b border-[#1f2329] px-3 py-2.5 text-neutral-500">
                 <Search size={14} />
                 <input
                   ref={searchRef}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={resolvedSearchPlaceholder}
-                  className="flex-1 bg-transparent text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
+                  className="min-w-0 flex-1 bg-transparent text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
                 />
               </div>
             )}
 
-            <div className="icosa-scroll max-h-60 overflow-y-auto p-1">
+            <div className="icosa-scroll min-h-0 flex-1 overflow-y-auto p-1">
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((option) => {
                   const active = option.value === value

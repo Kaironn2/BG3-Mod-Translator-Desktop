@@ -3,7 +3,7 @@
   "steps": {
     "source": "Origem",
     "translated": "Traduzido",
-    "mod": "Mod"
+    "mod": "Projeto"
   },
   "sourceFile": {
     "title": "Arquivo de origem",
@@ -22,8 +22,8 @@
   },
   "nameStep": {
     "title": "Detalhes do merge",
-    "description": "Escolha o nome do mod de destino para a saída mesclada.",
-    "label": "Nome do mod",
+    "description": "Escolha o nome do projeto de destino para a saída mesclada.",
+    "label": "Nome do projeto",
     "placeholder": "ex: Shared Translation Pack"
   },
   "preparing": {

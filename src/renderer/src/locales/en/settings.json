@@ -8,7 +8,7 @@
     "metadata": "Default metadata",
     "metadataSubtitle": "Pre-fill values for new translation sessions and exports.",
     "packagePaths": "Package tool paths",
-    "packagePathsSubtitle": "Default output folders for Extract mod and Create package. With a path set, those pages can unpack or pack straight into it.",
+    "packagePathsSubtitle": "Default output folders for Extract package and Create package. With a path set, those pages can unpack or pack straight into it.",
     "apiKeys": "API keys",
     "apiKeysSubtitle": "Keys for DeepL and Google Translate. Saved automatically.",
     "debugLogs": "Debug logs"
