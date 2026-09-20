@@ -1,4 +1,5 @@
 import { CaseSensitive, Search, WholeWord, X } from 'lucide-react'
+import { ThemedSelect, type ThemedSelectOption } from '@/components/shared/ThemedSelect'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 
@@ -13,6 +14,9 @@ interface TextSearchInputProps {
   inputRef?: React.RefObject<HTMLInputElement | null>
   className?: string
   inputClassName?: string
+  scopeValue?: string
+  onScopeChange?: (value: string) => void
+  scopeOptions?: ThemedSelectOption[]
 }
 
 function ToggleButton({
@@ -59,7 +63,10 @@ export function TextSearchInput({
   onMatchWholeWordChange,
   inputRef,
   className,
-  inputClassName
+  inputClassName,
+  scopeValue,
+  onScopeChange,
+  scopeOptions
 }: TextSearchInputProps): React.JSX.Element {
   const { t } = useAppTranslation('common')
 
@@ -83,6 +90,19 @@ export function TextSearchInput({
       )}
     >
       <Search size={13} className="shrink-0 text-neutral-500" />
+      {scopeValue !== undefined && onScopeChange && scopeOptions && (
+        <ThemedSelect
+          value={scopeValue}
+          onChange={onScopeChange}
+          options={scopeOptions}
+          className="w-[7.5rem] shrink-0"
+          triggerClassName="h-6 border-0 bg-transparent px-1.5 text-[11px] shadow-none hover:border-transparent hover:bg-[#1c1f24]"
+          menuMinWidth={148}
+        />
+      )}
+      {scopeValue !== undefined && onScopeChange && scopeOptions && (
+        <span className="h-4 w-px shrink-0 bg-[#1f2329]" />
+      )}
       <input
         ref={inputRef}
         value={value}

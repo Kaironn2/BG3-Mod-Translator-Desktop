@@ -657,28 +657,45 @@ export function TranslationGrid({
       </div>
     ) : null
 
+  const statusFilterOptions = useMemo<ThemedSelectOption[]>(
+    () => [
+      {
+        value: 'all',
+        label: t('grid.all', { ns: 'translate' }),
+        badge: `${entries.length}`
+      },
+      ...filterItems.map((item) => ({
+        value: item.mode,
+        label: item.label,
+        badge: `${item.count}`,
+        dot: item.dot
+      }))
+    ],
+    [entries.length, filterItems, t]
+  )
+
+  const searchPlaceholder =
+    searchField === 'source'
+      ? t('grid.searchPlaceholderSource', { ns: 'translate' })
+      : searchField === 'target'
+        ? t('grid.searchPlaceholderTarget', { ns: 'translate' })
+        : t('grid.searchPlaceholder', { ns: 'translate' })
+
   const searchBar = (
     <div className="icosa-scroll flex shrink-0 flex-nowrap items-center gap-2 overflow-x-auto overflow-y-hidden border-b border-[#1f2329] bg-[#0c0d0f] px-5 py-1 [scrollbar-gutter:stable]">
       <TextSearchInput
         value={search}
         onChange={setSearch}
-        placeholder={t('grid.searchPlaceholder', { ns: 'translate' })}
+        placeholder={searchPlaceholder}
         matchCase={matchCase}
         onMatchCaseChange={setMatchCase}
         matchWholeWord={wholeWord}
         onMatchWholeWordChange={setWholeWord}
         inputRef={searchInputRef}
-        className="w-[292px] min-w-45"
-      />
-
-      <ThemedSelect
-        value={searchField}
-        onChange={(value) => setSearchField(value as SearchFieldMode)}
-        options={searchFieldOptions}
-        placeholder={t('searchOptions.scopeAll', { ns: 'common' })}
-        className="w-32 shrink-0"
-        triggerClassName="h-8 px-2.5 text-xs"
-        menuMinWidth={160}
+        className="w-[28rem] min-w-72"
+        scopeValue={searchField}
+        onScopeChange={(value) => setSearchField(value as SearchFieldMode)}
+        scopeOptions={searchFieldOptions}
       />
 
       {fileOptions.counts.size > 0 && (
@@ -710,46 +727,16 @@ export function TranslationGrid({
 
       {sourceTabs}
 
+      <ThemedSelect
+        value={filter}
+        onChange={(value) => setFilter(value as FilterMode)}
+        options={statusFilterOptions}
+        className="w-52 shrink-0"
+        triggerClassName="h-8 px-2.5 text-xs"
+        menuMinWidth={220}
+      />
+
       <div className="flex shrink-0 items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setFilter('all')}
-          className={cn(
-            'flex h-8 cursor-pointer items-center gap-2 rounded-md border px-3 text-xs font-semibold transition-colors focus:outline-none focus-visible:border-[#2a2f37] focus-visible:bg-[#181b1f] focus-visible:text-neutral-100',
-            filter === 'all'
-              ? 'border-[#2a2f37] bg-[#181b1f] text-neutral-100'
-              : 'border-transparent text-neutral-400 hover:border-[#2a2f37] hover:bg-[#181b1f] hover:text-neutral-200'
-          )}
-        >
-          {t('grid.all', { ns: 'translate' })}
-          <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[11px] tabular-nums text-neutral-500">
-            {entries.length}
-          </span>
-        </button>
-
-        {filterItems.map((item) => {
-          const active = filter === item.mode
-          return (
-            <button
-              key={item.mode}
-              type="button"
-              onClick={() => setFilter(item.mode)}
-              className={cn(
-                'flex h-8 cursor-pointer items-center gap-2 rounded-md border px-2 text-xs font-semibold transition-colors focus:outline-none focus-visible:border-[#2a2f37] focus-visible:bg-[#181b1f] focus-visible:text-neutral-100',
-                active
-                  ? 'border-[#2a2f37] bg-[#181b1f] text-neutral-100'
-                  : 'border-transparent text-neutral-400 hover:border-[#2a2f37] hover:bg-[#181b1f] hover:text-neutral-200'
-              )}
-            >
-              <span className={cn('inline-block h-1.5 w-1.5 shrink-0 rounded-full', item.dot)} />
-              {item.label}
-              <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[11px] tabular-nums text-neutral-600">
-                {item.count}
-              </span>
-            </button>
-          )
-        })}
-
         <button
           type="button"
           aria-label={t('grid.refreshView', { ns: 'translate' })}

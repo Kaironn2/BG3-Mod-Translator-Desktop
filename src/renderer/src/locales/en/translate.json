@@ -61,6 +61,8 @@
   },
   "grid": {
     "searchPlaceholder": "Search strings...",
+    "searchPlaceholderSource": "Search source...",
+    "searchPlaceholderTarget": "Search translations...",
     "all": "All",
     "tabAll": "All",
     "fileAll": "All files",
