@@ -258,6 +258,20 @@ export type DictionaryDeleteProgressUpdate =
   | { phase: 'counting'; total: number }
   | { phase: 'deleting'; processed: number; total: number }
 
+export type DictionaryReplaceScope = 'source' | 'target' | 'both'
+
+export interface DictionaryReplacePatch {
+  findText: string
+  replaceText: string
+  scope: DictionaryReplaceScope
+  matchCase?: boolean
+  matchWholeWord?: boolean
+}
+
+export type DictionaryReplaceProgressUpdate =
+  | { phase: 'counting'; total: number }
+  | { phase: 'replacing'; processed: number; total: number }
+
 export interface ModMeta {
   metaFilePath: string
   name: string
@@ -358,14 +372,20 @@ export type UserErrorCode =
   | 'merge.languagesMustDiffer'
   | 'dictionary.xlsxNotSupported'
   | 'dictionary.deleteInProgress'
+  | 'dictionary.replaceInProgress'
   | 'package.versionFormatInvalid'
   | 'package.languageFolderInvalid'
   | 'package.folderInvalid'
 
 export type XmlMatchType = 'none' | 'mod-text' | 'text' | 'manual'
 
+export type DictionarySearchField = 'all' | 'source' | 'target'
+
 export interface DictionaryFilters {
   text?: string
+  matchCase?: boolean
+  matchWholeWord?: boolean
+  searchField?: DictionarySearchField
   modName?: string
   sourceLang?: string
   targetLang?: string
@@ -457,6 +477,7 @@ export interface DictionaryApi {
   import(params: { filePath: string; format: 'csv' | 'xlsx' }): Promise<{ count: number }>
   onImportProgress(cb: (data: DictionaryImportProgressUpdate) => void): () => void
   onDeleteProgress(cb: (data: DictionaryDeleteProgressUpdate) => void): () => void
+  onReplaceProgress(cb: (data: DictionaryReplaceProgressUpdate) => void): () => void
   export(params: {
     filters: DictionaryFilters
     format: 'csv' | 'xlsx'
@@ -471,7 +492,12 @@ export interface DictionaryApi {
   deleteByFilter(filters: DictionaryFilters): Promise<{ deleted: number }>
   replaceByFilter(
     filters: DictionaryFilters,
-    patch: { findText: string; replaceText: string; column: 'language1' | 'language2' }
+    patch: DictionaryReplacePatch
+  ): Promise<{ updated: number }>
+  replaceByIds(
+    ids: number[],
+    filters: DictionaryFilters,
+    patch: DictionaryReplacePatch
   ): Promise<{ updated: number }>
 }
 

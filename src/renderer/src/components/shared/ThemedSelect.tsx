@@ -11,6 +11,7 @@ export interface ThemedSelectOption {
   searchText?: string
   highlight?: boolean
   mark?: string
+  dot?: string
 }
 
 interface MenuPosition {
@@ -197,6 +198,9 @@ export function ThemedSelect({
                             : 'text-neutral-300 hover:bg-neutral-800'
                       )}
                     >
+                      {option.dot && (
+                        <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', option.dot)} />
+                      )}
                       <span className="flex-1 truncate">{option.label}</span>
                       {option.badge && (
                         <span className="font-mono text-[10px] text-neutral-500">
@@ -240,6 +244,9 @@ export function ThemedSelect({
           triggerClassName
         )}
       >
+        {selected?.dot && (
+          <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', selected.dot)} />
+        )}
         <span className="flex-1 truncate font-medium">
           {selected?.label ?? resolvedPlaceholder}
         </span>

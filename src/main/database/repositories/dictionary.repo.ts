@@ -1,9 +1,10 @@
-import { and, desc, eq, inArray, or, type SQL, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, or, type SQL, sql } from 'drizzle-orm'
 import type { drizzle } from 'drizzle-orm/better-sqlite3'
 import { dictionaryTextKey, normalizeDictionaryText } from '../../utils/dictionaryText'
 import { normalizeLangs } from '../../utils/languages'
-import { toFtsQuery } from '../fts-query'
+import { isFtsTokenizable, toFtsQuery } from '../fts-query'
 import { type DictionaryEntry, dictionary, type NewDictionaryEntry } from '../schema'
+import { buildTextMatchCondition } from '../text-search'
 
 type AppDb = ReturnType<typeof drizzle>
 
@@ -12,8 +13,15 @@ export interface SimilarityRow {
   target: string
 }
 
+export type DictionarySearchField = 'all' | 'source' | 'target'
+
 export interface DictionaryFilters {
   text?: string
+  matchCase?: boolean
+  matchWholeWord?: boolean
+  // Which translation side the text query applies to. 'source'/'target' follow
+  // the selected language direction (and the page's swap rule).
+  searchField?: DictionarySearchField
   modName?: string
   sourceLang?: string
   targetLang?: string
@@ -640,44 +648,48 @@ export class DictionaryRepository {
     return { deleted: result.changes }
   }
 
-  updateTextByFilter(
+  listChunkByFilter(
     filters: DictionaryFilters,
-    patch: { findText: string; replaceText: string; column: 'language1' | 'language2' }
-  ): { updated: number } {
-    const { sourceLang, targetLang } = filters
-    let swapped = false
-    if (sourceLang && targetLang) {
-      ;[, , swapped] = normalizeLangs(sourceLang, targetLang)
-    }
+    afterId: number,
+    limit: number
+  ): DictionaryEntry[] {
+    const where = this.buildFilterWhere(filters)
+    const idCond = sql`${dictionary.id} > ${afterId}`
+    const combined = where ? (and(where, idCond) as SQL) : idCond
+    return this.db
+      .select()
+      .from(dictionary)
+      .where(combined)
+      .orderBy(asc(dictionary.id))
+      .limit(Math.max(1, limit))
+      .all() as DictionaryEntry[]
+  }
 
-    // user's 'language1' (source) -> textLanguage1 when not swapped, textLanguage2 when swapped
-    const useL1 = (patch.column === 'language1') !== swapped
-    const filterWhere = this.buildFilterWhere(filters)
-    const { findText, replaceText } = patch
+  listByIds(ids: number[]): DictionaryEntry[] {
+    if (ids.length === 0) return []
+    return this.db.select().from(dictionary).where(inArray(dictionary.id, ids)).all() as DictionaryEntry[]
+  }
 
-    if (useL1) {
-      const likeWhere = sql`${dictionary.textLanguage1} like ${`%${findText}%`}`
-      const finalWhere = filterWhere ? (and(filterWhere, likeWhere) as SQL) : likeWhere
-      const result = this.db
-        .update(dictionary)
-        .set({
-          textLanguage1: sql`replace(${dictionary.textLanguage1}, ${findText}, ${replaceText})`
-        })
-        .where(finalWhere)
-        .run() as { changes: number }
-      return { updated: result.changes }
-    }
-
-    const likeWhere = sql`${dictionary.textLanguage2} like ${`%${findText}%`}`
-    const finalWhere = filterWhere ? (and(filterWhere, likeWhere) as SQL) : likeWhere
-    const result = this.db
-      .update(dictionary)
-      .set({
-        textLanguage2: sql`replace(${dictionary.textLanguage2}, ${findText}, ${replaceText})`
-      })
-      .where(finalWhere)
-      .run() as { changes: number }
-    return { updated: result.changes }
+  updateReplacedTexts(
+    rows: { id: number; textLanguage1: string; textLanguage2: string }[]
+  ): void {
+    if (rows.length === 0) return
+    this.db.transaction((tx) => {
+      for (const row of rows) {
+        const textLanguage1 = normalizeDictionaryText(row.textLanguage1)
+        const textLanguage2 = normalizeDictionaryText(row.textLanguage2)
+        tx.update(dictionary)
+          .set({
+            textLanguage1,
+            textLanguage2,
+            textLanguage1Key: dictionaryTextKey(textLanguage1),
+            textLanguage2Key: dictionaryTextKey(textLanguage2),
+            updatedAt: sql`(datetime('now'))`
+          })
+          .where(eq(dictionary.id, row.id))
+          .run()
+      }
+    })
   }
 
   private queryList(filters: DictionaryFilters) {
@@ -693,7 +705,7 @@ export class DictionaryRepository {
 
   private buildFilterWhere(filters: DictionaryFilters): SQL | undefined {
     const conditions: SQL[] = []
-    const text = filters.text?.trim().toLowerCase()
+    const text = filters.text?.trim()
     const modName = filters.modName?.trim()
     const sourceLang = filters.sourceLang?.trim()
     const targetLang = filters.targetLang?.trim()
@@ -720,27 +732,78 @@ export class DictionaryRepository {
     }
 
     if (text) {
-      const ftsQuery = this.hasFts() ? toFtsQuery(text) : null
-      if (ftsQuery) {
-        conditions.push(
-          sql`${dictionary.id} in (select rowid from dictionary_fts where dictionary_fts match ${ftsQuery})`
-        )
-      } else {
-        const pattern = `%${text}%`
-        conditions.push(
-          sql`(
-          lower(${dictionary.textLanguage1}) like ${pattern}
-          or lower(${dictionary.textLanguage2}) like ${pattern}
-          or lower(coalesce(${dictionary.uid}, '')) like ${pattern}
-          or lower(coalesce(${dictionary.modName}, '')) like ${pattern}
-        )`
-        )
-      }
+      const condition = this.buildTextSearchWhere(filters, text)
+      if (condition) conditions.push(condition)
     }
 
     if (conditions.length === 0) return undefined
     if (conditions.length === 1) return conditions[0]
     return and(...conditions) as SQL
+  }
+
+  // Text search is limited to dictionary text columns (never UID/mod names).
+  // Scope 'source'/'target' mirrors the page display: it resolves to the column
+  // holding the selected source/target language, including the swapped pair.
+  private buildTextSearchWhere(filters: DictionaryFilters, text: string): SQL {
+    const field = filters.searchField ?? 'all'
+    const matchCase = filters.matchCase ?? false
+    const wholeWord = filters.matchWholeWord ?? false
+    const { sourceLang, targetLang } = filters
+
+    const tokenizable = isFtsTokenizable(text)
+    const ftsQuery = this.hasFts()
+      ? toFtsQuery(text, { wholeWord: wholeWord && tokenizable })
+      : null
+    const canUseFtsAlone = Boolean(ftsQuery) && !matchCase && (!wholeWord || tokenizable)
+
+    const columnMatch = (names: ('text_language1' | 'text_language2')[]): SQL => {
+      const ftsPart = ftsQuery
+        ? sql`${dictionary.id} in (select rowid from dictionary_fts where dictionary_fts match ${`{${names.join(' ')}} : (${ftsQuery})`})`
+        : null
+      const precisePart = canUseFtsAlone
+        ? null
+        : (or(
+            ...names.map((name) =>
+              buildTextMatchCondition(
+                name === 'text_language1' ? dictionary.textLanguage1 : dictionary.textLanguage2,
+                text,
+                { matchCase, wholeWord }
+              )
+            )
+          ) as SQL)
+
+      if (ftsPart && precisePart) return and(ftsPart, precisePart) as SQL
+      if (ftsPart) return ftsPart
+      return precisePart as SQL
+    }
+
+    if (field === 'all') {
+      return columnMatch(['text_language1', 'text_language2'])
+    }
+
+    if (sourceLang && targetLang) {
+      const [, , swapped] = normalizeLangs(sourceLang, targetLang)
+      const useL1 = (field === 'source') !== swapped
+      return columnMatch([useL1 ? 'text_language1' : 'text_language2'])
+    }
+
+    if (!sourceLang && !targetLang) {
+      return columnMatch([field === 'source' ? 'text_language1' : 'text_language2'])
+    }
+
+    // Single language selected: when the searched side has its own filter, the
+    // match is on the column holding that language; otherwise the entry's other
+    // column is the searched side.
+    const selectedLang = field === 'source' ? sourceLang : targetLang
+    const otherLang = field === 'source' ? targetLang : sourceLang
+    const lang = (selectedLang ?? otherLang) as string
+    const firstColumn = selectedLang ? 'text_language1' : 'text_language2'
+    const secondColumn = selectedLang ? 'text_language2' : 'text_language1'
+
+    return or(
+      and(eq(dictionary.language1, lang), columnMatch([firstColumn])),
+      and(eq(dictionary.language2, lang), columnMatch([secondColumn]))
+    ) as SQL
   }
 
   private hasFts(): boolean {

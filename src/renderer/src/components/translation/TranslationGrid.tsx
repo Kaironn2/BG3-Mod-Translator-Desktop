@@ -1,20 +1,24 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { AlertTriangle, BookOpen, Check, Copy, RefreshCw, Search, X } from 'lucide-react'
-import {
-  startTransition,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition
-} from 'react'
+import { AlertTriangle, BookOpen, Check, Copy, RefreshCw, Replace } from 'lucide-react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { applyTextReplace } from '@/components/dictionary/replace'
+import type { ReplaceDraft } from '@/components/dictionary/types'
 import { HighlightedTextarea } from '@/components/shared/HighlightedTextarea'
+import { TextSearchInput } from '@/components/shared/TextSearchInput'
+import { ThemedSelect, type ThemedSelectOption } from '@/components/shared/ThemedSelect'
 import { AITranslateModal } from '@/components/translation/AITranslateModal'
 import {
+  EditorReplaceModal,
+  type EditorReplaceScopeInfo
+} from '@/components/translation/EditorReplaceModal'
+import {
+  entryMatchesFilter,
   type FilterSpec,
+  filterSpecIsActive,
+  filterSpecsEqual,
   materializeSelectedEntries,
+  type SearchFieldMode,
   type TranslationSessionEntry,
   useTranslationSession
 } from '@/context/TranslationSession'
@@ -23,6 +27,7 @@ import { useAISettings } from '@/hooks/useAISettings'
 import { getLocalizedErrorMessage } from '@/i18n/errors'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
+import { encodeEntities } from '@/lib/xmlEntities'
 import { renderSource } from '@/utils/renderSource'
 
 type TranslationCategory = 'dictionary' | 'tool' | 'manual' | 'none'
@@ -47,6 +52,18 @@ function getCategory(entry: TranslationSessionEntry): TranslationCategory {
 
 function hasXmlTags(entry: TranslationSessionEntry): boolean {
   return /(<[^>]+>|\{[^}]+\})/.test(entry.source)
+}
+
+function measureRowHeight(element: Element): number {
+  return Math.max(1, Math.ceil(element.getBoundingClientRect().height))
+}
+
+function estimateSideRowHeight(sourceLength: number): number {
+  return Math.min(520, 64 + Math.max(2, Math.ceil(sourceLength / 88)) * 21)
+}
+
+function estimateStackedRowHeight(sourceLength: number): number {
+  return Math.min(640, 160 + Math.max(3, Math.ceil(sourceLength / 70)) * 22)
 }
 
 function LangTag({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
@@ -80,20 +97,34 @@ export function TranslationGrid({
     toggleEntry,
     clearSelection,
     sourceLang,
-    targetLang
+    targetLang,
+    modName
   } = session
   const [search, setSearch] = useState('')
+  const [matchCase, setMatchCase] = useState(false)
+  const [wholeWord, setWholeWord] = useState(false)
+  const [searchField, setSearchField] = useState<SearchFieldMode>('all')
   const [filter, setFilter] = useState<FilterMode>('all')
   const [sourceTab, setSourceTab] = useState<SourceFileTab>('all')
+  const [sourceFile, setSourceFile] = useState('')
   const deferredSearch = useDeferredValue(search)
+  const deferredMatchCase = useDeferredValue(matchCase)
+  const deferredWholeWord = useDeferredValue(wholeWord)
+  const deferredSearchField = useDeferredValue(searchField)
   const deferredFilter = useDeferredValue(filter)
   const deferredSourceTab = useDeferredValue(sourceTab)
-  const [isPending, startFilterTransition] = useTransition()
+  const deferredSourceFile = useDeferredValue(sourceFile)
   const [pageSize, setPageSize] = useState<100 | 250 | 500 | 1000>(250)
   const [currentPage, setCurrentPage] = useState(1)
   const [stickyRowIds, setStickyRowIds] = useState<Set<string>>(() => new Set())
   // Row the per-line "Translate with AI" modal is open for (null = closed).
   const [aiEntry, setAiEntry] = useState<TranslationSessionEntry | null>(null)
+  const [replaceOpen, setReplaceOpen] = useState(false)
+  const [replaceRowIds, setReplaceRowIds] = useState<string[]>([])
+  const [replaceScope, setReplaceScope] = useState<EditorReplaceScopeInfo>({
+    kind: 'all',
+    entryCount: 0
+  })
   const { provider: aiProvider } = useAISettings()
   const aiMeta = getProviderMeta(aiProvider)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -101,6 +132,7 @@ export function TranslationGrid({
   const savedByEnterRef = useRef<Set<string>>(new Set())
   const sideParentRef = useRef<HTMLDivElement>(null)
   const stackedParentRef = useRef<HTMLDivElement>(null)
+  const pageEntriesRef = useRef<TranslationSessionEntry[]>([])
 
   const hasLocaFiles = entries.some((entry) => entry.sourceFileType === 'loca')
   const hasXmlFiles = entries.some(
@@ -133,41 +165,93 @@ export function TranslationGrid({
     return { xml, loca }
   }, [entries])
 
-  const filteredEntries = useMemo(() => {
-    return entries.filter((entry) => {
-      if (stickyRowIds.has(entry.rowId)) return true
-      if (deferredFilter === 'untranslated' && entry.target.trim()) return false
-      if (deferredFilter === 'translated' && !entry.target.trim()) return false
-      if (deferredFilter === 'dictionary' && getCategory(entry) !== 'dictionary') return false
-      if (deferredFilter === 'tags' && !hasXmlTags(entry)) return false
-      if (deferredSourceTab === 'loca' && entry.sourceFileType !== 'loca') return false
-      if (deferredSourceTab === 'xml' && entry.sourceFileType === 'loca') return false
-      if (deferredSearch) {
-        const query = deferredSearch.toLowerCase()
-        return (
-          entry.source.toLowerCase().includes(query) || entry.target.toLowerCase().includes(query)
-        )
+  const fileOptions = useMemo(() => {
+    const counts = new Map<string, number>()
+    let withoutFile = 0
+    for (const entry of entries) {
+      if (entry.sourceFile) counts.set(entry.sourceFile, (counts.get(entry.sourceFile) ?? 0) + 1)
+      else withoutFile += 1
+    }
+    return { counts, withoutFile }
+  }, [entries])
+
+  const sourceFileOptions = useMemo<ThemedSelectOption[]>(() => {
+    const options: ThemedSelectOption[] = [
+      {
+        value: '',
+        label: t('grid.fileAll', { ns: 'translate' }),
+        badge: `${entries.length}`
+      },
+      ...[...fileOptions.counts.entries()]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([fileName, count]) => ({
+          value: fileName,
+          label: fileName,
+          badge: `${count}`,
+          searchText: fileName
+        }))
+    ]
+    if (fileOptions.withoutFile > 0) {
+      options.push({
+        value: '__none__',
+        label: t('grid.fileNone', { ns: 'translate' }),
+        badge: `${fileOptions.withoutFile}`
+      })
+    }
+    return options
+  }, [entries.length, fileOptions, t])
+
+  const searchFieldOptions = useMemo<ThemedSelectOption[]>(
+    () => [
+      { value: 'all', label: t('searchOptions.scopeAll', { ns: 'common' }) },
+      { value: 'source', label: t('searchOptions.scopeSource', { ns: 'common' }) },
+      { value: 'target', label: t('searchOptions.scopeTarget', { ns: 'common' }) }
+    ],
+    [t]
+  )
+
+  // single source of truth for which entries "select-all" covers
+  const currentFilter: FilterSpec = useMemo(
+    () => {
+      const hasSearch = deferredSearch.trim() !== ''
+      return {
+        mode: deferredFilter,
+        search: deferredSearch,
+        matchCase: hasSearch ? deferredMatchCase : false,
+        wholeWord: hasSearch ? deferredWholeWord : false,
+        searchField: hasSearch ? deferredSearchField : 'all',
+        sourceTab: deferredSourceTab,
+        sourceFile: deferredSourceFile || undefined
       }
-      return true
-    })
-  }, [deferredFilter, deferredSearch, deferredSourceTab, entries, stickyRowIds])
+    },
+    [
+      deferredFilter,
+      deferredSearch,
+      deferredMatchCase,
+      deferredWholeWord,
+      deferredSearchField,
+      deferredSourceTab,
+      deferredSourceFile
+    ]
+  )
+
+  const filterIsActive = filterSpecIsActive(currentFilter)
+
+  const filteredEntries = useMemo(() => {
+    return entries.filter(
+      (entry) => stickyRowIds.has(entry.rowId) || entryMatchesFilter(entry, currentFilter)
+    )
+  }, [currentFilter, entries, stickyRowIds])
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [deferredFilter, deferredSearch, deferredSourceTab])
+  }, [currentFilter])
 
   // clear selection and sticky rows when filter or search changes
   useEffect(() => {
     clearSelection()
     setStickyRowIds(new Set())
-  }, [deferredFilter, deferredSearch, deferredSourceTab, clearSelection])
-
-  // single source of truth for which entries "select-all" covers
-  const currentFilter: FilterSpec = {
-    mode: deferredFilter,
-    search: deferredSearch,
-    sourceTab: deferredSourceTab
-  }
+  }, [currentFilter, clearSelection])
 
   const totalPages = Math.max(1, Math.ceil(filteredEntries.length / pageSize))
 
@@ -176,19 +260,34 @@ export function TranslationGrid({
   }, [currentPage, totalPages])
 
   const pageEntries = filteredEntries.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  pageEntriesRef.current = pageEntries
+
+  const listIsStale =
+    search !== deferredSearch ||
+    matchCase !== deferredMatchCase ||
+    wholeWord !== deferredWholeWord ||
+    searchField !== deferredSearchField ||
+    filter !== deferredFilter ||
+    sourceTab !== deferredSourceTab ||
+    sourceFile !== deferredSourceFile
 
   const sideVirtualizer = useVirtualizer({
     count: pageEntries.length,
     getScrollElement: () => sideParentRef.current,
-    estimateSize: () => 72,
-    overscan: 10
+    estimateSize: (index) => estimateSideRowHeight(pageEntriesRef.current[index]?.source.length ?? 0),
+    overscan: 6,
+    getItemKey: (index) => pageEntriesRef.current[index]?.rowId ?? index,
+    measureElement: measureRowHeight
   })
 
   const stackedVirtualizer = useVirtualizer({
     count: pageEntries.length,
     getScrollElement: () => stackedParentRef.current,
-    estimateSize: () => 220,
-    overscan: 10
+    estimateSize: (index) =>
+      estimateStackedRowHeight(pageEntriesRef.current[index]?.source.length ?? 0),
+    overscan: 6,
+    getItemKey: (index) => pageEntriesRef.current[index]?.rowId ?? index,
+    measureElement: measureRowHeight
   })
 
   const selectedStats = useMemo(() => {
@@ -199,19 +298,98 @@ export function TranslationGrid({
     }
   }, [session.selection, session.entries])
 
+  // Replace target set: selection > active filter > every entry.
+  const resolveReplaceTargets = useCallback((): {
+    kind: EditorReplaceScopeInfo['kind']
+    entries: TranslationSessionEntry[]
+  } => {
+    const selected = materializeSelectedEntries(session)
+    if (selected.length > 0) return { kind: 'selection', entries: selected }
+    if (filterIsActive) {
+      return { kind: 'filter', entries: entries.filter((entry) => entryMatchesFilter(entry, currentFilter)) }
+    }
+    return { kind: 'all', entries }
+  }, [currentFilter, entries, filterIsActive, session])
+
+  const openReplace = useCallback(() => {
+    const targets = resolveReplaceTargets()
+    setReplaceRowIds(targets.entries.map((entry) => entry.rowId))
+    setReplaceScope({ kind: targets.kind, entryCount: targets.entries.length })
+    setReplaceOpen(true)
+  }, [resolveReplaceTargets])
+
+  const handleEditorReplace = useCallback(
+    async (draft: ReplaceDraft): Promise<boolean> => {
+      const rowIds = new Set(replaceRowIds)
+      const updates: Array<{ rowId: string; target: string }> = []
+      for (const entry of entries) {
+        if (!rowIds.has(entry.rowId)) continue
+        const nextTarget = applyTextReplace(entry.target, draft)
+        if (nextTarget !== entry.target) updates.push({ rowId: entry.rowId, target: nextTarget })
+      }
+
+      if (updates.length === 0) {
+        toast.info(t('translate.replaceNoMatch', { ns: 'toasts' }))
+        return false
+      }
+
+      const targetsByRow = new Map(updates.map((update) => [update.rowId, update.target]))
+      const payload = entries
+        .filter((entry) => {
+          const target = targetsByRow.get(entry.rowId)
+          return target !== undefined && target.trim() !== ''
+        })
+        .map((entry) => ({
+          language1: sourceLang,
+          language2: targetLang,
+          textLanguage1: encodeEntities(entry.source),
+          textLanguage2: encodeEntities(targetsByRow.get(entry.rowId) ?? ''),
+          modName: modName || null,
+          uid: entry.uid || null
+        }))
+
+      try {
+        if (payload.length > 0) await window.api.dictionary.bulkUpsert(payload)
+        session.updateEntries(updates)
+        if (filterIsActive) {
+          setStickyRowIds((prev) => {
+            const next = new Set(prev)
+            for (const update of updates) next.add(update.rowId)
+            return next
+          })
+        }
+        toast.success(t('translate.replaceApplied', { ns: 'toasts', count: updates.length }))
+        return true
+      } catch (error) {
+        toast.error(getLocalizedErrorMessage(error, t))
+        return false
+      }
+    },
+    [entries, filterIsActive, modName, replaceRowIds, session, sourceLang, t, targetLang]
+  )
+
   const allFiltered =
     selection.kind === 'all-matching' &&
     selection.excluded.size === 0 &&
-    selection.filter.mode === deferredFilter &&
-    selection.filter.search === deferredSearch
+    filterSpecsEqual(selection.filter, currentFilter)
+
+  const openReplaceRef = useRef(openReplace)
+  openReplaceRef.current = openReplace
 
   useEffect(() => {
     const handleFindShortcut = (event: KeyboardEvent) => {
       if (!event.ctrlKey || event.shiftKey || event.altKey || event.metaKey) return
-      if (event.key.toLowerCase() !== 'f') return
-      event.preventDefault()
-      searchInputRef.current?.focus()
-      searchInputRef.current?.select()
+      const key = event.key.toLowerCase()
+      if (key === 'f') {
+        event.preventDefault()
+        searchInputRef.current?.focus()
+        searchInputRef.current?.select()
+        return
+      }
+      if (key === 'h') {
+        event.preventDefault()
+        openReplaceRef.current()
+      }
     }
 
     window.addEventListener('keydown', handleFindShortcut)
@@ -240,6 +418,25 @@ export function TranslationGrid({
     }
   }
 
+  const sourceSearch =
+    deferredSearch.trim() && (deferredSearchField === 'all' || deferredSearchField === 'source')
+      ? deferredSearch
+      : undefined
+  const targetSearch =
+    deferredSearch.trim() && (deferredSearchField === 'all' || deferredSearchField === 'target')
+      ? deferredSearch
+      : undefined
+  const searchOptions = { matchCase: deferredMatchCase, wholeWord: deferredWholeWord }
+
+  const renderEntrySource = (source: string) => {
+    if (!source) {
+      return (
+        <span className="italic text-neutral-600">{t('grid.emptySource', { ns: 'translate' })}</span>
+      )
+    }
+    return renderSource(source, { search: sourceSearch, searchOptions })
+  }
+
   const updateEntryTarget = (entry: TranslationSessionEntry, value: string) => {
     if (value !== entry.target) {
       onEntryChange(entry.rowId, value)
@@ -248,7 +445,7 @@ export function TranslationGrid({
   }
 
   const markSticky = (rowId: string) => {
-    if (deferredFilter === 'all' && !deferredSearch) return
+    if (!filterIsActive) return
     setStickyRowIds((prev) => {
       if (prev.has(rowId)) return prev
       const next = new Set(prev)
@@ -441,7 +638,7 @@ export function TranslationGrid({
           <button
             key={tab.mode}
             type="button"
-            onClick={() => startFilterTransition(() => setSourceTab(tab.mode))}
+            onClick={() => setSourceTab(tab.mode)}
             className={cn(
               'flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-xs font-semibold transition-colors',
               sourceTab === tab.mode
@@ -460,76 +657,95 @@ export function TranslationGrid({
       </div>
     ) : null
 
+  const statusFilterOptions = useMemo<ThemedSelectOption[]>(
+    () => [
+      {
+        value: 'all',
+        label: t('grid.all', { ns: 'translate' }),
+        badge: `${entries.length}`
+      },
+      ...filterItems.map((item) => ({
+        value: item.mode,
+        label: item.label,
+        badge: `${item.count}`,
+        dot: item.dot
+      }))
+    ],
+    [entries.length, filterItems, t]
+  )
+
+  const searchPlaceholder =
+    searchField === 'source'
+      ? t('grid.searchPlaceholderSource', { ns: 'translate' })
+      : searchField === 'target'
+        ? t('grid.searchPlaceholderTarget', { ns: 'translate' })
+        : t('grid.searchPlaceholder', { ns: 'translate' })
+
   const searchBar = (
-    <div className="flex shrink-0 items-center gap-3 border-b border-[#1f2329] bg-[#0c0d0f] px-5 py-1">
-      <div className="flex h-8 w-[292px] min-w-45 items-center gap-2 rounded-md border border-[#1f2329] bg-[#131518] px-3 transition-colors focus-within:border-neutral-600">
-        <Search size={13} className="shrink-0 text-neutral-500" />
-        <input
-          ref={searchInputRef}
-          value={search}
-          onChange={(event) => {
-            const value = event.target.value
-            startTransition(() => setSearch(value))
-          }}
-          placeholder={t('grid.searchPlaceholder', { ns: 'translate' })}
-          className="min-w-0 flex-1 bg-transparent text-xs font-medium text-neutral-300 placeholder:text-neutral-600 focus:outline-none"
+    <div className="icosa-scroll flex shrink-0 flex-nowrap items-center gap-2 overflow-x-auto overflow-y-hidden border-b border-[#1f2329] bg-[#0c0d0f] px-5 py-1 [scrollbar-gutter:stable]">
+      <TextSearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder={searchPlaceholder}
+        matchCase={matchCase}
+        onMatchCaseChange={setMatchCase}
+        matchWholeWord={wholeWord}
+        onMatchWholeWordChange={setWholeWord}
+        inputRef={searchInputRef}
+        className="w-[28rem] min-w-72"
+        scopeValue={searchField}
+        onScopeChange={(value) => setSearchField(value as SearchFieldMode)}
+        scopeOptions={searchFieldOptions}
+      />
+
+      <button
+        type="button"
+        aria-label={t('grid.replace', { ns: 'translate' })}
+        title={t('grid.replace', { ns: 'translate' })}
+        disabled={entries.length === 0}
+        onClick={openReplace}
+        className={cn(btnBase, 'h-8 gap-1.5 px-2.5 disabled:cursor-not-allowed disabled:opacity-40')}
+      >
+        <Replace size={12} />
+        {t('grid.replace', { ns: 'translate' })}
+      </button>
+
+      <span className="mx-1 h-5 w-px shrink-0 bg-[#1f2329]" />
+
+      {fileOptions.counts.size > 0 && (
+        <ThemedSelect
+          value={sourceFile}
+          onChange={setSourceFile}
+          options={sourceFileOptions}
+          searchable
+          placeholder={t('grid.fileAll', { ns: 'translate' })}
+          searchPlaceholder={t('placeholders.search', { ns: 'common' })}
+          emptyLabel={t('placeholders.noOptionFound', { ns: 'common' })}
+          className="w-44 shrink-0"
+          triggerClassName="h-8 px-2.5 text-xs"
+          menuMinWidth={220}
         />
-        {search && (
-          <button type="button" onClick={() => setSearch('')} className="shrink-0 cursor-pointer">
-            <X size={13} className="text-neutral-500 transition-colors hover:text-neutral-300" />
-          </button>
-        )}
-      </div>
+      )}
 
       {sourceTabs}
 
+      <ThemedSelect
+        value={filter}
+        onChange={(value) => setFilter(value as FilterMode)}
+        options={statusFilterOptions}
+        className="w-52 shrink-0"
+        triggerClassName="h-8 px-2.5 text-xs"
+        menuMinWidth={220}
+      />
+
       <div className="flex shrink-0 items-center gap-3">
-        <button
-          type="button"
-          onClick={() => startFilterTransition(() => setFilter('all'))}
-          className={cn(
-            'flex h-8 cursor-pointer items-center gap-2 rounded-md border px-3 text-xs font-semibold transition-colors focus:outline-none focus-visible:border-[#2a2f37] focus-visible:bg-[#181b1f] focus-visible:text-neutral-100',
-            filter === 'all'
-              ? 'border-[#2a2f37] bg-[#181b1f] text-neutral-100'
-              : 'border-transparent text-neutral-400 hover:border-[#2a2f37] hover:bg-[#181b1f] hover:text-neutral-200'
-          )}
-        >
-          {t('grid.all', { ns: 'translate' })}
-          <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[11px] tabular-nums text-neutral-500">
-            {entries.length}
-          </span>
-        </button>
-
-        {filterItems.map((item) => {
-          const active = filter === item.mode
-          return (
-            <button
-              key={item.mode}
-              type="button"
-              onClick={() => startFilterTransition(() => setFilter(item.mode))}
-              className={cn(
-                'flex h-8 cursor-pointer items-center gap-2 rounded-md border px-2 text-xs font-semibold transition-colors focus:outline-none focus-visible:border-[#2a2f37] focus-visible:bg-[#181b1f] focus-visible:text-neutral-100',
-                active
-                  ? 'border-[#2a2f37] bg-[#181b1f] text-neutral-100'
-                  : 'border-transparent text-neutral-400 hover:border-[#2a2f37] hover:bg-[#181b1f] hover:text-neutral-200'
-              )}
-            >
-              <span className={cn('inline-block h-1.5 w-1.5 shrink-0 rounded-full', item.dot)} />
-              {item.label}
-              <span className="rounded-full bg-[#181b1f] px-1.5 py-0.5 text-[11px] tabular-nums text-neutral-600">
-                {item.count}
-              </span>
-            </button>
-          )
-        })}
-
         <button
           type="button"
           aria-label={t('grid.refreshView', { ns: 'translate' })}
           title={t('grid.refreshView', { ns: 'translate' })}
           disabled={stickyRowIds.size === 0}
           onClick={() => setStickyRowIds(new Set())}
-          className={cn(btnBase, 'gap-1.5 disabled:cursor-not-allowed disabled:opacity-40')}
+          className={cn(btnBase, 'h-8 gap-1.5 disabled:cursor-not-allowed disabled:opacity-40')}
         >
           <RefreshCw size={12} />
           {stickyRowIds.size > 0 && (
@@ -540,12 +756,15 @@ export function TranslationGrid({
         </button>
       </div>
 
-      <div className="ml-auto flex items-center gap-3 text-xs font-semibold text-neutral-400">
-        {isPending && (
-          <span className="rounded-full border border-[#252a32] bg-[#181b1f] px-2 py-0.5 text-[10px] font-mono text-amber-400">
-            {t('status.updating', { ns: 'common' })}
-          </span>
-        )}
+      <div className="ml-auto flex shrink-0 items-center gap-3 text-xs font-semibold text-neutral-400">
+        <span
+          className={cn(
+            'rounded-full border border-[#252a32] bg-[#181b1f] px-2 py-0.5 font-mono text-[10px] text-amber-400',
+            !listIsStale && 'invisible'
+          )}
+        >
+          {t('status.updating', { ns: 'common' })}
+        </span>
         <span className="font-mono tabular-nums text-neutral-500">
           {t('grid.selectedStats', {
             ns: 'translate',
@@ -555,6 +774,18 @@ export function TranslationGrid({
         </span>
       </div>
     </div>
+  )
+
+  const replaceModal = (
+    <EditorReplaceModal
+      open={replaceOpen}
+      scope={replaceScope}
+      targetLang={targetLang}
+      initialMatchCase={matchCase}
+      initialWholeWord={wholeWord}
+      onClose={() => setReplaceOpen(false)}
+      onSubmit={handleEditorReplace}
+    />
   )
 
   if (viewMode === 'side') {
@@ -590,11 +821,15 @@ export function TranslationGrid({
 
         <div
           ref={sideParentRef}
-          className="icosa-scroll min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]"
+          className={cn(
+            'icosa-scroll min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]',
+            listIsStale && 'opacity-70'
+          )}
         >
           <div style={{ height: sideVirtualizer.getTotalSize(), position: 'relative' }}>
             {sideVirtualizer.getVirtualItems().map((virtualItem) => {
               const entry = pageEntries[virtualItem.index]
+              if (!entry) return null
               const category = getCategory(entry)
               const isDone = entry.target.trim() !== ''
               const isRowSelected = isSelected(entry.rowId)
@@ -604,19 +839,23 @@ export function TranslationGrid({
 
               return (
                 <div
-                  key={entry.rowId}
+                  key={virtualItem.key}
                   data-index={virtualItem.index}
                   ref={sideVirtualizer.measureElement}
-                  className={cn(
-                    'group grid border-b border-[#1f2329] transition-colors hover:bg-[#131518]/60 focus-within:bg-[#131518] focus-within:shadow-[inset_3px_0_0_#f59e0b]',
-                    isRowSelected && 'bg-blue-950/10'
-                  )}
                   style={{
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     width: '100%',
-                    transform: `translateY(${virtualItem.start}px)`,
+                    transform: `translateY(${virtualItem.start}px)`
+                  }}
+                >
+                <div
+                  className={cn(
+                    'group grid border-b border-[#1f2329] transition-colors hover:bg-[#131518]/60 focus-within:bg-[#131518] focus-within:shadow-[inset_3px_0_0_#f59e0b]',
+                    isRowSelected && 'bg-blue-950/10'
+                  )}
+                  style={{
                     gridTemplateColumns: '80px 1fr 1fr'
                   }}
                 >
@@ -644,13 +883,7 @@ export function TranslationGrid({
 
                   <div className="flex min-w-0 cursor-text flex-col gap-2 px-4 py-3">
                     <div className="wrap-break-word font-mono text-[13px] leading-[1.6] text-neutral-200 whitespace-pre-wrap">
-                      {entry.source ? (
-                        renderSource(entry.source)
-                      ) : (
-                        <span className="italic text-neutral-600">
-                          {t('grid.emptySource', { ns: 'translate' })}
-                        </span>
-                      )}
+                      {renderEntrySource(entry.source)}
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {isDictionary && (
@@ -700,6 +933,8 @@ export function TranslationGrid({
                       placeholder={t('grid.translationPlaceholder', { ns: 'translate' })}
                       containerClassName="rounded-md"
                       className="field-sizing-content"
+                      search={targetSearch}
+                      searchOptions={searchOptions}
                     />
                     <div className="flex items-center gap-1.5">
                       {renderAiButton(entry)}
@@ -714,6 +949,7 @@ export function TranslationGrid({
                     </div>
                   </div>
                 </div>
+                </div>
               )
             })}
           </div>
@@ -721,6 +957,7 @@ export function TranslationGrid({
 
         {PaginationFooter}
         {aiModal}
+        {replaceModal}
       </div>
     )
   }
@@ -741,11 +978,14 @@ export function TranslationGrid({
         </span>
       </div>
 
-      <div ref={stackedParentRef} className="icosa-scroll min-h-0 flex-1 overflow-y-auto">
-        {/* 44px = pt-5 (20px) + pb-6 (24px) added to total size so padding is preserved */}
+      <div
+        ref={stackedParentRef}
+        className={cn('icosa-scroll min-h-0 flex-1 overflow-y-auto', listIsStale && 'opacity-70')}
+      >
         <div style={{ height: stackedVirtualizer.getTotalSize() + 44, position: 'relative' }}>
           {stackedVirtualizer.getVirtualItems().map((virtualItem) => {
             const entry = pageEntries[virtualItem.index]
+            if (!entry) return null
             const category = getCategory(entry)
             const isDone = entry.target.trim() !== ''
             const isRowSelected = isSelected(entry.rowId)
@@ -758,7 +998,7 @@ export function TranslationGrid({
 
             return (
               <div
-                key={entry.rowId}
+                key={virtualItem.key}
                 data-index={virtualItem.index}
                 ref={stackedVirtualizer.measureElement}
                 style={{
@@ -766,7 +1006,6 @@ export function TranslationGrid({
                   top: 0,
                   left: 0,
                   width: '100%',
-                  // 20px offset = pt-5 top padding
                   transform: `translateY(${virtualItem.start + 20}px)`,
                   paddingLeft: '28px',
                   paddingRight: '28px',
@@ -865,13 +1104,7 @@ export function TranslationGrid({
                       </div>
 
                       <div className="wrap-break-word font-mono text-[14px] leading-[1.65] text-neutral-200 whitespace-pre-wrap">
-                        {entry.source ? (
-                          renderSource(entry.source)
-                        ) : (
-                          <span className="italic text-neutral-600">
-                            {t('grid.emptySource', { ns: 'translate' })}
-                          </span>
-                        )}
+                        {renderEntrySource(entry.source)}
                       </div>
 
                       {isDictionary && (
@@ -926,6 +1159,8 @@ export function TranslationGrid({
                         containerClassName="min-h-11 rounded-lg border-[#1f2329] bg-[#0c0d0f] focus-within:border-amber-500 focus-within:shadow-[0_0_0_3px_rgba(245,158,11,0.25)]"
                         overlayClassName="px-3.5 py-3 text-[13px] leading-[1.6]"
                         className="min-h-11 px-3.5 py-3 text-[13px] leading-[1.6]"
+                        search={targetSearch}
+                        searchOptions={searchOptions}
                       />
                     </div>
                   </div>
@@ -938,6 +1173,7 @@ export function TranslationGrid({
 
       {PaginationFooter}
       {aiModal}
+      {replaceModal}
     </div>
   )
 }

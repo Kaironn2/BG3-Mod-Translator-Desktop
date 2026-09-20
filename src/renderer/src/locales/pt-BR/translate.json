@@ -61,8 +61,13 @@
   },
   "grid": {
     "searchPlaceholder": "Buscar em strings...",
+    "searchPlaceholderSource": "Buscar na origem...",
+    "searchPlaceholderTarget": "Buscar nas traduções...",
     "all": "Todas",
     "tabAll": "Todas",
+    "fileAll": "Todos os arquivos",
+    "fileNone": "Sem arquivo",
+    "replace": "Substituir",
     "untranslated": "Não traduzidas",
     "translated": "Traduzidas",
     "dictionary": "Com dicionário",
@@ -93,6 +98,25 @@
       "next": "Próxima",
       "last": "Última"
     }
+  },
+  "replaceModal": {
+    "title": "Substituir nas traduções",
+    "description": "Substituir texto nas traduções em {{language}} ({{scope}}).",
+    "scopeSelected": "{{count}} strings selecionadas",
+    "scopeFiltered": "{{count}} strings no filtro atual",
+    "scopeAll": "todas as {{count}} strings",
+    "find": "Buscar",
+    "findPlaceholder": "Texto a procurar",
+    "replaceWith": "Substituir por",
+    "replacePlaceholder": "Novo texto",
+    "matchCase": "Diferenciar maiúsculas",
+    "matchWholeWord": "Palavra inteira",
+    "targetHint": "Buscar e substituir sempre agem na língua alvo ({{language}}).",
+    "apply": "Aplicar substituição",
+    "applying": "Aplicando...",
+    "discardTitle": "Descartar alterações?",
+    "discardDescription": "Existem parâmetros preenchidos nesta substituição. Se continuar, eles serão perdidos.",
+    "searchRequired": "Preencha o campo Buscar"
   },
   "alreadyTranslatedDialog": {
     "title": "Entradas já traduzidas selecionadas",

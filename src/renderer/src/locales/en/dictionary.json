@@ -11,7 +11,7 @@
     "lastEdit": "Last edit"
   },
   "filters": {
-    "searchPlaceholder": "Search term, translation, mod or UID...",
+    "searchPlaceholder": "Search texts...",
     "allMods": "All mods",
     "all": "All",
     "mod": "Mod",
@@ -57,7 +57,8 @@
     "deleteEntryTitle": "Delete entry?",
     "deleteEntryDescription": "Entry #{{id}} will be removed from the dictionary.",
     "deleteConfirm": "Delete",
-    "deleting": "Deleting..."
+    "deleting": "Deleting...",
+    "replacing": "Replacing..."
   },
   "entryModal": {
     "createTitle": "New entry",

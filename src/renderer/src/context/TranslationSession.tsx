@@ -6,6 +6,7 @@ import {
   type XmlEntry,
   type XmlLoadProgress
 } from '@/types'
+import { textMatches } from '@/utils/textSearch'
 
 export interface TranslationSessionEntry extends XmlEntry {
   rowId: string
@@ -15,11 +16,18 @@ type Phase = 'idle' | 'loading' | 'loaded'
 
 export type FilterMode = 'all' | 'untranslated' | 'translated' | 'dictionary' | 'tags'
 export type SourceTabMode = 'all' | 'xml' | 'loca'
+export type SearchFieldMode = 'all' | 'source' | 'target'
 export interface FilterSpec {
   mode: FilterMode
   search: string
+  matchCase?: boolean
+  wholeWord?: boolean
+  // Which side the search applies to (defaults to both).
+  searchField?: SearchFieldMode
   // Per-origin tab (.xml / .loca). 'all' means no file-type restriction.
   sourceTab?: SourceTabMode
+  // Specific source file (basename). Empty/undefined means every file.
+  sourceFile?: string
 }
 export type SelectionState =
   | { kind: 'explicit'; uids: Set<string> }
@@ -44,11 +52,44 @@ export function entryMatchesFilter(entry: TranslationSessionEntry, filter: Filte
   if (filter.mode === 'tags' && !hasXmlTags(entry)) return false
   if (filter.sourceTab === 'loca' && entry.sourceFileType !== 'loca') return false
   if (filter.sourceTab === 'xml' && entry.sourceFileType === 'loca') return false
-  if (filter.search) {
-    const query = filter.search.toLowerCase()
-    return entry.source.toLowerCase().includes(query) || entry.target.toLowerCase().includes(query)
+  if (filter.sourceFile === '__none__') {
+    if (entry.sourceFile) return false
+  } else if (filter.sourceFile && entry.sourceFile !== filter.sourceFile) {
+    return false
+  }
+  if (filter.search.trim()) {
+    const options = { matchCase: filter.matchCase, wholeWord: filter.wholeWord }
+    const field = filter.searchField ?? 'all'
+    if (field === 'source') return textMatches(filter.search, entry.source, options)
+    if (field === 'target') return textMatches(filter.search, entry.target, options)
+    return (
+      textMatches(filter.search, entry.source, options) ||
+      textMatches(filter.search, entry.target, options)
+    )
   }
   return true
+}
+
+export function filterSpecsEqual(a: FilterSpec, b: FilterSpec): boolean {
+  return (
+    a.mode === b.mode &&
+    a.search === b.search &&
+    (a.matchCase ?? false) === (b.matchCase ?? false) &&
+    (a.wholeWord ?? false) === (b.wholeWord ?? false) &&
+    (a.searchField ?? 'all') === (b.searchField ?? 'all') &&
+    (a.sourceTab ?? 'all') === (b.sourceTab ?? 'all') &&
+    (a.sourceFile ?? '') === (b.sourceFile ?? '')
+  )
+}
+
+// True when the filter narrows the list (used by the editor replace scope).
+export function filterSpecIsActive(filter: FilterSpec): boolean {
+  return (
+    filter.mode !== 'all' ||
+    filter.search.trim() !== '' ||
+    (filter.sourceTab ?? 'all') !== 'all' ||
+    (filter.sourceFile ?? '') !== ''
+  )
 }
 
 export interface TranslationSessionState {
@@ -82,6 +123,7 @@ type Action =
   | { type: 'SET_LOADING_PROGRESS'; progress: XmlLoadProgress | null }
   | { type: 'SET_ENTRIES'; entries: TranslationSessionEntry[] }
   | { type: 'UPDATE_ENTRY'; rowId: string; target: string }
+  | { type: 'UPDATE_ENTRIES'; updates: Array<{ rowId: string; target: string }> }
   | { type: 'MARK_MANUAL'; rowId: string }
   | { type: 'SELECT_ALL_MATCHING'; filter: FilterSpec }
   | { type: 'TOGGLE_ENTRY'; rowId: string }
@@ -118,6 +160,23 @@ function reducer(state: TranslationSessionState, action: Action): TranslationSes
           e.rowId === action.rowId ? { ...e, target: action.target } : e
         )
       }
+    case 'UPDATE_ENTRIES': {
+      if (action.updates.length === 0) return state
+      const byRowId = new Map(action.updates.map((update) => [update.rowId, update.target]))
+      return {
+        ...state,
+        entries: state.entries.map((entry) => {
+          const target = byRowId.get(entry.rowId)
+          if (target === undefined) return entry
+          return {
+            ...entry,
+            target,
+            matchType:
+              entry.matchType === 'none' && target.trim() !== '' ? 'manual' : entry.matchType
+          }
+        })
+      }
+    }
     case 'MARK_MANUAL':
       return {
         ...state,
@@ -192,6 +251,7 @@ interface TranslationSessionContext extends TranslationSessionState {
     options?: { storedPath?: string }
   ) => Promise<void>
   updateEntry: (rowId: string, target: string) => void
+  updateEntries: (updates: Array<{ rowId: string; target: string }>) => void
   markManual: (rowId: string) => void
   setModName: (name: string) => void
   setSourceLang: (lang: string) => void
@@ -284,6 +344,10 @@ export function TranslationSessionProvider({
 
   const updateEntry = useCallback((rowId: string, target: string) => {
     dispatch({ type: 'UPDATE_ENTRY', rowId, target })
+  }, [])
+
+  const updateEntries = useCallback((updates: Array<{ rowId: string; target: string }>) => {
+    dispatch({ type: 'UPDATE_ENTRIES', updates })
   }, [])
 
   const markManual = useCallback((rowId: string) => {
@@ -386,6 +450,7 @@ export function TranslationSessionProvider({
         selectEntries,
         loadSession,
         updateEntry,
+        updateEntries,
         markManual,
         setModName,
         setSourceLang,

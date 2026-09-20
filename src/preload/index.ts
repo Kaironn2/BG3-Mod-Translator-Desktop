@@ -74,6 +74,9 @@ const api: AppApi = {
     list: (params: {
       filters: {
         text?: string
+        matchCase?: boolean
+        matchWholeWord?: boolean
+        searchField?: 'all' | 'source' | 'target'
         modName?: string
         sourceLang?: string
         targetLang?: string
@@ -149,9 +152,16 @@ const api: AppApi = {
       cb: (data: import('./api-types').DictionaryDeleteProgressUpdate) => void
     ): UnsubscribeFn => on('dictionary:delete:progress', cb),
 
+    onReplaceProgress: (
+      cb: (data: import('./api-types').DictionaryReplaceProgressUpdate) => void
+    ): UnsubscribeFn => on('dictionary:replace:progress', cb),
+
     export: (params: {
       filters: {
         text?: string
+        matchCase?: boolean
+        matchWholeWord?: boolean
+        searchField?: 'all' | 'source' | 'target'
         modName?: string
         sourceLang?: string
         targetLang?: string
@@ -165,16 +175,42 @@ const api: AppApi = {
 
     deleteByFilter: (filters: {
       text?: string
+      matchCase?: boolean
+      matchWholeWord?: boolean
+      searchField?: 'all' | 'source' | 'target'
       modName?: string
       sourceLang?: string
       targetLang?: string
     }): Promise<{ deleted: number }> => ipcRenderer.invoke('dictionary:deleteByFilter', filters),
 
     replaceByFilter: (
-      filters: { text?: string; modName?: string; sourceLang?: string; targetLang?: string },
-      patch: { findText: string; replaceText: string; column: 'language1' | 'language2' }
+      filters: {
+        text?: string
+        matchCase?: boolean
+        matchWholeWord?: boolean
+        searchField?: 'all' | 'source' | 'target'
+        modName?: string
+        sourceLang?: string
+        targetLang?: string
+      },
+      patch: import('./api-types').DictionaryReplacePatch
     ): Promise<{ updated: number }> =>
-      ipcRenderer.invoke('dictionary:replaceByFilter', { filters, patch })
+      ipcRenderer.invoke('dictionary:replaceByFilter', { filters, patch }),
+
+    replaceByIds: (
+      ids: number[],
+      filters: {
+        text?: string
+        matchCase?: boolean
+        matchWholeWord?: boolean
+        searchField?: 'all' | 'source' | 'target'
+        modName?: string
+        sourceLang?: string
+        targetLang?: string
+      },
+      patch: import('./api-types').DictionaryReplacePatch
+    ): Promise<{ updated: number }> =>
+      ipcRenderer.invoke('dictionary:replaceByIds', { ids, filters, patch })
   },
 
   language: {

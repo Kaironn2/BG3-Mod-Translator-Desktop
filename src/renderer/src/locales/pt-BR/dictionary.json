@@ -11,7 +11,7 @@
     "lastEdit": "Última edição"
   },
   "filters": {
-    "searchPlaceholder": "Buscar termo, tradução, mod ou UID...",
+    "searchPlaceholder": "Buscar nos textos...",
     "allMods": "Todos os mods",
     "all": "Todos",
     "mod": "Mod",
@@ -57,7 +57,8 @@
     "deleteEntryTitle": "Excluir entrada?",
     "deleteEntryDescription": "A entrada #{{id}} será removida do dicionário.",
     "deleteConfirm": "Excluir",
-    "deleting": "Excluindo..."
+    "deleting": "Excluindo...",
+    "replacing": "Substituindo..."
   },
   "entryModal": {
     "createTitle": "Nova entrada",
@@ -99,7 +100,7 @@
     "importing": "Importando..."
   },
   "replaceModal": {
-    "title": "Replace em lote",
+    "title": "Substituir em lote",
     "description": "Aplicar buscar e substituir nas {{count}} entradas selecionadas.",
     "find": "Buscar",
     "findPlaceholder": "Texto a procurar",
@@ -111,10 +112,10 @@
     "scopeBoth": "Ambos",
     "matchCase": "Diferenciar maiúsculas",
     "matchWholeWord": "Palavra inteira",
-    "apply": "Aplicar replace",
+    "apply": "Aplicar substituição",
     "applying": "Aplicando...",
     "discardTitle": "Descartar alterações?",
-    "discardDescription": "Existem parâmetros preenchidos neste replace em lote. Se continuar, eles serão perdidos.",
+    "discardDescription": "Existem parâmetros preenchidos nesta substituição em lote. Se continuar, eles serão perdidos.",
     "searchRequired": "Preencha o campo Buscar"
   }
 }
