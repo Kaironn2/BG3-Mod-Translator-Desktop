@@ -6,7 +6,8 @@
     "src/renderer/src/**/*.tsx",
     "src/preload/api-types.ts",
     "src/preload/*.d.ts",
-    "src/main/utils/text-match.ts"
+    "src/main/utils/text-match.ts",
+    "src/shared/**/*"
   ],
   "compilerOptions": {
     "composite": true,
@@ -19,6 +20,9 @@
       ],
       "@/*": [
         "src/renderer/src/*"
+      ],
+      "@shared/*": [
+        "src/shared/*"
       ]
     }
   }

@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { ipcMain } from 'electron'
+import type { CsvColumnMap } from '../../shared/parsers/types'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { writeLocaFile } from '../services/loca/loca-writer'
 import { decodeEntities, encodeEntities } from '../services/xml-entities.service'
@@ -12,6 +13,7 @@ interface LoadPayload {
   sourceLang: string
   targetLang: string
   modName?: string
+  columnMap?: CsvColumnMap
 }
 
 interface ExportPayload {

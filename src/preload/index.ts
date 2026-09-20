@@ -353,6 +353,7 @@ const api: AppApi = {
       sourceLang: string
       targetLang: string
       modName?: string
+      columnMap?: import('./api-types').CsvColumnMap
     }): Promise<
       {
         uid: string
@@ -511,6 +512,16 @@ const api: AppApi = {
       to: string
       service?: import('./api-types').MetricsRunService
     }) => ipcRenderer.invoke('metrics:aggregateByMod', payload)
+  },
+
+  parser: {
+    previewCsv: (params: { filePath: string }) => ipcRenderer.invoke('parser:previewCsv', params),
+    exportProject: (params: {
+      parserId: string
+      format: 'csv' | 'json'
+      outputPath: string
+      entries: { uid: string; source: string; target: string }[]
+    }) => ipcRenderer.invoke('parser:exportProject', params)
   },
 
   updater: {

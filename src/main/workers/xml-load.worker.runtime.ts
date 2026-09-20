@@ -2,6 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { guessCsvColumns } from '../../shared/parsers/csv-columns'
+import type { CsvColumnMap } from '../../shared/parsers/types'
 import {
   DictionaryRepository,
   getDictionaryTargetText
@@ -10,6 +12,7 @@ import { ModRepository } from '../database/repositories/mod.repo'
 import { SourceFileRepository } from '../database/repositories/source-file.repo'
 import * as schema from '../database/schema'
 import { applySqlitePragmas } from '../database/sqlite-pragmas'
+import { csvTableToProjectRows } from '../parsers/csv/project-rows'
 import { unpackMod } from '../services/lslib.service'
 import { decodeEntities } from '../services/xml-entities.service'
 import {
@@ -19,6 +22,7 @@ import {
   parseLocalizationFile
 } from '../services/xml-parser.service'
 import { extract } from '../services/zip.service'
+import { parseCsvTable } from '../utils/csv'
 import { findPakFiles } from '../utils/findPakFiles'
 import { cleanupTempDir, createTempDir } from '../utils/tempDir'
 
@@ -29,6 +33,7 @@ export interface XmlLoadWorkerInput {
   modName?: string
   sourceFolder: string
   dbPath: string
+  columnMap?: CsvColumnMap
 }
 
 export interface XmlEntry {
@@ -85,6 +90,11 @@ export async function runXmlLoadWorker(
     const { inputPath, sourceLang, targetLang, modName, sourceFolder } = input
     const ext = path.extname(inputPath).toLowerCase()
 
+    if (ext === '.csv') {
+      await loadCsvProject(input, db, post)
+      return
+    }
+
     let files: { fileName: string; fileType: 'xml' | 'loca'; entries: LocalizationEntry[] }[]
     let perEntrySourceFiles: string[] | null = null
 
@@ -130,7 +140,7 @@ export async function runXmlLoadWorker(
       await unpackMod(pakFiles[0], unpackedDir)
       files = readAllLocalizationFiles(unpackedDir, sourceFolder, post)
     } else {
-      throw new Error(`Unsupported file type: ${ext}. Use .xml, .loca, .pak, or .zip`)
+      throw new Error(`Unsupported file type: ${ext}. Use .xml, .loca, .pak, .zip, or .csv`)
     }
 
     const total = files.reduce((sum, file) => sum + file.entries.length, 0)
@@ -220,6 +230,62 @@ export async function runXmlLoadWorker(
     for (const tempDir of tempDirs) cleanupTempDir(tempDir)
     sqlite.close()
   }
+}
+
+async function loadCsvProject(
+  input: XmlLoadWorkerInput,
+  db: ReturnType<typeof drizzle>,
+  post: (msg: XmlLoadProgress) => void
+): Promise<void> {
+  post({ phase: 'parsing' })
+  const table = parseCsvTable(fs.readFileSync(input.inputPath, 'utf-8'))
+  const columnMap = input.columnMap ?? guessCsvColumns(table.headers)
+  const rows = csvTableToProjectRows(table, columnMap)
+  const fileName = path.basename(input.inputPath)
+  const total = rows.length
+  const result: XmlEntry[] = new Array(total)
+
+  post({ phase: 'loading-cache' })
+  const priorityMods = new ModRepository(db).getPriorityOrdered()
+  const index = new DictionaryRepository(db).loadMatchIndex(
+    input.sourceLang,
+    input.targetLang,
+    null,
+    priorityMods
+  )
+
+  if (input.modName) {
+    new ModRepository(db).upsert(input.modName)
+  }
+
+  for (let cursor = 0; cursor < rows.length; cursor++) {
+    const row = rows[cursor]
+    const match = index.resolve({
+      modName: input.modName ?? null,
+      uid: row.uid,
+      sourceText: row.source
+    })
+    const existingTarget = row.target.trim()
+    const dictionaryTarget = match
+      ? decodeEntities(getDictionaryTargetText(match.entry, input.sourceLang, input.targetLang))
+      : ''
+    result[cursor] = {
+      uid: row.uid,
+      version: '1',
+      source: row.source,
+      target: existingTarget || dictionaryTarget,
+      matchType: existingTarget ? 'manual' : match ? match.matchType : 'none',
+      sourceFile: fileName,
+      sourceFileType: null
+    }
+  }
+
+  for (let i = 0; i < total; i += MATCH_CHUNK) {
+    post({ phase: 'matching', processed: Math.min(i + MATCH_CHUNK, total), total })
+    await new Promise<void>((resolve) => setImmediate(resolve))
+  }
+
+  post({ phase: 'done', result: { entries: result } })
 }
 
 // Every .xml AND .loca inside Localization/{sourceFolder}/ - the tab views are built

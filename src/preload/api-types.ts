@@ -1,4 +1,5 @@
 import type { ElectronAPI } from '@electron-toolkit/preload'
+import type { CsvColumnMap } from '../shared/parsers/types'
 
 export type UnsubscribeFn = () => void
 export type AiProviderId = 'openai' | 'anthropic' | 'gemini' | 'grok' | 'zai' | 'deepseek'
@@ -173,36 +174,12 @@ export interface Language {
   updatedAt: string | null
 }
 
-// Larian Localization folder names. Display names stay on Language.name (UI + AI prompts);
-// extract/export must use these folders or official language packs are missed.
-export const BG3_OFFICIAL_LANGUAGE_FOLDERS = {
-  de: 'German',
-  en: 'English',
-  es: 'Spanish',
-  'es-419': 'LatinSpanish',
-  fr: 'French',
-  it: 'Italian',
-  ja: 'Japanese',
-  ko: 'Korean',
-  pl: 'Polish',
-  'pt-BR': 'BrazilianPortuguese',
-  ru: 'Russian',
-  tr: 'Turkish',
-  uk: 'Ukrainian',
-  'zh-CN': 'Chinese',
-  'zh-TW': 'ChineseTraditional'
-} as const
-
-export type Bg3OfficialLanguageCode = keyof typeof BG3_OFFICIAL_LANGUAGE_FOLDERS
-
-export function isOfficialBg3Language(code: string): code is Bg3OfficialLanguageCode {
-  return Object.hasOwn(BG3_OFFICIAL_LANGUAGE_FOLDERS, code)
-}
-
-export function toBg3LanguageFolder(code: string, name?: string | null): string {
-  if (isOfficialBg3Language(code)) return BG3_OFFICIAL_LANGUAGE_FOLDERS[code]
-  return (name ?? code).replace(/[^a-zA-Z0-9]/g, '')
-}
+export {
+  BG3_OFFICIAL_LANGUAGE_FOLDERS,
+  type Bg3OfficialLanguageCode,
+  isOfficialBg3Language,
+  toBg3LanguageFolder
+} from '../shared/parsers/bg3/languages'
 
 export const DEFAULT_SOURCE_LANG = 'en'
 export const DEFAULT_TARGET_LANG = 'pt-BR'
@@ -602,12 +579,32 @@ export type XmlLoadProgress =
   | { phase: 'loading-cache' }
   | { phase: 'matching'; processed: number; total: number }
 
+export type { CsvColumnMap }
+
+export interface CsvProjectPreview {
+  headers: string[]
+  totalRows: number
+  sampleRows: string[][]
+  guessed: CsvColumnMap
+}
+
+export interface ParserApi {
+  previewCsv(params: { filePath: string }): Promise<CsvProjectPreview>
+  exportProject(params: {
+    parserId: string
+    format: 'csv' | 'json'
+    outputPath: string
+    entries: { uid: string; source: string; target: string }[]
+  }): Promise<{ success: boolean }>
+}
+
 export interface XmlApi {
   load(params: {
     inputPath: string
     sourceLang: string
     targetLang: string
     modName?: string
+    columnMap?: CsvColumnMap
   }): Promise<XmlEntry[]>
   export(params: {
     outputPath: string
@@ -803,6 +800,7 @@ export interface AppApi {
   fs: FsApi
   log: LogApi
   xml: XmlApi
+  parser: ParserApi
   merge: MergeApi
   window: WindowApi
   metrics: MetricsApi

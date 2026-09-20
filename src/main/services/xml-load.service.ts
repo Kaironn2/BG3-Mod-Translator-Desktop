@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { app } from 'electron'
+import type { CsvColumnMap } from '../../shared/parsers/types'
 import type { RepositoryRegistry } from '../database/repositories/registry'
-import { toBg3LanguageFolder } from '../utils/languages'
+import { toBg3LanguageFolder } from '../../shared/parsers/bg3/languages'
 import { resolveWorkerPath } from '../utils/worker-path'
 import type {
   XmlEntry,
@@ -20,6 +21,7 @@ export interface LoadXmlParams {
   sourceLang: string
   targetLang: string
   modName?: string
+  columnMap?: CsvColumnMap
   repos: RepositoryRegistry
   onProgress?: (p: XmlLoadProgressUpdate) => void
 }

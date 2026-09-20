@@ -18,6 +18,7 @@ import { registerPromptSlotHandlers } from './ipc/prompt-slot.ipc'
 import { registerTranslationHandlers } from './ipc/translation.ipc'
 import { registerUpdaterHandlers } from './ipc/updater.ipc'
 import { registerWindowHandlers, setupWindowEvents } from './ipc/window.ipc'
+import { registerParserHandlers } from './ipc/parser.ipc'
 import { registerXmlHandlers } from './ipc/xml.ipc'
 import { configurePortableUserData, showPortableBlockDialog } from './portable-paths'
 import { logError, writeLog } from './services/log.service'
@@ -143,6 +144,7 @@ app.whenReady().then(() => {
   registerConfigHandlers()
   registerPromptSlotHandlers(repos)
   registerXmlHandlers(repos)
+  registerParserHandlers()
   registerUpdater(getWindow)
   registerUpdaterHandlers()
 
