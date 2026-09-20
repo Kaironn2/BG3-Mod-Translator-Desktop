@@ -658,7 +658,7 @@ export function TranslationGrid({
     ) : null
 
   const searchBar = (
-    <div className="flex shrink-0 items-center gap-2 overflow-x-auto border-b border-[#1f2329] bg-[#0c0d0f] px-5 py-1">
+    <div className="icosa-scroll flex shrink-0 flex-nowrap items-center gap-2 overflow-x-auto overflow-y-hidden border-b border-[#1f2329] bg-[#0c0d0f] px-5 py-1 [scrollbar-gutter:stable]">
       <TextSearchInput
         value={search}
         onChange={setSearch}
@@ -767,12 +767,15 @@ export function TranslationGrid({
         </button>
       </div>
 
-      <div className="ml-auto flex items-center gap-3 text-xs font-semibold text-neutral-400">
-        {listIsStale && (
-          <span className="rounded-full border border-[#252a32] bg-[#181b1f] px-2 py-0.5 text-[10px] font-mono text-amber-400">
-            {t('status.updating', { ns: 'common' })}
-          </span>
-        )}
+      <div className="ml-auto flex shrink-0 items-center gap-3 text-xs font-semibold text-neutral-400">
+        <span
+          className={cn(
+            'rounded-full border border-[#252a32] bg-[#181b1f] px-2 py-0.5 font-mono text-[10px] text-amber-400',
+            !listIsStale && 'invisible'
+          )}
+        >
+          {t('status.updating', { ns: 'common' })}
+        </span>
         <span className="font-mono tabular-nums text-neutral-500">
           {t('grid.selectedStats', {
             ns: 'translate',
