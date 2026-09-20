@@ -698,6 +698,20 @@ export function TranslationGrid({
         scopeOptions={searchFieldOptions}
       />
 
+      <button
+        type="button"
+        aria-label={t('grid.replace', { ns: 'translate' })}
+        title={t('grid.replace', { ns: 'translate' })}
+        disabled={entries.length === 0}
+        onClick={openReplace}
+        className={cn(btnBase, 'h-8 gap-1.5 px-2.5 disabled:cursor-not-allowed disabled:opacity-40')}
+      >
+        <Replace size={12} />
+        {t('grid.replace', { ns: 'translate' })}
+      </button>
+
+      <span className="mx-1 h-5 w-px shrink-0 bg-[#1f2329]" />
+
       {fileOptions.counts.size > 0 && (
         <ThemedSelect
           value={sourceFile}
@@ -712,18 +726,6 @@ export function TranslationGrid({
           menuMinWidth={220}
         />
       )}
-
-      <button
-        type="button"
-        aria-label={t('grid.replace', { ns: 'translate' })}
-        title={t('grid.replace', { ns: 'translate' })}
-        disabled={entries.length === 0}
-        onClick={openReplace}
-        className={cn(btnBase, 'h-8 gap-1.5 px-2.5 disabled:cursor-not-allowed disabled:opacity-40')}
-      >
-        <Replace size={12} />
-        {t('grid.replace', { ns: 'translate' })}
-      </button>
 
       {sourceTabs}
 
