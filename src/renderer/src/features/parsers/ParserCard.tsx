@@ -1,6 +1,7 @@
 import type { ParserManifest } from '@shared/parsers/types'
 import { FileSpreadsheet } from 'lucide-react'
 import bg3Cover from '@/assets/parsers/baldurs-gate-3.webp'
+import maidCafeCover from '@/assets/parsers/maid-cafe-on-electric-street.webp'
 import skyrimCover from '@/assets/parsers/the-elder-scrolls-skyrim.webp'
 import untilThenCover from '@/assets/parsers/until-then.webp'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
@@ -8,6 +9,7 @@ import { cn } from '@/lib/utils'
 
 const COVERS: Record<string, string> = {
   bg3: bg3Cover,
+  'maid-cafe-on-electric-street': maidCafeCover,
   skyrim: skyrimCover,
   'until-then': untilThenCover
 }

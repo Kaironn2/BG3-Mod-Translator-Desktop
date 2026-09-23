@@ -13,9 +13,10 @@ import { guessCsvColumns } from './csv-columns'
 test('catalog exposes csv, bg3 and coming-soon games', () => {
   assert.deepEqual(
     PARSER_CATALOG.map((parser) => parser.id),
-    ['csv', 'bg3', 'skyrim', 'until-then']
+    ['csv', 'bg3', 'skyrim', 'maid-cafe-on-electric-street', 'until-then']
   )
   assert.equal(getParser('skyrim')?.status, 'comingSoon')
+  assert.equal(getParser('maid-cafe-on-electric-street')?.status, 'comingSoon')
   assert.equal(getParser('until-then')?.status, 'comingSoon')
 })
 
@@ -44,7 +45,7 @@ test('export formats keep parser natives then generic csv/json', () => {
 test('extract and package hubs only list games with those capabilities', () => {
   assert.deepEqual(
     parsersForCapability('extract').map((parser) => parser.id),
-    ['bg3', 'skyrim']
+    ['bg3', 'skyrim', 'maid-cafe-on-electric-street']
   )
   assert.equal(parsersForCapability('translate').some((parser) => parser.id === 'csv'), true)
 })

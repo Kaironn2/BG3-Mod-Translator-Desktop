@@ -31,6 +31,15 @@ export const PARSER_CATALOG: ParserManifest[] = [
     capabilities: ['translate', 'extract', 'package']
   },
   {
+    id: 'maid-cafe-on-electric-street',
+    name: 'Maid Cafe on Electric Street',
+    kind: 'game',
+    status: 'comingSoon',
+    extensions: [],
+    nativeExportFormats: [],
+    capabilities: ['translate', 'extract', 'package']
+  },
+  {
     id: 'until-then',
     name: 'Until Then',
     kind: 'game',
