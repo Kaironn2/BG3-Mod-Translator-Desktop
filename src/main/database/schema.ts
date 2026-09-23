@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 const timestamps = {
   createdAt: text('created_at').default(sql`(datetime('now'))`),
@@ -20,21 +20,18 @@ export const game = sqliteTable('game', {
   ...timestamps
 })
 
-export const mod = sqliteTable(
-  'mod',
-  {
-    id: integer('id').primaryKey({ autoIncrement: true }),
-    name: text('name').notNull(),
-    gameId: integer('game_id').references(() => game.id),
-    totalStrings: integer('total_strings').default(0),
-    lastFilePath: text('last_file_path'),
-    priority: integer('priority'),
-    ...timestamps
-  },
-  (table) => ({
-    mod_game_name_unique: uniqueIndex('mod_game_name_unique').on(table.gameId, table.name)
-  })
-)
+export const mod = sqliteTable('mod', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  // UNIQUE kept: dictionary.mod_name / translation_run.mod_name FKs reference this
+  // column and SQLite requires a lone unique index on it. Game scoping lives in
+  // dictionary.game_id; a (game_id, name) index covers game-scoped lookups.
+  name: text('name').unique().notNull(),
+  gameId: integer('game_id'),
+  totalStrings: integer('total_strings').default(0),
+  lastFilePath: text('last_file_path'),
+  priority: integer('priority'),
+  ...timestamps
+})
 
 export const modMeta = sqliteTable('mod_meta', {
   id: integer('id').primaryKey({ autoIncrement: true }),

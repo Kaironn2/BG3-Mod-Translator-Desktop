@@ -18,9 +18,11 @@ ALTER TABLE `mod` ADD `game_id` integer;
 --> statement-breakpoint
 UPDATE `mod` SET `game_id` = (SELECT `id` FROM `game` WHERE `code` = 'bg3') WHERE `game_id` IS NULL;
 --> statement-breakpoint
-CREATE UNIQUE INDEX `mod_game_name_unique` ON `mod` (`game_id`, `name`);
---> statement-breakpoint
-DROP INDEX IF EXISTS `mod_name_unique`;
+-- Keep mod.name UNIQUE (dictionary.mod_name / translation_run.mod_name FKs
+-- require a unique index on the referenced column; SQLite rejects composite
+-- indexes). Games share the same project namespace for now; game-specific
+-- lookups use the (game_id, name) index below.
+CREATE INDEX `mod_game_idx` ON `mod` (`game_id`, `name`);
 --> statement-breakpoint
 DROP TRIGGER IF EXISTS `dictionary_fts_ai`;
 --> statement-breakpoint

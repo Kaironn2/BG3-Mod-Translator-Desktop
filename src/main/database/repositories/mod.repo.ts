@@ -44,7 +44,7 @@ export class ModRepository {
       .insert(mod)
       .values({ name, gameId, totalStrings, lastFilePath })
       .onConflictDoUpdate({
-        target: [mod.gameId, mod.name],
+        target: mod.name,
         set: {
           ...(totalStrings !== undefined && { totalStrings }),
           ...(lastFilePath !== undefined && { lastFilePath }),
