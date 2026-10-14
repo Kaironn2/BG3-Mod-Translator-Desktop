@@ -397,11 +397,27 @@ function resolveApiKey(providerId: AiProviderId): string {
 }
 
 function resolveModel(providerId: AiProviderId, override?: string): string {
-  return (
+  const model =
     override?.trim() ||
     readConfigValue(PROVIDER_CONFIG[providerId].modelConfigName) ||
     PROVIDER_CONFIG[providerId].defaultModel
-  )
+  return remapRetiredModel(providerId, model)
+}
+
+// Google retired the 2.5 family for new users ("no longer available to new users",
+// 404 on first call). Nothing we ship can list a retired model; map any stored
+// 2.x model to the current default so saved settings keep working. Manual config
+// edits always win: a model that survives the map is used as-is.
+const RETIRED_MODEL_PREFIX: Partial<Record<AiProviderId, RegExp>> = {
+  gemini: /^models\/?gemini-[12]\./
+}
+
+function remapRetiredModel(providerId: AiProviderId, model: string): string {
+  const retired = RETIRED_MODEL_PREFIX[providerId]?.test(model)
+  if (retired) {
+    return PROVIDER_CONFIG[providerId].defaultModel
+  }
+  return model
 }
 
 function resolveActiveTemplate(repos: RepositoryRegistry): string {
