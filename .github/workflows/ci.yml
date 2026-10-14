@@ -47,6 +47,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Build bundles (electron-vite)
+        run: pnpm exec electron-vite build
+
       - name: Unit tests
         run: pnpm test
 
