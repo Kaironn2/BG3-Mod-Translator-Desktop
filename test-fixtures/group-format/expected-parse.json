@@ -1,0 +1,37 @@
+[
+  {
+    "name": "plain numbered reply",
+    "parsed": {
+      "1": "Ataque dos Goblin",
+      "2": "Ele disse, \"o fogo apagou\"\n\ne {0}",
+      "3": "Passo Trêmulo"
+    }
+  },
+  {
+    "name": "fenced reply with preamble",
+    "parsed": {
+      "1": "Teste de Resistência",
+      "2": "Passo Trêmulo"
+    }
+  },
+  {
+    "name": "duplicate marker keeps first",
+    "parsed": {
+      "1": "Primeira versão",
+      "2": "Passo Trêmulo"
+    }
+  },
+  {
+    "name": "out of range markers ignored, missing line stays absent",
+    "parsed": {
+      "1": "Ataque dos Goblin",
+      "3": "Passo Trêmulo"
+    }
+  },
+  {
+    "name": "marker-like text inside translation is scanned as marker",
+    "parsed": {
+      "2": "Passo Trêmulo"
+    }
+  }
+]

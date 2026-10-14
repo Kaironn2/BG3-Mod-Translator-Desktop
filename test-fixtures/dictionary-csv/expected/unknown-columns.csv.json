@@ -1,0 +1,21 @@
+{
+  "headers": [
+    "language1",
+    "language2",
+    "text_language1",
+    "text_language2",
+    "power-saving",
+    "mod_name",
+    "uid"
+  ],
+  "rows": [
+    {
+      "sourceLang": "English",
+      "targetLang": "Brazilian Portuguese",
+      "sourceText": "Unknown neighbour column is ignored",
+      "targetText": "Coluna vizinha desconhecida é ignorada",
+      "modName": "Renamed Columns",
+      "uid": "f0e1d2c3-b4a5-4c6d-9e8f-0a1b2c3d4e50"
+    }
+  ]
+}

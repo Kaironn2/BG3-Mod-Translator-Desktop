@@ -1,0 +1,37 @@
+{
+  "linesBlock": {
+    "sources": [
+      "Goblin Attack",
+      "He said, \"the fire is out\"\nthen {0} <LSTag GameObject=\"torch\"/>",
+      "Totter Step"
+    ]
+  },
+  "parseResponses": [
+    {
+      "name": "plain numbered reply",
+      "expectedCount": 3,
+      "raw": "<<<1>>>\nAtaque dos Goblin\n<<<2>>>\nEle disse, \"o fogo apagou\"\n\ne {0}\n<<<3>>>\nPasso Trêmulo"
+    },
+    {
+      "name": "fenced reply with preamble",
+      "expectedCount": 2,
+      "raw": "Here is the translation:\n```text\n<<<1>>>\nTeste de Resistência\n<<<2>>>\nPasso Trêmulo\n```"
+    },
+    {
+      "name": "duplicate marker keeps first",
+      "expectedCount": 2,
+      "raw": "<<<1>>>\nPrimeira versão\n<<<1>>>\nSegunda versão\n<<<2>>>\nPasso Trêmulo"
+    },
+    {
+      "name": "out of range markers ignored, missing line stays absent",
+      "expectedCount": 3,
+      "raw": "<<<0>>>\nzero ignorado\n<<<1>>>\nAtaque dos Goblin\n<<<9>>>\nfora do intervalo\n<<<3>>>\nPasso Trêmulo"
+    },
+    {
+      "name": "marker-like text inside translation is scanned as marker",
+      "expectedCount": 2,
+      "raw": "<<<1>>>\n<<<2>>>\nPasso Trêmulo\n",
+      "empty": true
+    }
+  ]
+}

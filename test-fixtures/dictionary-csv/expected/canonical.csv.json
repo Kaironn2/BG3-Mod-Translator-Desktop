@@ -1,0 +1,52 @@
+{
+  "headers": [
+    "language1",
+    "language2",
+    "text_language1",
+    "text_language2",
+    "mod_name",
+    "uid"
+  ],
+  "rows": [
+    {
+      "sourceLang": "English",
+      "targetLang": "Brazilian Portuguese",
+      "sourceText": "Goblin Attack",
+      "targetText": "Ataque dos Goblin",
+      "modName": "Soaked in Sorcery",
+      "uid": "9c4f12a3-b41d-4a1e-9e2f-51a9c3d7e101"
+    },
+    {
+      "sourceLang": "English",
+      "targetLang": "Brazilian Portuguese",
+      "sourceText": "He said, \"Fire! {0} charge!\" then ran.",
+      "targetText": "Ele disse, \"Fogo! {0} cargue!\" e correu.",
+      "modName": "Soaked in Sorcery",
+      "uid": "9c4f12a3-b41d-4a1e-9e2f-51a9c3d7e102"
+    },
+    {
+      "sourceLang": "English",
+      "targetLang": "Brazilian Portuguese",
+      "sourceText": "Line one\n<nowiki>plainnewline</nowiki> line two",
+      "targetText": "Linha um\n<nowiki>plainnewline</nowiki> linha dois",
+      "modName": "Quote Uncursed",
+      "uid": "9c4f12a3-b41d-4a1e-9e2f-51a9c3d7e103"
+    },
+    {
+      "sourceLang": "English",
+      "targetLang": "Brazilian Portuguese",
+      "sourceText": "Fire,Ice /* neutral */",
+      "targetText": "Fogo,Gelo /* neutro */",
+      "modName": null,
+      "uid": null
+    },
+    {
+      "sourceLang": "English",
+      "targetLang": "Brazilian Portuguese",
+      "sourceText": "Saving Throw",
+      "targetText": "Teste de Resistência",
+      "modName": "Higher Arcane",
+      "uid": "e5d6c7b8-a9f0-4c1d-8e3b-2f4a5b6c7d90"
+    }
+  ]
+}

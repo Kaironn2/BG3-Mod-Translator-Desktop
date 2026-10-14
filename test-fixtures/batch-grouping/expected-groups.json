@@ -1,0 +1,59 @@
+[
+  {
+    "entries": [
+      "u1",
+      "u2",
+      "u3",
+      "u4",
+      "u5",
+      "u6",
+      "u6",
+      "u7",
+      "u8"
+    ],
+    "sources": [
+      "Goblin gnasher burns the camp. {0} left. <LSTag tooltip=\"hp\"/>",
+      "Saving Throw: Dex",
+      "He said, \"the fire is out...{1}\" and gnawed on cold beans.",
+      "...",
+      "Higher Order of the Unshackled Choir pronounced you outcast from the hall of bells and candles and broke the old covenant writ that bound your name for all the turning of the years of the third age of mortals under sun and moon both rising in the deep of winter when the snow lay long upon the graves of the drowned and the living whispered half their secrets to the wind that migrates over salt and smoke and iron and somewhere in the dark the bell toll keeps the saints awake.",
+      "Totter Step",
+      "Totter Step",
+      "### SHORT ###",
+      "Placeholder intact {0} {1} <LSTag GameObject=\"torch\"/>"
+    ],
+    "tokenEstimates": [
+      18,
+      5,
+      17,
+      1,
+      137,
+      4,
+      4,
+      4,
+      16
+    ],
+    "examples": [
+      {
+        "src": "Goblin gnasher bites the camp. {0} left.",
+        "tgt": "Peculiar Gnasher queima o acampamento. {0} restantes."
+      },
+      {
+        "src": "Goblin gnasher burns the camp.",
+        "tgt": "Goblin Gnasher queima o acampamento."
+      },
+      {
+        "src": "Goblin gnasher burns the camp. {0} left.",
+        "tgt": "Peculiar Gnasher queima o acampamento. {0} restantes."
+      },
+      {
+        "src": "Saving Throw: Con",
+        "tgt": "Teste de Resistência: CON"
+      },
+      {
+        "src": "Bonus Action利率",
+        "tgt": "Ação Bônus"
+      }
+    ]
+  }
+]
