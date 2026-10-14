@@ -1,5 +1,5 @@
-import { BasePipeline } from './base.pipeline'
 import { translateText } from '../services/google.service'
+import { BasePipeline } from './base.pipeline'
 
 export class GooglePipeline extends BasePipeline {
   constructor(private readonly apiKey: string) {

@@ -9,7 +9,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { readLoca } from '../../src/main/services/loca/loca-reader'
 import type { LocalizationEntry } from '../../src/main/services/xml-parser.service'
-import { parseLocalizationXml, writeLocalizationXml } from '../../src/main/services/xml-parser.service'
+import {
+  parseLocalizationXml,
+  writeLocalizationXml
+} from '../../src/main/services/xml-parser.service'
 
 const [, , inputArg, outputArg] = process.argv
 if (!inputArg) {

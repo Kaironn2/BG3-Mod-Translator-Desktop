@@ -5,7 +5,7 @@ import { LanguageSelect } from '@/components/shared/LanguageSelect'
 import { ThemedSelect } from '@/components/shared/ThemedSelect'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { compareLanguagesOfficialFirst } from '@/lib/languageOptions'
-import { isOfficialBg3Language, type ConfigKey, toBg3LanguageFolder } from '@/types'
+import { type ConfigKey, isOfficialBg3Language, toBg3LanguageFolder } from '@/types'
 import { SettingsSectionCard } from './SettingsSectionCard'
 import { useDebouncedPersist } from './useDebouncedPersist'
 
@@ -68,20 +68,18 @@ export function DefaultMetadataCard({ config, set }: DefaultMetadataCardProps): 
   useEffect(() => {
     window.api.language.getAll().then((languages) => {
       const officialMark = t('badges.official', { ns: 'common' })
-      const mapped = [...languages]
-        .sort(compareLanguagesOfficialFirst)
-        .map((language) => {
-          const folder = toBg3LanguageFolder(language.code, language.name)
-          const official = isOfficialBg3Language(language.code)
-          const label = t(`languages.${language.code}`)
-          return {
-            value: language.code,
-            label,
-            searchText: `${label} ${language.name} ${language.code} ${folder}`,
-            highlight: official,
-            mark: official ? officialMark : undefined
-          }
-        })
+      const mapped = [...languages].sort(compareLanguagesOfficialFirst).map((language) => {
+        const folder = toBg3LanguageFolder(language.code, language.name)
+        const official = isOfficialBg3Language(language.code)
+        const label = t(`languages.${language.code}`)
+        return {
+          value: language.code,
+          label,
+          searchText: `${label} ${language.name} ${language.code} ${folder}`,
+          highlight: official,
+          mark: official ? officialMark : undefined
+        }
+      })
       setBg3Languages(mapped)
     })
   }, [t])
@@ -116,11 +114,7 @@ export function DefaultMetadataCard({ config, set }: DefaultMetadataCardProps): 
           label={t('fields.defaultSourceLanguage')}
           value={config.last_source_lang ?? ''}
           onChange={(code) => {
-            void handleDefaultChange(
-              'last_source_lang',
-              code,
-              t('fields.defaultSourceLanguage')
-            )
+            void handleDefaultChange('last_source_lang', code, t('fields.defaultSourceLanguage'))
           }}
           className="w-full"
         />
@@ -128,11 +122,7 @@ export function DefaultMetadataCard({ config, set }: DefaultMetadataCardProps): 
           label={t('fields.defaultTargetLanguage')}
           value={config.last_target_lang ?? ''}
           onChange={(code) => {
-            void handleDefaultChange(
-              'last_target_lang',
-              code,
-              t('fields.defaultTargetLanguage')
-            )
+            void handleDefaultChange('last_target_lang', code, t('fields.defaultTargetLanguage'))
           }}
           className="w-full"
         />

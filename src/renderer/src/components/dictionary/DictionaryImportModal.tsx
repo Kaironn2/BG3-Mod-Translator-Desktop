@@ -249,8 +249,11 @@ export function DictionaryImportModal({
                   </tr>
                 </thead>
                 <tbody>
-                  {preview.rows.map((row, index) => (
-                    <tr key={`${row.uid ?? 'row'}-${index}`} className="border-t border-[#1f2329]">
+                  {preview.rows.map((row) => (
+                    <tr
+                      key={row.uid ?? `${row.modName ?? '-'}|${row.sourceText}|${row.targetText}`}
+                      className="border-t border-[#1f2329]"
+                    >
                       <td className="px-3 py-2 font-mono text-neutral-200">{row.sourceText}</td>
                       <td className="px-3 py-2 font-mono text-neutral-200">{row.targetText}</td>
                       <td className="px-3 py-2 text-neutral-300">

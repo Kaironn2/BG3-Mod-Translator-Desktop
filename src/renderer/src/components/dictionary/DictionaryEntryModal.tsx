@@ -52,10 +52,8 @@ export function DictionaryEntryModal({
 
   const languageOptions = useMemo(
     () =>
-      languagesToSelectOptions(
-        languages,
-        t('badges.official', { ns: 'common' }),
-        (code) => t(`languages.${code}`, { ns: 'common' })
+      languagesToSelectOptions(languages, t('badges.official', { ns: 'common' }), (code) =>
+        t(`languages.${code}`, { ns: 'common' })
       ),
     [languages, t]
   )

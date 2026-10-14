@@ -4,9 +4,9 @@
 import {
   FILE_ENTRY_SIZE,
   FILE_NAME_BYTES,
-  HEADER_SIZE,
   type FileEntry,
-  type PackageHeader,
+  HEADER_SIZE,
+  type PackageHeader
 } from './pak-format'
 
 export function readHeader(buf: Buffer, offset: number): PackageHeader {
@@ -51,7 +51,7 @@ export function writeHeader(buf: Buffer, offset: number, header: PackageHeader):
 export function parseFileEntries(decompressed: Buffer, numFiles: number): FileEntry[] {
   if (decompressed.length < numFiles * FILE_ENTRY_SIZE) {
     throw new Error(
-      `File list too small: expected ${numFiles * FILE_ENTRY_SIZE} bytes, got ${decompressed.length}`,
+      `File list too small: expected ${numFiles * FILE_ENTRY_SIZE} bytes, got ${decompressed.length}`
     )
   }
   const entries: FileEntry[] = new Array(numFiles)

@@ -1,5 +1,5 @@
-import { BasePipeline } from './base.pipeline'
 import { translateText } from '../services/deepl.service'
+import { BasePipeline } from './base.pipeline'
 
 export class DeepLPipeline extends BasePipeline {
   constructor(private readonly apiKey: string) {

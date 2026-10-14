@@ -1,12 +1,12 @@
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { app } from 'electron'
+import { resolveWorkerPath } from '../utils/worker-path'
 import type {
   ImportPreviewResult,
   ImportProgress,
   ImportWorkerInput
 } from '../workers/import.worker.runtime'
-import { resolveWorkerPath } from '../utils/worker-path'
 
 export type { ImportPreviewResult, ImportProgress }
 
@@ -25,7 +25,9 @@ export function runImport(params: RunImportParams): Promise<number> {
   const input: ImportWorkerInput = { filePath, dbPath: getDbPath(), mode: 'import' }
 
   return new Promise<number>((resolve, reject) => {
-    const worker = new Worker(resolveWorkerPath(__dirname, 'import.worker.js'), { workerData: input })
+    const worker = new Worker(resolveWorkerPath(__dirname, 'import.worker.js'), {
+      workerData: input
+    })
 
     worker.on('message', (msg: ImportProgress) => {
       if (msg.phase === 'done') {
@@ -57,7 +59,9 @@ export function runPreviewImport(params: RunPreviewImportParams): Promise<Import
   const input: ImportWorkerInput = { filePath, mode: 'preview' }
 
   return new Promise<ImportPreviewResult>((resolve, reject) => {
-    const worker = new Worker(resolveWorkerPath(__dirname, 'import.worker.js'), { workerData: input })
+    const worker = new Worker(resolveWorkerPath(__dirname, 'import.worker.js'), {
+      workerData: input
+    })
 
     worker.on('message', (msg: ImportProgress) => {
       if (msg.phase === 'preview-done') {

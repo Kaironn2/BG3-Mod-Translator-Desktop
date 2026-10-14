@@ -55,7 +55,9 @@ export function XmlCandidateCard({
           <div className="flex items-center gap-2 mt-1 text-[11px] text-neutral-500">
             {candidate.valid ? (
               <>
-                <span>{t('xmlSelection.strings', { ns: 'translate', count: candidate.stringCount })}</span>
+                <span>
+                  {t('xmlSelection.strings', { ns: 'translate', count: candidate.stringCount })}
+                </span>
                 <span className="text-neutral-700">-</span>
                 <span>{candidate.sizeKb} KB</span>
               </>

@@ -18,8 +18,8 @@ import zlib from 'zlib'
 import {
   CompressionLevel,
   CompressionMethod,
-  getCompressionMethod,
   getCompressionLevel,
+  getCompressionMethod
 } from './pak-format'
 
 const inflateAsync = promisify(zlib.inflate)
@@ -28,7 +28,7 @@ const deflateAsync = promisify(zlib.deflate)
 export async function decompress(
   buf: Buffer,
   uncompressedSize: number,
-  flags: number,
+  flags: number
 ): Promise<Buffer> {
   const method = getCompressionMethod(flags)
   switch (method) {
@@ -50,7 +50,7 @@ export async function decompress(
 export async function compress(
   buf: Buffer,
   method: CompressionMethod,
-  level: CompressionLevel,
+  level: CompressionLevel
 ): Promise<Buffer> {
   switch (method) {
     case CompressionMethod.None:
@@ -61,7 +61,7 @@ export async function compress(
       return compressLz4Block(buf)
     case CompressionMethod.Zstd:
       throw new Error(
-        'Zstd compression is not supported when writing .pak files (decode-only). Use LZ4 instead.',
+        'Zstd compression is not supported when writing .pak files (decode-only). Use LZ4 instead.'
       )
     default:
       throw new Error(`Unsupported compression method: ${method}`)

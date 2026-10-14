@@ -1,6 +1,6 @@
-import { BasePipeline } from './base.pipeline'
 import { translateText } from '../services/openai.service'
 import type { SimilarEntry } from '../services/similarity.service'
+import { BasePipeline } from './base.pipeline'
 
 export class OpenAIPipeline extends BasePipeline {
   constructor(

@@ -1157,9 +1157,9 @@ function DictionaryLoadingOverlay({ mode }: { mode: DictionaryLoadingMode }): Re
     >
       <div className="flex h-full flex-col gap-3 px-4 py-4">
         <div className="h-10 rounded-md bg-[#1a1d22]/90" />
-        {Array.from({ length: 7 }).map((_, index) => (
+        {['row-1', 'row-2', 'row-3', 'row-4', 'row-5', 'row-6', 'row-7'].map((rowKey) => (
           <div
-            key={`dictionary-loading-row-${index + 1}`}
+            key={`dictionary-loading-row-${rowKey}`}
             className="grid animate-pulse gap-3 rounded-md border border-[#22262d] bg-[#14171b]/90 px-4 py-3"
             style={{ gridTemplateColumns: '40px 80px 1.2fr 1.2fr 180px 120px 80px' }}
           >

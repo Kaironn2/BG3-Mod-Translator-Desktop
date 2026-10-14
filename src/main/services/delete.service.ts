@@ -1,13 +1,13 @@
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { app } from 'electron'
+import { resolveWorkerPath } from '../utils/worker-path'
 import type {
   DeleteJob,
   DeleteProgress,
   DeleteWorkerInput,
   DeleteWorkerResult
 } from '../workers/delete.worker.runtime'
-import { resolveWorkerPath } from '../utils/worker-path'
 
 export type { DeleteWorkerResult }
 export type DeleteProgressUpdate = Exclude<DeleteProgress, { phase: 'done' } | { phase: 'error' }>
@@ -38,7 +38,9 @@ export function runDelete(params: RunDeleteParams): Promise<DeleteWorkerResult> 
   }
 
   const work = new Promise<DeleteWorkerResult>((resolve, reject) => {
-    const worker = new Worker(resolveWorkerPath(__dirname, 'delete.worker.js'), { workerData: input })
+    const worker = new Worker(resolveWorkerPath(__dirname, 'delete.worker.js'), {
+      workerData: input
+    })
 
     worker.on('message', (msg: DeleteProgress) => {
       if (msg.phase === 'done') {

@@ -21,6 +21,16 @@
       "correctness": {
         "useExhaustiveDependencies": "warn",
         "useHookAtTopLevel": "error"
+      },
+      "a11y": {
+        "useHtmlLang": "warn",
+        "noLabelWithoutControl": "warn",
+        "noAutofocus": "warn",
+        "noStaticElementInteractions": "warn",
+        "noSvgWithoutTitle": "warn",
+        "useButtonType": "warn",
+        "useKeyWithClickEvents": "warn",
+        "useAriaPropsSupportedByRole": "warn"
       }
     }
   },

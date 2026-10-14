@@ -48,13 +48,13 @@ export function TitleBar(): React.JSX.Element {
       <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
         <div
           className="w-5 h-5 rounded-[5px] flex items-center justify-center shrink-0 bg-linear-to-br from-amber-500 to-orange-600"
-          style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.06) inset, 0 4px 12px rgba(245,158,11,0.18)' }}
+          style={{
+            boxShadow: '0 0 0 1px rgba(255,255,255,0.06) inset, 0 4px 12px rgba(245,158,11,0.18)'
+          }}
         >
           <IcosaLogo />
         </div>
-        <span className="text-[13px] font-bold tracking-[0.06em] text-neutral-300">
-          ICOSA
-        </span>
+        <span className="text-[13px] font-bold tracking-[0.06em] text-neutral-300">ICOSA</span>
       </div>
 
       <div style={NO_DRAG} className="flex">

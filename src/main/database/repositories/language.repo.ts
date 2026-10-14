@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { language, type Language } from '../schema'
+import type { drizzle } from 'drizzle-orm/better-sqlite3'
+import { type Language, language } from '../schema'
 
 type AppDb = ReturnType<typeof drizzle>
 

@@ -183,7 +183,9 @@ export async function translateBatchDetailed(
         apiKey,
         signal
       )
-      translated.forEach((result, i) => results.push({ index: offset + i, ...result }))
+      for (let i = 0; i < translated.length; i++) {
+        results.push({ index: offset + i, ...translated[i] })
+      }
     } catch (err) {
       logError('deepl.batch.chunk', err, { offset, size: chunk.length })
       if (isFatalBatchError(err)) {

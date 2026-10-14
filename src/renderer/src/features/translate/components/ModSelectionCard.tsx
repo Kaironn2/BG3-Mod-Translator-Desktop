@@ -49,9 +49,7 @@ export function ModSelectionCard({
           <h3 className="text-[15px] font-semibold text-neutral-200 tracking-tight m-0">
             {t('setup.modSelection.title')}
           </h3>
-          <p className="text-xs text-neutral-500 mt-1 m-0">
-            {t('setup.modSelection.description')}
-          </p>
+          <p className="text-xs text-neutral-500 mt-1 m-0">{t('setup.modSelection.description')}</p>
         </div>
         <div className="flex items-center bg-[#0f1114] border border-[#1f2329] rounded-md p-0.5 gap-0.5 text-xs shrink-0">
           <button

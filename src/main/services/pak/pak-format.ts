@@ -21,32 +21,32 @@ export const FILE_NAME_BYTES = 256
 export const V18_PADDING_SIZE = 0x40
 export const V18_PADDING_BYTE = 0xad
 
-export const enum PackageFlags {
+export enum PackageFlags {
   None = 0,
   AllowMemoryMapping = 0x02,
   Solid = 0x04,
-  Preload = 0x08,
+  Preload = 0x08
 }
 
 // Bits 0-3 of the per-file Flags byte.
-export const enum CompressionMethod {
+export enum CompressionMethod {
   None = 0,
   Zlib = 1,
   LZ4 = 2,
-  Zstd = 3,
+  Zstd = 3
 }
 
 // Bits 4-7 of the per-file Flags byte.
-export const enum CompressionLevelFlag {
+export enum CompressionLevelFlag {
   Fast = 0x10,
   Default = 0x20,
-  Max = 0x40,
+  Max = 0x40
 }
 
-export const enum CompressionLevel {
+export enum CompressionLevel {
   Fast = 0,
   Default = 1,
-  Max = 2,
+  Max = 2
 }
 
 export interface PackageHeader {
