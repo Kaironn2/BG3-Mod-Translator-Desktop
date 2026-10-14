@@ -1,0 +1,20 @@
+{
+  "renderPrompt": {
+    "template": "You are a translator specialized in **Baldur's Gate 3** mods, with deep knowledge of the **Dungeons & Dragons** (5e) universe.\n\n## Goal\nTranslate from {SOURCE_LANGUAGE} to {TARGET_LANGUAGE}, preserving the tone, lore and official terminology.\n\n## Rules\n- Keep **all** XML tags and placeholders (`<LSTag ...>`, `{0}`, `{1}`) exactly as they are, in the same position.\n- Keep the game's heroic/dark tone. Do not add comments or explanations.\n\n## Input\n- Source language: {SOURCE_LANGUAGE}\n- Current translation (if any): {TARGET_TEXT}\n- Source text:\n{SOURCE_TEXT}",
+    "sourceText": "He said, \"Fire! {0} charge!\" then ran toward the {1} <LSTag GameObject=\"torch\"/>.",
+    "targetText": "Ele disse, \"Fogo! {0} cargue!\"",
+    "sourceLangName": "English",
+    "targetLangName": "Brazilian Portuguese"
+  },
+  "filterExamples": {
+    "count": 3,
+    "minScore": 0.75,
+    "entries": [
+      { "original": "Goblin Attack", "translated": "Ataque dos Goblin", "score": 0.05 },
+      { "original": "Goblin Ambush", "translated": "Emboscada dos Goblin", "score": 0.3 },
+      { "original": "Goblin Outrider", "translated": "Batedora Goblin", "score": 0.25 },
+      { "original": "Fireball", "translated": "Bola de Fogo", "score": 0.4 },
+      { "original": "Saving Throw", "translated": "Teste de Resistência", "score": 0.1 }
+    ]
+  }
+}

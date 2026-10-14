@@ -1,0 +1,27 @@
+{
+  "headers": [
+    "src_lang",
+    "tgt_lang",
+    "src",
+    "tgt",
+    "mod"
+  ],
+  "rows": [
+    {
+      "sourceLang": "English",
+      "targetLang": "Brazilian Portuguese",
+      "sourceText": "Totter Step",
+      "targetText": "Passo Trêmulo",
+      "modName": "Chains of Elthrion",
+      "uid": null
+    },
+    {
+      "sourceLang": "English",
+      "targetLang": "Brazilian Portuguese",
+      "sourceText": "<LSTag GameObject=\"fireball\"/> Cast",
+      "targetText": "<LSTag GameObject=\"fireball\"/> Lança",
+      "modName": "Chains of Elthrion",
+      "uid": null
+    }
+  ]
+}

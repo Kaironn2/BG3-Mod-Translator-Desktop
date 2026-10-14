@@ -1,0 +1,8 @@
+{
+  "sources": [
+    "Goblin Attack",
+    "He said, \"the fire is out\"\nthen {0} <LSTag GameObject=\"torch\"/>",
+    "Totter Step"
+  ],
+  "block": "<<<1>>>\nGoblin Attack\n<<<2>>>\nHe said, \"the fire is out\"\nthen {0} <LSTag GameObject=\"torch\"/>\n<<<3>>>\nTotter Step"
+}
