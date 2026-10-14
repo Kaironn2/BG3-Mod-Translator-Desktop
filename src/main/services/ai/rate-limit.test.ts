@@ -45,8 +45,8 @@ test('every AI provider has a conservative rate-limit entry', () => {
 })
 
 test('Gemini Pro uses a tighter RPM than Flash', () => {
-  const flash = getProviderRateLimit('gemini', 'gemini-2.5-flash')
-  const pro = getProviderRateLimit('gemini', 'gemini-2.5-pro')
+  const flash = getProviderRateLimit('gemini', 'gemini-3.6-flash')
+  const pro = getProviderRateLimit('gemini', 'gemini-3.6-pro')
   assert.ok(pro.rpm < flash.rpm)
   assert.equal(pro.rpm, 4)
 })

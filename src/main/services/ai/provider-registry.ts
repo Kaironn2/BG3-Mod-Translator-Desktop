@@ -26,7 +26,7 @@ export const PROVIDER_CONFIG: Record<AiProviderId, ProviderConfig> = {
     label: 'Google Gemini',
     keyConfigName: 'gemini_key',
     modelConfigName: 'gemini_model',
-    defaultModel: 'gemini-2.5-flash',
+    defaultModel: 'gemini-3.6-flash',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai'
   },
   grok: {
