@@ -11,6 +11,9 @@ out
 data/
 *.txt
 *.xml
+# Golden fixture inputs (byte-exact contracts) are first-class repo content.
+!test-fixtures/**/*.xml
+!test-fixtures/**/*.loca
 
 design/
 scripts/bench-results/
