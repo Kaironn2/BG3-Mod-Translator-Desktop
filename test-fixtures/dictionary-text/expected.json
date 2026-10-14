@@ -1,0 +1,44 @@
+[
+  {
+    "name": "plain",
+    "normalized": "Goblin Attack",
+    "key": "goblin attack",
+    "decoded": "Goblin Attack"
+  },
+  {
+    "name": "entities",
+    "normalized": "<LSTag tooltip=\"fire\"/> & Charge",
+    "key": "<lstag tooltip=\"fire\"/> & charge",
+    "decoded": "<LSTag tooltip=\"fire\"/> & Charge"
+  },
+  {
+    "name": "nbsp-and-spaces",
+    "normalized": "Totter  Step",
+    "key": "totter  step",
+    "decoded": "  Totter  Step   "
+  },
+  {
+    "name": "mixed-entity-double-amp",
+    "normalized": "&amp; folded",
+    "key": "&amp; folded",
+    "decoded": "&amp; folded"
+  },
+  {
+    "name": "unicode",
+    "normalized": "Épée — Teste de Resistência",
+    "key": "épée — teste de resistência",
+    "decoded": "Épée — Teste de Resistência"
+  },
+  {
+    "name": "empty",
+    "normalized": "",
+    "key": "",
+    "decoded": ""
+  },
+  {
+    "name": "only-spaces",
+    "normalized": "",
+    "key": "",
+    "decoded": "   "
+  }
+]

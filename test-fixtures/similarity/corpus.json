@@ -1,0 +1,39 @@
+{
+  "rows": [
+    { "source": "Goblin Attack", "target": "Ataque dos Goblin" },
+    { "source": "Goblin Gnasher", "target": "Goblin Devorador" },
+    { "source": "goblin attack", "target": "Ataque dos Goblin" },
+    { "source": "Goblin, Gnashing Teeth", "target": "Goblin de Dentes Trituradores" },
+    { "source": "Saving Throw", "target": "Teste de Resistência" },
+    { "source": "Saving Throw: Strength", "target": "Teste de Resistência: FOR" },
+    { "source": "Saving Throw: Dexterity", "target": "Teste de Resistência: DES" },
+    { "source": "Spell Slot", "target": "Espaço de Magia" },
+    { "source": "Ablaze", "target": "Em Chamas" },
+    { "source": "<LSTag tooltip=\"ablaze\"/> Ablaze", "target": "<LSTag tooltip=\"ablaze\"/> Em Chamas" },
+    { "source": "He said, \"Fire! {0} charge!\"", "target": "Ele disse, \"Fogo! {0} cargue!\"" },
+    { "source": "Fireball", "target": "Bola de Fogo" },
+    { "source": "Fireball Wardstone", "target": "Pedra-Guarda da Bola de Fogo" },
+    { "source": "Épée of the Choir", "target": "Épée do Coro" },
+    { "source": "epee of the choir", "target": "Espada do Coro" },
+    { "source": "Wretched Owl", "target": "Coruja Miserável" },
+    { "source": "Wretched Oaf", "target": "Tolo Miserável" },
+    { "source": "Bonus Action: Totter Step", "target": "Ação Bônus: Passo Trêmulo" },
+    { "source": "Totter Step", "target": "Passo Trêmulo" },
+    { "source": "Tottering Steps", "target": "Passos Trêmulos" }
+  ],
+  "queries": [
+    { "uid": "q-exact-case-insensitive", "text": "Goblin Attack" },
+    { "uid": "q-exact-accent-fold", "text": "EPEE OF THE CHOIR" },
+    { "uid": "q-typo", "text": "Gobiln Attack" },
+    { "uid": "q-typo-word", "text": "Totter Stepp" },
+    { "uid": "q-with-tags", "text": "Ablaze with tooltip tags <LSTag tooltip=\"ablaze\"/>" },
+    { "uid": "q-placeholder", "text": "He said, \"Firre! charging {0}\"" },
+    { "uid": "q-common-word", "text": "Fire" },
+    { "uid": "q-two-words", "text": "Fireball Ward" },
+    { "uid": "q-accented", "text": "Épée du Coro" },
+    { "uid": "q-space-noise", "text": "Totter   Step..." },
+    { "uid": "q-unreachable", "text": "Zzzzt gabtub qzplvo" },
+    { "uid": "q-blank", "text": "   " },
+    { "uid": "q-long", "text": "Bonus Action: Totter Step, Saving Throw: Dexterity, Fireball Wardstone, Wretched Owl" }
+  ]
+}

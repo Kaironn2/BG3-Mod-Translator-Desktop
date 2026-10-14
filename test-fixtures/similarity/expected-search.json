@@ -1,0 +1,185 @@
+[
+  {
+    "uid": "q-exact-case-insensitive",
+    "hits": [
+      {
+        "original": "Goblin Attack",
+        "translated": "Ataque dos Goblin",
+        "score": 0
+      },
+      {
+        "original": "goblin attack",
+        "translated": "Ataque dos Goblin",
+        "score": 0
+      },
+      {
+        "original": "Goblin Gnasher",
+        "translated": "Goblin Devorador",
+        "score": 0.5150953798976697
+      },
+      {
+        "original": "Goblin, Gnashing Teeth",
+        "translated": "Goblin de Dentes Trituradores",
+        "score": 0.6144036293136779
+      }
+    ]
+  },
+  {
+    "uid": "q-exact-accent-fold",
+    "hits": [
+      {
+        "original": "epee of the choir",
+        "translated": "Espada do Coro",
+        "score": 0
+      },
+      {
+        "original": "Épée of the Choir",
+        "translated": "Épée do Coro",
+        "score": 0.26819607838311155
+      }
+    ]
+  },
+  {
+    "uid": "q-typo",
+    "hits": [
+      {
+        "original": "Goblin Attack",
+        "translated": "Ataque dos Goblin",
+        "score": 0.32342042385292025
+      },
+      {
+        "original": "goblin attack",
+        "translated": "Ataque dos Goblin",
+        "score": 0.32342042385292025
+      }
+    ]
+  },
+  {
+    "uid": "q-typo-word",
+    "hits": [
+      {
+        "original": "Totter Step",
+        "translated": "Passo Trêmulo",
+        "score": 0.28824185242434885
+      },
+      {
+        "original": "Bonus Action: Totter Step",
+        "translated": "Ação Bônus: Passo Trêmulo",
+        "score": 0.4652867242192207
+      }
+    ]
+  },
+  {
+    "uid": "q-with-tags",
+    "hits": [
+      {
+        "original": "<LSTag tooltip=\"ablaze\"/> Ablaze",
+        "translated": "<LSTag tooltip=\"ablaze\"/> Em Chamas",
+        "score": 0.1633632338008646
+      },
+      {
+        "original": "Ablaze",
+        "translated": "Em Chamas",
+        "score": 0.6208407813995617
+      }
+    ]
+  },
+  {
+    "uid": "q-placeholder",
+    "hits": [
+      {
+        "original": "He said, \"Fire! {0} charge!\"",
+        "translated": "Ele disse, \"Fogo! {0} cargue!\"",
+        "score": 0.3199862830253344
+      }
+    ]
+  },
+  {
+    "uid": "q-common-word",
+    "hits": [
+      {
+        "original": "He said, \"Fire! {0} charge!\"",
+        "translated": "Ele disse, \"Fogo! {0} cargue!\"",
+        "score": 0.48174894957983194
+      }
+    ]
+  },
+  {
+    "uid": "q-two-words",
+    "hits": [
+      {
+        "original": "Fireball",
+        "translated": "Bola de Fogo",
+        "score": 0.24143583235745925
+      },
+      {
+        "original": "Fireball Wardstone",
+        "translated": "Pedra-Guarda da Bola de Fogo",
+        "score": 0.3258554887879852
+      }
+    ]
+  },
+  {
+    "uid": "q-accented",
+    "hits": [
+      {
+        "original": "Épée of the Choir",
+        "translated": "Épée do Coro",
+        "score": 0.5454063688636956
+      }
+    ]
+  },
+  {
+    "uid": "q-space-noise",
+    "hits": [
+      {
+        "original": "Totter Step",
+        "translated": "Passo Trêmulo",
+        "score": 0.10102370689655171
+      },
+      {
+        "original": "Bonus Action: Totter Step",
+        "translated": "Ação Bônus: Passo Trêmulo",
+        "score": 0.30359883720930236
+      }
+    ]
+  },
+  {
+    "uid": "q-unreachable",
+    "hits": []
+  },
+  {
+    "uid": "q-blank",
+    "hits": []
+  },
+  {
+    "uid": "q-long",
+    "hits": [
+      {
+        "original": "Bonus Action: Totter Step",
+        "translated": "Ação Bônus: Passo Trêmulo",
+        "score": 0.5154107731863107
+      },
+      {
+        "original": "Saving Throw: Dexterity",
+        "translated": "Teste de Resistência: DES",
+        "score": 0.5892610608086093
+      },
+      {
+        "original": "Fireball Wardstone",
+        "translated": "Pedra-Guarda da Bola de Fogo",
+        "score": 0.6546224616352304
+      },
+      {
+        "original": "Wretched Owl",
+        "translated": "Coruja Miserável",
+        "score": 0.6804858839272241
+      },
+      {
+        "original": "Totter Step",
+        "translated": "Passo Trêmulo",
+        "score": 0.6921802236125162
+      }
+    ]
+  }
+]

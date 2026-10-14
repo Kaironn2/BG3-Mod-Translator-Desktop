@@ -1,4 +1,5 @@
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { estimateTokens, packEntriesIntoGroups } from '../../src/main/services/ai/batch-grouping'
 import { buildLinesBlock, parseGroupResponse } from '../../src/main/services/ai/group-format'
@@ -7,7 +8,14 @@ import {
   filterExamples,
   renderPrompt
 } from '../../src/main/services/ai/prompt-builder'
+import { SimilarityIndex, tokenize } from '../../src/main/services/similarity.service'
+import { decodeEntities } from '../../src/main/services/xml-entities.service'
+import {
+  parseLocalizationXml,
+  writeLocalizationXml
+} from '../../src/main/services/xml-parser.service'
 import { readImportCsv } from '../../src/main/utils/dictionaryCsv'
+import { dictionaryTextKey, normalizeDictionaryText } from '../../src/main/utils/dictionaryText'
 
 const FIXTURES = 'test-fixtures'
 const BOM = '\uFEFF'
@@ -127,4 +135,75 @@ writeJsonRel('prompt-builder/expected-default-prompt.json', {
     sourceLangName: 'English',
     targetLangName: 'Brazilian Portuguese'
   })
+})
+
+// --- similarity -------------------------------------------------------------
+
+interface SimilarityCorpus {
+  rows: { source: string; target: string }[]
+  queries: { uid: string; text: string }[]
+}
+
+const similarity = JSON.parse(
+  readFileSync(join(FIXTURES, 'similarity', 'corpus.json'), 'utf-8')
+) as SimilarityCorpus
+const index = new SimilarityIndex(similarity.rows)
+writeJsonRel(
+  'similarity/expected-search.json',
+  similarity.queries.map((query) => ({
+    uid: query.uid,
+    hits: index.search(query.text, 5).map((hit) => ({
+      original: hit.original,
+      translated: hit.translated,
+      score: hit.score
+    }))
+  }))
+)
+writeJsonRel(
+  'similarity/expected-tokens.json',
+  similarity.rows.slice(0, 6).map((row) => ({
+    source: row.source,
+    tokens: tokenize(row.source)
+  }))
+)
+
+// --- dictionary text --------------------------------------------------------
+
+interface TextCases {
+  cases: { name: string; input: string }[]
+}
+
+const textCases = JSON.parse(
+  readFileSync(join(FIXTURES, 'dictionary-text', 'cases.json'), 'utf-8')
+) as TextCases
+writeJsonRel(
+  'dictionary-text/expected.json',
+  textCases.cases.map((caseRow) => ({
+    name: caseRow.name,
+    normalized: normalizeDictionaryText(caseRow.input),
+    key: dictionaryTextKey(caseRow.input),
+    decoded: decodeEntities(caseRow.input)
+  }))
+)
+
+// --- localization XML -------------------------------------------------------
+
+const xmlPath = join(FIXTURES, 'loca-xml', 'sample-ls.xml')
+const xmlEntries = parseLocalizationXml(xmlPath)
+writeJsonRel('loca-xml/expected-parse.json', xmlEntries)
+const roundTripDir = mkdtempSync(join(tmpdir(), 'icosa-golden-xml-'))
+const roundTripPath = join(roundTripDir, 'round-trip.xml')
+writeLocalizationXml(xmlEntries, roundTripPath)
+const reparsed = parseLocalizationXml(roundTripPath)
+rmSync(roundTripDir, { recursive: true, force: true })
+writeJsonRel('loca-xml/expected-round-trip.json', {
+  stable: reparsed.every((entry, i) => {
+    const original = xmlEntries[i]
+    return (
+      original.contentuid === entry.contentuid &&
+      original.version === entry.version &&
+      original.text === entry.text
+    )
+  }),
+  reparsed
 })
