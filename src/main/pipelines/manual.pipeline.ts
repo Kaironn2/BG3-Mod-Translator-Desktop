@@ -1,5 +1,5 @@
-import { BasePipeline } from './base.pipeline'
 import type { SimilarEntry } from '../services/similarity.service'
+import { BasePipeline } from './base.pipeline'
 
 // Manual pipeline: no external API.
 // Returns the best dictionary match when available, empty string otherwise.

@@ -57,10 +57,7 @@ export const modSource = sqliteTable(
     ...timestamps
   },
   (table) => ({
-    mod_source_mod_file_unique: index('mod_source_mod_file_unique').on(
-      table.modId,
-      table.fileName
-    ),
+    mod_source_mod_file_unique: index('mod_source_mod_file_unique').on(table.modId, table.fileName),
     mod_source_file_name_idx: index('mod_source_file_name_idx').on(table.fileName)
   })
 )

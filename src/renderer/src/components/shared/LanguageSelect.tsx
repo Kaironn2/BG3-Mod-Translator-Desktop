@@ -20,7 +20,8 @@ export function LanguageSelect({
   const [languages, setLanguages] = useState<Language[]>([])
   const { t } = useAppTranslation('common')
   const options = useMemo(
-    () => languagesToSelectOptions(languages, t('badges.official'), (code) => t(`languages.${code}`)),
+    () =>
+      languagesToSelectOptions(languages, t('badges.official'), (code) => t(`languages.${code}`)),
     [languages, t]
   )
 

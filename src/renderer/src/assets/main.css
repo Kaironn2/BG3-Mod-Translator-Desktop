@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 /* Modern scrollbar — ICOSA design tokens */
 .icosa-scroll::-webkit-scrollbar {

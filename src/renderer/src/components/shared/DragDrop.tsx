@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
 import { Upload } from 'lucide-react'
+import { useCallback, useState } from 'react'
 import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { cn } from '@/lib/utils'
 
@@ -71,9 +71,7 @@ export function DragDrop({ accept, onFile, label, className }: DragDropProps): R
     >
       <Upload size={32} className="text-neutral-500" />
       <div className="text-center">
-        <p className="text-sm text-neutral-300">
-          {label ?? t('dragDrop.defaultLabel')}
-        </p>
+        <p className="text-sm text-neutral-300">{label ?? t('dragDrop.defaultLabel')}</p>
         <p className="mt-1 text-xs text-neutral-500">.{accept.join(', .')}</p>
       </div>
       <button

@@ -17,14 +17,20 @@ export function useDictionaryIO(): {
     return result.count
   }, [])
 
-  const exportCsv = useCallback(async (filters: {
-    text?: string
-    modName?: string
-    sourceLang?: string
-    targetLang?: string
-  }, outputPath: string) => {
-    await window.api.dictionary.export({ filters, format: 'csv', outputPath })
-  }, [])
+  const exportCsv = useCallback(
+    async (
+      filters: {
+        text?: string
+        modName?: string
+        sourceLang?: string
+        targetLang?: string
+      },
+      outputPath: string
+    ) => {
+      await window.api.dictionary.export({ filters, format: 'csv', outputPath })
+    },
+    []
+  )
 
   return { importCsv, exportCsv }
 }

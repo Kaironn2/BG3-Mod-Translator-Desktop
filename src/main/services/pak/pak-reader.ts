@@ -8,11 +8,11 @@ import { parseFileEntries, readHeader } from './pak-binio'
 import { decompress } from './pak-compression'
 import {
   FILE_ENTRY_SIZE,
+  type FileEntry,
   HEADER_TOTAL_SIZE,
   LSPK_SIGNATURE,
   LSPK_VERSION_BG3,
-  PackageFlags,
-  type FileEntry
+  PackageFlags
 } from './pak-format'
 
 const DELETION_OFFSET_MASK = 0x0000ffffffffffffn

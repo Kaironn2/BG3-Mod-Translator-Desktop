@@ -37,16 +37,29 @@ await build({
   format: 'esm',
   outdir: path.join(tmpRoot, 'compiled'),
   external: ['lz4-napi', 'fzstd'],
-  logLevel: 'silent',
+  logLevel: 'silent'
 })
 
-const { readPackage } = await import(`file://${path.join(tmpRoot, 'compiled/pak-reader.js').replace(/\\/g, '/')}`)
+const { readPackage } = await import(
+  `file://${path.join(tmpRoot, 'compiled/pak-reader.js').replace(/\\/g, '/')}`
+)
 
 console.log('[1/3] Packing with divine.exe...')
 const divinePath = path.join(projectRoot, 'external/lslib/Divine.exe')
 const t0 = Date.now()
-await execFileAsync(divinePath, ['-g', 'bg3', '-a', 'create-package', '-s', inputDir, '-d', divinePak])
-console.log(`      Done in ${Date.now() - t0}ms. Output size: ${(await fs.stat(divinePak)).size} bytes`)
+await execFileAsync(divinePath, [
+  '-g',
+  'bg3',
+  '-a',
+  'create-package',
+  '-s',
+  inputDir,
+  '-d',
+  divinePak
+])
+console.log(
+  `      Done in ${Date.now() - t0}ms. Output size: ${(await fs.stat(divinePak)).size} bytes`
+)
 
 console.log('[2/3] Unpacking with our reader...')
 const t1 = Date.now()

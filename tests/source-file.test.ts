@@ -1,21 +1,22 @@
 // Unit-test style checks: SourceFileRepository get-or-create + rename reuse +
 // dictionary sourceFileId round-trip + loca export naming. Runs against a temp DB.
 // Run: pnpm test:db (compiles to source-file.test.cjs and runs under Electron ABI)
+
+import assert from 'node:assert'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import assert from 'node:assert'
 import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { eq, sql } from 'drizzle-orm'
+import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
+import { DictionaryRepository } from '../src/main/database/repositories/dictionary.repo'
+import { SourceFileRepository } from '../src/main/database/repositories/source-file.repo'
 import * as schema from '../src/main/database/schema'
 import { seedLanguages } from '../src/main/database/seeds/languages.seed'
 import { applySqlitePragmas } from '../src/main/database/sqlite-pragmas'
-import { DictionaryRepository } from '../src/main/database/repositories/dictionary.repo'
-import { SourceFileRepository } from '../src/main/database/repositories/source-file.repo'
-import { writeLoca, writeLocaFile } from '../src/main/services/loca/loca-writer'
 import { readLoca } from '../src/main/services/loca/loca-reader'
+import { writeLoca, writeLocaFile } from '../src/main/services/loca/loca-writer'
 import {
   findLocalizationXmls,
   parseLocalizationFile,
@@ -152,7 +153,11 @@ async function main() {
 
     // loca round-trip (write -> read) with markup
     const entries = [
-      { key: 'h3333', version: 1, text: 'Imune a <LSTag Type="Status" Tooltip="PARALYZED">status</LSTag> & co' },
+      {
+        key: 'h3333',
+        version: 1,
+        text: 'Imune a <LSTag Type="Status" Tooltip="PARALYZED">status</LSTag> & co'
+      },
       { key: 'h4444', version: 7, text: 'Acentuação: ação, coração, português' }
     ]
     const locaPath = path.join(tmp, 'brazilianportuguese.loca')
@@ -171,7 +176,10 @@ async function main() {
 
     // findLocalizationXmls picks up both xml and loca in the language folder
     const locDir = path.join(tmp, 'unpacked', 'Mods', 'X', 'Localization', 'BrazilianPortuguese')
-    writeLocalizationXml([{ contentuid: 'h1', version: '1', text: 'x' }], path.join(locDir, 'a.xml'))
+    writeLocalizationXml(
+      [{ contentuid: 'h1', version: '1', text: 'x' }],
+      path.join(locDir, 'a.xml')
+    )
     fs.copyFileSync(locaPath, path.join(locDir, 'brazilianportuguese.loca'))
     const found = findLocalizationXmls(path.join(tmp, 'unpacked'), 'BrazilianPortuguese')
     assert.equal(found.length, 2, 'both xml and loca found in language folder')

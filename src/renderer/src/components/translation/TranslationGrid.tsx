@@ -211,29 +211,26 @@ export function TranslationGrid({
   )
 
   // single source of truth for which entries "select-all" covers
-  const currentFilter: FilterSpec = useMemo(
-    () => {
-      const hasSearch = deferredSearch.trim() !== ''
-      return {
-        mode: deferredFilter,
-        search: deferredSearch,
-        matchCase: hasSearch ? deferredMatchCase : false,
-        wholeWord: hasSearch ? deferredWholeWord : false,
-        searchField: hasSearch ? deferredSearchField : 'all',
-        sourceTab: deferredSourceTab,
-        sourceFile: deferredSourceFile || undefined
-      }
-    },
-    [
-      deferredFilter,
-      deferredSearch,
-      deferredMatchCase,
-      deferredWholeWord,
-      deferredSearchField,
-      deferredSourceTab,
-      deferredSourceFile
-    ]
-  )
+  const currentFilter: FilterSpec = useMemo(() => {
+    const hasSearch = deferredSearch.trim() !== ''
+    return {
+      mode: deferredFilter,
+      search: deferredSearch,
+      matchCase: hasSearch ? deferredMatchCase : false,
+      wholeWord: hasSearch ? deferredWholeWord : false,
+      searchField: hasSearch ? deferredSearchField : 'all',
+      sourceTab: deferredSourceTab,
+      sourceFile: deferredSourceFile || undefined
+    }
+  }, [
+    deferredFilter,
+    deferredSearch,
+    deferredMatchCase,
+    deferredWholeWord,
+    deferredSearchField,
+    deferredSourceTab,
+    deferredSourceFile
+  ])
 
   const filterIsActive = filterSpecIsActive(currentFilter)
 
@@ -274,7 +271,8 @@ export function TranslationGrid({
   const sideVirtualizer = useVirtualizer({
     count: pageEntries.length,
     getScrollElement: () => sideParentRef.current,
-    estimateSize: (index) => estimateSideRowHeight(pageEntriesRef.current[index]?.source.length ?? 0),
+    estimateSize: (index) =>
+      estimateSideRowHeight(pageEntriesRef.current[index]?.source.length ?? 0),
     overscan: 6,
     getItemKey: (index) => pageEntriesRef.current[index]?.rowId ?? index,
     measureElement: measureRowHeight
@@ -306,7 +304,10 @@ export function TranslationGrid({
     const selected = materializeSelectedEntries(session)
     if (selected.length > 0) return { kind: 'selection', entries: selected }
     if (filterIsActive) {
-      return { kind: 'filter', entries: entries.filter((entry) => entryMatchesFilter(entry, currentFilter)) }
+      return {
+        kind: 'filter',
+        entries: entries.filter((entry) => entryMatchesFilter(entry, currentFilter))
+      }
     }
     return { kind: 'all', entries }
   }, [currentFilter, entries, filterIsActive, session])
@@ -431,7 +432,9 @@ export function TranslationGrid({
   const renderEntrySource = (source: string) => {
     if (!source) {
       return (
-        <span className="italic text-neutral-600">{t('grid.emptySource', { ns: 'translate' })}</span>
+        <span className="italic text-neutral-600">
+          {t('grid.emptySource', { ns: 'translate' })}
+        </span>
       )
     }
     return renderSource(source, { search: sourceSearch, searchOptions })
@@ -704,7 +707,10 @@ export function TranslationGrid({
         title={t('grid.replace', { ns: 'translate' })}
         disabled={entries.length === 0}
         onClick={openReplace}
-        className={cn(btnBase, 'h-8 gap-1.5 px-2.5 disabled:cursor-not-allowed disabled:opacity-40')}
+        className={cn(
+          btnBase,
+          'h-8 gap-1.5 px-2.5 disabled:cursor-not-allowed disabled:opacity-40'
+        )}
       >
         <Replace size={12} />
         {t('grid.replace', { ns: 'translate' })}
@@ -850,105 +856,105 @@ export function TranslationGrid({
                     transform: `translateY(${virtualItem.start}px)`
                   }}
                 >
-                <div
-                  className={cn(
-                    'group grid border-b border-[#1f2329] transition-colors hover:bg-[#131518]/60 focus-within:bg-[#131518] focus-within:shadow-[inset_3px_0_0_#f59e0b]',
-                    isRowSelected && 'bg-blue-950/10'
-                  )}
-                  style={{
-                    gridTemplateColumns: '80px 1fr 1fr'
-                  }}
-                >
                   <div
-                    className="flex cursor-pointer flex-col items-center gap-2 border-r border-[#1f2329] bg-[#0f1114] px-3 py-3"
-                    onClick={() => focusEntry(entry.rowId)}
+                    className={cn(
+                      'group grid border-b border-[#1f2329] transition-colors hover:bg-[#131518]/60 focus-within:bg-[#131518] focus-within:shadow-[inset_3px_0_0_#f59e0b]',
+                      isRowSelected && 'bg-blue-950/10'
+                    )}
+                    style={{
+                      gridTemplateColumns: '80px 1fr 1fr'
+                    }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={isRowSelected}
-                      onChange={() => toggleEntry(entry.rowId)}
+                    <div
+                      className="flex cursor-pointer flex-col items-center gap-2 border-r border-[#1f2329] bg-[#0f1114] px-3 py-3"
+                      onClick={() => focusEntry(entry.rowId)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isRowSelected}
+                        onChange={() => toggleEntry(entry.rowId)}
+                        onClick={(event) => event.stopPropagation()}
+                        className="cursor-pointer accent-amber-500"
+                      />
+                      <span className="font-mono text-[11px] tabular-nums text-neutral-600">
+                        {String(globalIndex + 1).padStart(3, '0')}
+                      </span>
+                      <span
+                        className={cn(
+                          'mt-auto h-1.5 w-1.5 rounded-full transition-colors',
+                          isDone ? 'bg-amber-500' : 'bg-neutral-700'
+                        )}
+                      />
+                    </div>
+
+                    <div className="flex min-w-0 cursor-text flex-col gap-2 px-4 py-3">
+                      <div className="wrap-break-word font-mono text-[13px] leading-[1.6] text-neutral-200 whitespace-pre-wrap">
+                        {renderEntrySource(entry.source)}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {isDictionary && (
+                          <span className="inline-flex items-center gap-1 rounded bg-blue-500/12 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-blue-400">
+                            <BookOpen size={10} /> D <span className="text-blue-500/70">1</span>
+                          </span>
+                        )}
+                        {entry.sourceFile && (
+                          <span
+                            title={entry.sourceFile}
+                            className="inline-flex max-w-40 items-center truncate rounded border border-[#1f2329] bg-[#131518] px-1.5 font-mono text-[10px] text-neutral-500"
+                          >
+                            {entry.sourceFile}
+                          </span>
+                        )}
+                        <span className="font-mono text-[10px] text-neutral-600">
+                          {t('grid.charCount', { ns: 'translate', count: charCount })}
+                        </span>
+                        <span className="ml-auto">
+                          <button
+                            type="button"
+                            aria-label={t('grid.copySource', { ns: 'translate' })}
+                            title={t('grid.copySource', { ns: 'translate' })}
+                            className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
+                            onClick={(event) => handleCopySource(event, entry.source)}
+                          >
+                            <Copy size={11} />
+                          </button>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div
+                      className="flex min-w-0 flex-col gap-2 border-l border-[#1f2329] px-4 py-3"
                       onClick={(event) => event.stopPropagation()}
-                      className="cursor-pointer accent-amber-500"
-                    />
-                    <span className="font-mono text-[11px] tabular-nums text-neutral-600">
-                      {String(globalIndex + 1).padStart(3, '0')}
-                    </span>
-                    <span
-                      className={cn(
-                        'mt-auto h-1.5 w-1.5 rounded-full transition-colors',
-                        isDone ? 'bg-amber-500' : 'bg-neutral-700'
-                      )}
-                    />
-                  </div>
-
-                  <div className="flex min-w-0 cursor-text flex-col gap-2 px-4 py-3">
-                    <div className="wrap-break-word font-mono text-[13px] leading-[1.6] text-neutral-200 whitespace-pre-wrap">
-                      {renderEntrySource(entry.source)}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {isDictionary && (
-                        <span className="inline-flex items-center gap-1 rounded bg-blue-500/12 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-blue-400">
-                          <BookOpen size={10} /> D <span className="text-blue-500/70">1</span>
-                        </span>
-                      )}
-                      {entry.sourceFile && (
-                        <span
-                          title={entry.sourceFile}
-                          className="inline-flex max-w-40 items-center truncate rounded border border-[#1f2329] bg-[#131518] px-1.5 font-mono text-[10px] text-neutral-500"
-                        >
-                          {entry.sourceFile}
-                        </span>
-                      )}
-                      <span className="font-mono text-[10px] text-neutral-600">
-                        {t('grid.charCount', { ns: 'translate', count: charCount })}
-                      </span>
-                      <span className="ml-auto">
-                        <button
-                          type="button"
-                          aria-label={t('grid.copySource', { ns: 'translate' })}
-                          title={t('grid.copySource', { ns: 'translate' })}
-                          className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
-                          onClick={(event) => handleCopySource(event, entry.source)}
-                        >
-                          <Copy size={11} />
-                        </button>
-                      </span>
-                    </div>
-                  </div>
-
-                  <div
-                    className="flex min-w-0 flex-col gap-2 border-l border-[#1f2329] px-4 py-3"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <HighlightedTextarea
-                      ref={(element) => {
-                        if (element) textareaRefs.current.set(entry.rowId, element)
-                        else textareaRefs.current.delete(entry.rowId)
-                      }}
-                      value={entry.target}
-                      onBlur={(event) => handleEntryBlur(entry, event.target.value)}
-                      onChange={() => {}}
-                      onKeyDown={(event) => handleEnterKey(event, entry)}
-                      rows={1}
-                      placeholder={t('grid.translationPlaceholder', { ns: 'translate' })}
-                      containerClassName="rounded-md"
-                      className="field-sizing-content"
-                      search={targetSearch}
-                      searchOptions={searchOptions}
-                    />
-                    <div className="flex items-center gap-1.5">
-                      {renderAiButton(entry)}
-                      <div className="pointer-events-none flex flex-1 items-center gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
-                        <button
-                          type="button"
-                          className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
-                        >
-                          <BookOpen size={11} /> {t('grid.applyDictionary', { ns: 'translate' })}
-                        </button>
+                    >
+                      <HighlightedTextarea
+                        ref={(element) => {
+                          if (element) textareaRefs.current.set(entry.rowId, element)
+                          else textareaRefs.current.delete(entry.rowId)
+                        }}
+                        value={entry.target}
+                        onBlur={(event) => handleEntryBlur(entry, event.target.value)}
+                        onChange={() => {}}
+                        onKeyDown={(event) => handleEnterKey(event, entry)}
+                        rows={1}
+                        placeholder={t('grid.translationPlaceholder', { ns: 'translate' })}
+                        containerClassName="rounded-md"
+                        className="field-sizing-content"
+                        search={targetSearch}
+                        searchOptions={searchOptions}
+                      />
+                      <div className="flex items-center gap-1.5">
+                        {renderAiButton(entry)}
+                        <div className="pointer-events-none flex flex-1 items-center gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                          <button
+                            type="button"
+                            className="inline-flex h-6 cursor-pointer items-center gap-1 rounded bg-transparent px-2 text-[11px] text-neutral-400 transition-colors hover:bg-[#1c1f24] hover:text-neutral-200"
+                          >
+                            <BookOpen size={11} /> {t('grid.applyDictionary', { ns: 'translate' })}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
                 </div>
               )
             })}

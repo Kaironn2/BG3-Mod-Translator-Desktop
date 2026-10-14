@@ -1,5 +1,5 @@
-import { useAppTranslation } from '@/i18n/useAppTranslation'
 import { SetupStepCard } from '@/features/translate/components/SetupStepCard'
+import { useAppTranslation } from '@/i18n/useAppTranslation'
 
 interface MergeNameStepProps {
   value: string

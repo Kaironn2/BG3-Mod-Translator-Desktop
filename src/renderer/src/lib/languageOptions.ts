@@ -1,9 +1,5 @@
 import type { ThemedSelectOption } from '@/components/shared/ThemedSelect'
-import {
-  isOfficialBg3Language,
-  toBg3LanguageFolder,
-  type Language
-} from '@/types'
+import { isOfficialBg3Language, type Language, toBg3LanguageFolder } from '@/types'
 
 export function compareLanguagesOfficialFirst(left: Language, right: Language): number {
   const leftOfficial = isOfficialBg3Language(left.code) ? 0 : 1

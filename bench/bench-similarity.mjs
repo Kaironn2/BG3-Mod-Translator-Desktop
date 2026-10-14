@@ -216,7 +216,9 @@ function runFuseBaseline(corpus, queries) {
 }
 
 async function loadOptimizedIndex(corpus) {
-  const serviceUrl = pathToFileURL(path.join(ROOT, 'src', 'main', 'services', 'similarity.service.ts')).href
+  const serviceUrl = pathToFileURL(
+    path.join(ROOT, 'src', 'main', 'services', 'similarity.service.ts')
+  ).href
   const mod = await import(serviceUrl)
   const built = await timedAsync('optimized.build', async () => new mod.SimilarityIndex(corpus))
   return { mod, index: built.value, buildMs: built.ms }
@@ -264,7 +266,9 @@ async function main() {
     return parseCsvTable(content)
   })
   const xmlLoad = timed('xml.parse', () => parseXmlEntries(XML_PATH))
-  const corpusLoad = timed('corpus.filterPair', () => loadCorpus(loadCsv.value.rows, loadCsv.value.headers))
+  const corpusLoad = timed('corpus.filterPair', () =>
+    loadCorpus(loadCsv.value.rows, loadCsv.value.headers)
+  )
 
   const queries = xmlLoad.value.map((e) => e.text).filter((t) => t.trim().length > 0)
   const report = {
@@ -288,7 +292,13 @@ async function main() {
     optimized: null
   }
 
-  const sampleNeedles = ['sword', 'armor', 'elemental', 'saving throw', queries[0]?.slice(0, 12) || 'the']
+  const sampleNeedles = [
+    'sword',
+    'armor',
+    'elemental',
+    'saving throw',
+    queries[0]?.slice(0, 12) || 'the'
+  ]
   const likeTimings = []
   const likeHits = {}
   for (const needle of sampleNeedles) {
@@ -304,7 +314,13 @@ async function main() {
   if (phase === 'baseline' || phase === 'both') {
     console.log(`Building Fuse index over ${corpusLoad.value.corpus.length} rows...`)
     report.fuse = runFuseBaseline(corpusLoad.value.corpus, queries)
-    console.log('Fuse done', report.fuse.buildMs, 'ms build,', report.fuse.search.mean, 'ms mean search')
+    console.log(
+      'Fuse done',
+      report.fuse.buildMs,
+      'ms build,',
+      report.fuse.search.mean,
+      'ms mean search'
+    )
   }
 
   if (phase === 'optimized' || phase === 'both') {

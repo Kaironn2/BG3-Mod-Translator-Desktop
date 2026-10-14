@@ -41,32 +41,50 @@ const extractedByOurs = path.join(tmpRoot, 'extracted-by-ours')
 // We compile-on-the-fly using esbuild here to avoid needing the full Electron build.
 const { build } = await import('esbuild')
 const buildResult = await build({
-  entryPoints: [path.join(projectRoot, 'src/main/services/pak/pak-reader.ts'), path.join(projectRoot, 'src/main/services/pak/pak-writer.ts')],
+  entryPoints: [
+    path.join(projectRoot, 'src/main/services/pak/pak-reader.ts'),
+    path.join(projectRoot, 'src/main/services/pak/pak-writer.ts')
+  ],
   bundle: true,
   platform: 'node',
   format: 'esm',
   outdir: path.join(tmpRoot, 'compiled'),
   external: ['lz4-napi', 'fzstd'],
-  logLevel: 'silent',
+  logLevel: 'silent'
 })
 if (buildResult.errors.length > 0) {
   console.error('esbuild errors:', buildResult.errors)
   process.exit(3)
 }
 
-const { writePackage } = await import(`file://${path.join(tmpRoot, 'compiled/pak-writer.js').replace(/\\/g, '/')}`)
-const { readPackage } = await import(`file://${path.join(tmpRoot, 'compiled/pak-reader.js').replace(/\\/g, '/')}`)
+const { writePackage } = await import(
+  `file://${path.join(tmpRoot, 'compiled/pak-writer.js').replace(/\\/g, '/')}`
+)
+const { readPackage } = await import(
+  `file://${path.join(tmpRoot, 'compiled/pak-reader.js').replace(/\\/g, '/')}`
+)
 
 console.log('[1/4] Packing with our writer...')
 const t0 = Date.now()
 await writePackage(inputDir, oursPak)
-console.log(`      Done in ${Date.now() - t0}ms. Output size: ${(await fs.stat(oursPak)).size} bytes`)
+console.log(
+  `      Done in ${Date.now() - t0}ms. Output size: ${(await fs.stat(oursPak)).size} bytes`
+)
 
 console.log('[2/4] Unpacking with divine.exe...')
 const divinePath = path.join(projectRoot, 'external/lslib/Divine.exe')
 const t1 = Date.now()
 try {
-  await execFileAsync(divinePath, ['-g', 'bg3', '-a', 'extract-package', '-s', oursPak, '-d', extractedByDivine])
+  await execFileAsync(divinePath, [
+    '-g',
+    'bg3',
+    '-a',
+    'extract-package',
+    '-s',
+    oursPak,
+    '-d',
+    extractedByDivine
+  ])
 } catch (err) {
   console.error('divine.exe failed:', err.stderr || err.message)
   process.exit(4)

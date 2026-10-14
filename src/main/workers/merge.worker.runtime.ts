@@ -6,10 +6,7 @@ import { SourceFileRepository } from '../database/repositories/source-file.repo'
 import type { NewDictionaryEntry } from '../database/schema'
 import * as schema from '../database/schema'
 import { applySqlitePragmas } from '../database/sqlite-pragmas'
-import {
-  type LocalizationEntry,
-  parseLocalizationFile
-} from '../services/xml-parser.service'
+import { type LocalizationEntry, parseLocalizationFile } from '../services/xml-parser.service'
 import { dictionaryTextKey, normalizeDictionaryText } from '../utils/dictionaryText'
 import { normalizeLangs } from '../utils/languages'
 
@@ -111,7 +108,8 @@ export async function runMergeWorker(
 
       if (existing) {
         // skip-if-equal: nothing changed for this row (file pointer stays too).
-        const targetFileId = targetFileIdByUid.get(sourceEntry.contentuid ?? '') ?? defaultTargetFileId
+        const targetFileId =
+          targetFileIdByUid.get(sourceEntry.contentuid ?? '') ?? defaultTargetFileId
         if (existing.targetKey === targetKey && existing.sourceFileId === targetFileId) continue
         updates.push({
           id: existing.id,

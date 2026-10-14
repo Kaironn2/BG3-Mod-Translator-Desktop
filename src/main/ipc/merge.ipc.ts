@@ -1,7 +1,6 @@
 import { ipcMain, type WebContents } from 'electron'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { type MergeResult, mergeXmls } from '../services/merge.service'
-import type { MergeFileInput } from '../workers/merge.worker.runtime'
 import {
   cancelUnpackJob,
   discardTranslationInput,
@@ -9,6 +8,7 @@ import {
   type PreparedTranslationInput,
   prepareTranslationInput
 } from '../services/translation-import.service'
+import type { MergeFileInput } from '../workers/merge.worker.runtime'
 
 interface PrepareInputPayload {
   inputPath: string
@@ -53,8 +53,16 @@ async function runMerge(
   sender: WebContents,
   payload: RunMergePayload
 ): Promise<MergeResult> {
-  const sourceFiles = resolveMergeFiles(payload.sourceImportId, payload.sourceCandidateIds, 'Source')
-  const targetFiles = resolveMergeFiles(payload.targetImportId, payload.targetCandidateIds, 'Target')
+  const sourceFiles = resolveMergeFiles(
+    payload.sourceImportId,
+    payload.sourceCandidateIds,
+    'Source'
+  )
+  const targetFiles = resolveMergeFiles(
+    payload.targetImportId,
+    payload.targetCandidateIds,
+    'Target'
+  )
 
   const modName = payload.modName.trim()
   if (!modName) throw new Error('Mod name is required')

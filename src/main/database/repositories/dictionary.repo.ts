@@ -280,7 +280,10 @@ export class DictionaryRepository {
     sourceLang: string,
     targetLang: string,
     modName: string
-  ): Map<string, { id: number; targetKey: string; uid: string | null; sourceFileId: number | null }> {
+  ): Map<
+    string,
+    { id: number; targetKey: string; uid: string | null; sourceFileId: number | null }
+  > {
     const [l1, l2, swapped] = normalizeLangs(sourceLang, targetLang)
     const normalizedMod = modName.toLowerCase()
 
@@ -300,9 +303,18 @@ export class DictionaryRepository {
           sql`lower(coalesce(${dictionary.modName}, '')) = ${normalizedMod}`
         )
       )
-      .all() as { id: number; uid: string | null; key1: string; key2: string; sourceFileId: number | null }[]
+      .all() as {
+      id: number
+      uid: string | null
+      key1: string
+      key2: string
+      sourceFileId: number | null
+    }[]
 
-    const map = new Map<string, { id: number; targetKey: string; uid: string | null; sourceFileId: number | null }>()
+    const map = new Map<
+      string,
+      { id: number; targetKey: string; uid: string | null; sourceFileId: number | null }
+    >()
     for (const row of rows) {
       const sourceKey = swapped ? row.key2 : row.key1
       const targetKey = swapped ? row.key1 : row.key2
@@ -648,11 +660,7 @@ export class DictionaryRepository {
     return { deleted: result.changes }
   }
 
-  listChunkByFilter(
-    filters: DictionaryFilters,
-    afterId: number,
-    limit: number
-  ): DictionaryEntry[] {
+  listChunkByFilter(filters: DictionaryFilters, afterId: number, limit: number): DictionaryEntry[] {
     const where = this.buildFilterWhere(filters)
     const idCond = sql`${dictionary.id} > ${afterId}`
     const combined = where ? (and(where, idCond) as SQL) : idCond
@@ -667,12 +675,14 @@ export class DictionaryRepository {
 
   listByIds(ids: number[]): DictionaryEntry[] {
     if (ids.length === 0) return []
-    return this.db.select().from(dictionary).where(inArray(dictionary.id, ids)).all() as DictionaryEntry[]
+    return this.db
+      .select()
+      .from(dictionary)
+      .where(inArray(dictionary.id, ids))
+      .all() as DictionaryEntry[]
   }
 
-  updateReplacedTexts(
-    rows: { id: number; textLanguage1: string; textLanguage2: string }[]
-  ): void {
+  updateReplacedTexts(rows: { id: number; textLanguage1: string; textLanguage2: string }[]): void {
     if (rows.length === 0) return
     this.db.transaction((tx) => {
       for (const row of rows) {

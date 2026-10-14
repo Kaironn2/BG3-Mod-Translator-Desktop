@@ -4,9 +4,9 @@ import type {
   NexusCreateUploadResponse,
   NexusCreateVersionInput,
   NexusCreateVersionSuccess,
+  NexusModFilesResponse,
   NexusModFileVersion,
   NexusModFileVersionsResponse,
-  NexusModFilesResponse,
   NexusModResponse,
   NexusUpload
 } from './nexus.types'
@@ -54,7 +54,9 @@ export class NexusApi {
     })
   }
 
-  async createMultipartUpload(input: NexusCreateUploadInput): Promise<NexusCreateMultipartUploadResponse> {
+  async createMultipartUpload(
+    input: NexusCreateUploadInput
+  ): Promise<NexusCreateMultipartUploadResponse> {
     return this.client.postJson<NexusCreateMultipartUploadResponse>('/uploads/multipart', {
       size_bytes: input.sizeBytes,
       filename: input.filename,
@@ -67,11 +69,10 @@ export class NexusApi {
    * The body is XML (not JSON), so it goes through putBytes-style raw request.
    */
   async completeMultipartUpload(completePresignedUrl: string, xml: string): Promise<void> {
-    await this.client.putBytes(
-      completePresignedUrl,
-      Buffer.from(xml, 'utf-8'),
-      { 'Content-Type': 'application/xml', 'Content-Length': String(Buffer.byteLength(xml, 'utf-8')) }
-    )
+    await this.client.putBytes(completePresignedUrl, Buffer.from(xml, 'utf-8'), {
+      'Content-Type': 'application/xml',
+      'Content-Length': String(Buffer.byteLength(xml, 'utf-8'))
+    })
   }
 
   async finaliseUpload(uploadId: string): Promise<void> {

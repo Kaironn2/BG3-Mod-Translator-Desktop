@@ -34,7 +34,9 @@ export function runTranslatePipeline(params: TranslatePipelineParams): { cancel:
   }
 
   let settled = false
-  const worker = new Worker(resolveWorkerPath(__dirname, 'translate.worker.js'), { workerData: input })
+  const worker = new Worker(resolveWorkerPath(__dirname, 'translate.worker.js'), {
+    workerData: input
+  })
 
   worker.on('message', (msg: TranslateWorkerProgress) => {
     if (msg.phase === 'progress') {

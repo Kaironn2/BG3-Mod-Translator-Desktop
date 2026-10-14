@@ -9,15 +9,15 @@ import { compress } from './pak-compression'
 import {
   CompressionLevel,
   CompressionMethod,
+  type FileEntry,
   HEADER_TOTAL_SIZE,
   LSPK_SIGNATURE,
   LSPK_VERSION_BG3,
-  PackageFlags,
-  V18_PADDING_BYTE,
-  V18_PADDING_SIZE,
   makeCompressionFlags,
+  PackageFlags,
   shouldCompress,
-  type FileEntry,
+  V18_PADDING_BYTE,
+  V18_PADDING_SIZE
 } from './pak-format'
 
 export interface WritePackageOptions {
@@ -33,13 +33,15 @@ interface InputFile {
 export async function writePackage(
   inputDir: string,
   outputPak: string,
-  options: WritePackageOptions = {},
+  options: WritePackageOptions = {}
 ): Promise<void> {
   const compression = options.compression ?? CompressionMethod.LZ4
   const compressionLevel = options.compressionLevel ?? CompressionLevel.Default
 
   const inputs = await collectInputFiles(inputDir)
-  inputs.sort((a, b) => (a.relativePath < b.relativePath ? -1 : a.relativePath > b.relativePath ? 1 : 0))
+  inputs.sort((a, b) =>
+    a.relativePath < b.relativePath ? -1 : a.relativePath > b.relativePath ? 1 : 0
+  )
 
   await fs.mkdir(path.dirname(outputPak), { recursive: true })
   const handle = await fs.open(outputPak, 'w')
@@ -57,7 +59,11 @@ export async function writePackage(
 
     const fileListOffset = BigInt(cursor)
     const tableBytes = serializeFileEntries(entries)
-    const compressedTable = await compress(tableBytes, CompressionMethod.LZ4, CompressionLevel.Default)
+    const compressedTable = await compress(
+      tableBytes,
+      CompressionMethod.LZ4,
+      CompressionLevel.Default
+    )
 
     const tablePrefix = Buffer.alloc(8)
     tablePrefix.writeUInt32LE(entries.length, 0)
@@ -75,7 +81,7 @@ export async function writePackage(
       flags: PackageFlags.None,
       priority: 0,
       md5: Buffer.alloc(16),
-      numParts: 1,
+      numParts: 1
     })
     await handle.write(headerBuf, 0, HEADER_TOTAL_SIZE, 0)
   } finally {
@@ -88,7 +94,7 @@ async function writeOneFile(
   file: InputFile,
   cursor: number,
   compressionMethod: CompressionMethod,
-  compressionLevel: CompressionLevel,
+  compressionLevel: CompressionLevel
 ): Promise<{ entry: FileEntry; nextCursor: number }> {
   const uncompressed = await fs.readFile(file.absolutePath)
 
@@ -108,7 +114,8 @@ async function writeOneFile(
   let nextCursor = cursor + compressed.length
 
   // V18 padding: align next write to a 64-byte boundary measured from offset HEADER_TOTAL_SIZE.
-  const padBytes = (V18_PADDING_SIZE - ((nextCursor - HEADER_TOTAL_SIZE) % V18_PADDING_SIZE)) % V18_PADDING_SIZE
+  const padBytes =
+    (V18_PADDING_SIZE - ((nextCursor - HEADER_TOTAL_SIZE) % V18_PADDING_SIZE)) % V18_PADDING_SIZE
   if (padBytes > 0) {
     const pad = Buffer.alloc(padBytes, V18_PADDING_BYTE)
     await handle.write(pad, 0, padBytes, nextCursor)
@@ -122,9 +129,9 @@ async function writeOneFile(
       archivePart: 0,
       flags: makeCompressionFlags(method, level),
       sizeOnDisk: compressed.length,
-      uncompressedSize: method === CompressionMethod.None ? 0 : uncompressed.length,
+      uncompressedSize: method === CompressionMethod.None ? 0 : uncompressed.length
     },
-    nextCursor,
+    nextCursor
   }
 }
 
@@ -145,7 +152,7 @@ async function walk(rootDir: string, relativeDir: string, out: InputFile[]): Pro
     } else if (dirent.isFile()) {
       out.push({
         absolutePath: path.join(rootDir, childRelative),
-        relativePath: childRelative,
+        relativePath: childRelative
       })
     }
   }

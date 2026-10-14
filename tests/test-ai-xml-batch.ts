@@ -8,12 +8,16 @@ import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { fileURLToPath } from 'node:url'
 import { aiTranslateGroup } from '../src/main/services/ai/ai-translate.service'
-import { estimateTokens, GROUP_LIMITS, packEntriesIntoGroups } from '../src/main/services/ai/batch-grouping'
+import {
+  estimateTokens,
+  GROUP_LIMITS,
+  packEntriesIntoGroups
+} from '../src/main/services/ai/batch-grouping'
 import { DEFAULT_PROMPT, filterExamples } from '../src/main/services/ai/prompt-builder'
 import { SimilarityIndex } from '../src/main/services/similarity.service'
+import { parseLocalizationXml } from '../src/main/services/xml-parser.service'
 import { parseCsvTable } from '../src/main/utils/csv'
 import { dictionaryTextKey } from '../src/main/utils/dictionaryText'
-import { parseLocalizationXml } from '../src/main/services/xml-parser.service'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CSV_PATH = path.join(ROOT, 'data', 'dictionary.csv')

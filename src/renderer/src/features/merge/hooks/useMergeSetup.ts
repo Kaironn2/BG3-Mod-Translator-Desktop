@@ -165,7 +165,9 @@ export function useMergeSetup(): UseMergeSetupResult {
       // Multiple loose files: show the common parent folder as the package name;
       // a single file (or a zip/pak) keeps its own name.
       const commonDir = filePaths.length > 1 ? commonDirectory(filePaths) : null
-      const displayFileName = commonDir ? `${fileNameFromPath(commonDir)} (${filePaths.length})` : primaryName
+      const displayFileName = commonDir
+        ? `${fileNameFromPath(commonDir)} (${filePaths.length})`
+        : primaryName
       updateSlot(key, (prev) => ({
         ...prev,
         filePath: primaryPath,
@@ -180,7 +182,11 @@ export function useMergeSetup(): UseMergeSetupResult {
 
       // Each package (or loose file) is staged as its own import session; the slot
       // aggregates their candidates so the modal offers every xml/loca at once.
-      const aggregated: { importId: string; requiresSelection: boolean; candidates: PreparedTranslationInput['candidates'] } = {
+      const aggregated: {
+        importId: string
+        requiresSelection: boolean
+        candidates: PreparedTranslationInput['candidates']
+      } = {
         importId: '',
         requiresSelection: false,
         candidates: []
@@ -204,7 +210,9 @@ export function useMergeSetup(): UseMergeSetupResult {
         }
 
         if (inflightRef.current[key] !== requestId) {
-          await window.api.merge.discardInput({ importId: prepared.importId }).catch(() => undefined)
+          await window.api.merge
+            .discardInput({ importId: prepared.importId })
+            .catch(() => undefined)
           for (const id of stagedIds) {
             await window.api.merge.discardInput({ importId: id }).catch(() => undefined)
           }

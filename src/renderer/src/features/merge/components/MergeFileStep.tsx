@@ -108,9 +108,7 @@ function CandidateSummary({ slot }: { slot: MergeFileSlot }): React.JSX.Element 
           className="flex items-center gap-2 font-mono text-[11px] text-neutral-500"
         >
           <span className="text-amber-400">
-            {candidate.fileType === 'loca'
-              ? t('candidateSummary.loca')
-              : t('candidateSummary.xml')}
+            {candidate.fileType === 'loca' ? t('candidateSummary.loca') : t('candidateSummary.xml')}
           </span>
           <span className="flex-1 truncate">{candidate.relativePath}</span>
           <span>{t('candidateSummary.entries', { count: candidate.stringCount })}</span>

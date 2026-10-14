@@ -116,47 +116,27 @@
       "indexes": {
         "dictionary_langs_idx": {
           "name": "dictionary_langs_idx",
-          "columns": [
-            "language1",
-            "language2"
-          ],
+          "columns": ["language1", "language2"],
           "isUnique": false
         },
         "dictionary_langs_mod_idx": {
           "name": "dictionary_langs_mod_idx",
-          "columns": [
-            "language1",
-            "language2",
-            "mod_name"
-          ],
+          "columns": ["language1", "language2", "mod_name"],
           "isUnique": false
         },
         "dictionary_mod_idx": {
           "name": "dictionary_mod_idx",
-          "columns": [
-            "mod_name"
-          ],
+          "columns": ["mod_name"],
           "isUnique": false
         },
         "dictionary_match_idx": {
           "name": "dictionary_match_idx",
-          "columns": [
-            "language1",
-            "language2",
-            "mod_name",
-            "text_language1_key"
-          ],
+          "columns": ["language1", "language2", "mod_name", "text_language1_key"],
           "isUnique": false
         },
         "dictionary_match_uid_idx": {
           "name": "dictionary_match_uid_idx",
-          "columns": [
-            "language1",
-            "language2",
-            "mod_name",
-            "uid",
-            "text_language1_key"
-          ],
+          "columns": ["language1", "language2", "mod_name", "uid", "text_language1_key"],
           "isUnique": false
         }
       },
@@ -165,12 +145,8 @@
           "name": "dictionary_language1_language_code_fk",
           "tableFrom": "dictionary",
           "tableTo": "language",
-          "columnsFrom": [
-            "language1"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["language1"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -178,12 +154,8 @@
           "name": "dictionary_language2_language_code_fk",
           "tableFrom": "dictionary",
           "tableTo": "language",
-          "columnsFrom": [
-            "language2"
-          ],
-          "columnsTo": [
-            "code"
-          ],
+          "columnsFrom": ["language2"],
+          "columnsTo": ["code"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -191,12 +163,8 @@
           "name": "dictionary_mod_name_mod_name_fk",
           "tableFrom": "dictionary",
           "tableTo": "mod",
-          "columnsFrom": [
-            "mod_name"
-          ],
-          "columnsTo": [
-            "name"
-          ],
+          "columnsFrom": ["mod_name"],
+          "columnsTo": ["name"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -249,9 +217,7 @@
       "indexes": {
         "language_code_unique": {
           "name": "language_code_unique",
-          "columns": [
-            "code"
-          ],
+          "columns": ["code"],
           "isUnique": true
         }
       },
@@ -312,9 +278,7 @@
       "indexes": {
         "mod_name_unique": {
           "name": "mod_name_unique",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },
@@ -437,9 +401,7 @@
       "indexes": {
         "mod_meta_mod_id_unique": {
           "name": "mod_meta_mod_id_unique",
-          "columns": [
-            "mod_id"
-          ],
+          "columns": ["mod_id"],
           "isUnique": true
         }
       },
@@ -448,12 +410,8 @@
           "name": "mod_meta_mod_id_mod_id_fk",
           "tableFrom": "mod_meta",
           "tableTo": "mod",
-          "columnsFrom": [
-            "mod_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["mod_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

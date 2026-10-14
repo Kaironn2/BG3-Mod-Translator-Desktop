@@ -28,7 +28,10 @@ sqlite.exec(`
   );
 `)
 
-const migration = fs.readFileSync(path.join(__dirname, '..', 'drizzle', '0010_dictionary_perf.sql'), 'utf8')
+const migration = fs.readFileSync(
+  path.join(__dirname, '..', 'drizzle', '0010_dictionary_perf.sql'),
+  'utf8'
+)
 for (const statement of migration.split('--> statement-breakpoint')) {
   const sql = statement.trim()
   if (sql) sqlite.exec(sql)
@@ -49,7 +52,9 @@ sqlite.transaction(() => {
 })()
 
 const match = timed(() =>
-  sqlite.prepare('SELECT text_language1 FROM dictionary_fts WHERE dictionary_fts MATCH ?').all('elemental*')
+  sqlite
+    .prepare('SELECT text_language1 FROM dictionary_fts WHERE dictionary_fts MATCH ?')
+    .all('elemental*')
 )
 const like = timed(() =>
   sqlite
@@ -58,9 +63,19 @@ const like = timed(() =>
     )
     .get()
 )
-const plan = sqlite.prepare('EXPLAIN QUERY PLAN SELECT * FROM dictionary WHERE language1 = ? AND language2 = ? AND text_language1_key = ?').all('en', 'pt-BR', 'fireball')
-const listPlan = sqlite.prepare('EXPLAIN QUERY PLAN SELECT * FROM dictionary WHERE language1 = ? AND language2 = ? ORDER BY updated_at DESC, id DESC LIMIT 200').all('en', 'pt-BR')
-const ftsPlan = sqlite.prepare('EXPLAIN QUERY PLAN SELECT rowid FROM dictionary_fts WHERE dictionary_fts MATCH ?').all('elemental*')
+const plan = sqlite
+  .prepare(
+    'EXPLAIN QUERY PLAN SELECT * FROM dictionary WHERE language1 = ? AND language2 = ? AND text_language1_key = ?'
+  )
+  .all('en', 'pt-BR', 'fireball')
+const listPlan = sqlite
+  .prepare(
+    'EXPLAIN QUERY PLAN SELECT * FROM dictionary WHERE language1 = ? AND language2 = ? ORDER BY updated_at DESC, id DESC LIMIT 200'
+  )
+  .all('en', 'pt-BR')
+const ftsPlan = sqlite
+  .prepare('EXPLAIN QUERY PLAN SELECT rowid FROM dictionary_fts WHERE dictionary_fts MATCH ?')
+  .all('elemental*')
 
 if (match.value.length !== 1 || match.value[0].text_language1 !== 'Enhanced Elemental Armor') {
   throw new Error(`FTS match failed: ${JSON.stringify(match.value)}`)

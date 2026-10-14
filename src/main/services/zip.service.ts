@@ -1,6 +1,6 @@
 import AdmZip from 'adm-zip'
-import path from 'path'
 import fs from 'fs'
+import path from 'path'
 
 export function extractZip(
   zipPath: string,

@@ -105,9 +105,9 @@ function TranslateRouteSkeleton(): React.JSX.Element {
 
       <div className="flex-1 overflow-hidden bg-[#0f1114] px-5 py-4">
         <div className="icosa-scroll h-full overflow-hidden">
-          {Array.from({ length: 5 }).map((_, index) => (
+          {['row-1', 'row-2', 'row-3', 'row-4', 'row-5'].map((rowKey) => (
             <div
-              key={`translate-route-skeleton-row-${index + 1}`}
+              key={`translate-route-skeleton-${rowKey}`}
               className="grid border-b border-[#1f2329] bg-[#101216]"
               style={{ gridTemplateColumns: '80px 1fr 1fr' }}
             >

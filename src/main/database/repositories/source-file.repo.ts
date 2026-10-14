@@ -1,6 +1,6 @@
 import { eq, inArray } from 'drizzle-orm'
 import type { drizzle } from 'drizzle-orm/better-sqlite3'
-import { mod, modSource, type ModSource } from '../schema'
+import { type ModSource, mod, modSource } from '../schema'
 
 type AppDb = ReturnType<typeof drizzle>
 
@@ -53,11 +53,7 @@ export class SourceFileRepository {
 
   listByIds(ids: number[]): ModSource[] {
     if (ids.length === 0) return []
-    return this.db
-      .select()
-      .from(modSource)
-      .where(inArray(modSource.id, ids))
-      .all() as ModSource[]
+    return this.db.select().from(modSource).where(inArray(modSource.id, ids)).all() as ModSource[]
   }
 
   private resolveModId(modName: string): number {

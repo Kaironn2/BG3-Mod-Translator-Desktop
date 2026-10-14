@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TranslationProgressEvent } from '@/types'
 
 export interface TranslationRow {
@@ -46,7 +46,7 @@ export function useTranslation() {
 
   // Clean up event listeners when component unmounts or job ends
   const clearListeners = useCallback(() => {
-    unsubscribers.current.forEach((fn) => fn())
+    for (const fn of unsubscribers.current) fn()
     unsubscribers.current = []
   }, [])
 

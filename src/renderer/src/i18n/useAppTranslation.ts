@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { languageLabels, type AppLanguage } from './languages'
+import { type AppLanguage, languageLabels } from './languages'
 import type { translationNamespaces } from './resources'
 
 type Namespace = (typeof translationNamespaces)[number]

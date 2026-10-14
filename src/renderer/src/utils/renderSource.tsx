@@ -18,8 +18,8 @@ export function renderSource(
   const parts: React.ReactNode[] = []
   let lastIndex = 0
   const re = /(<[^>]+>|\{[^}]+\})/g
-  let match: RegExpExecArray | null
-  while ((match = re.exec(text)) !== null) {
+  let match = re.exec(text)
+  while (match !== null) {
     if (match.index > lastIndex) {
       parts.push(<span key={`t${lastIndex}`}>{paint(text.slice(lastIndex, match.index))}</span>)
     }
@@ -38,6 +38,7 @@ export function renderSource(
       </span>
     )
     lastIndex = match.index + match[0].length
+    match = re.exec(text)
   }
   if (lastIndex < text.length) {
     parts.push(<span key={`t${lastIndex}`}>{paint(text.slice(lastIndex))}</span>)

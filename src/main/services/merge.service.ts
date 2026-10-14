@@ -3,7 +3,12 @@ import { Worker } from 'node:worker_threads'
 import { app } from 'electron'
 import type { RepositoryRegistry } from '../database/repositories/registry'
 import { resolveWorkerPath } from '../utils/worker-path'
-import type { MergeFileInput, MergeProgress, MergeResult, MergeWorkerInput } from '../workers/merge.worker.runtime'
+import type {
+  MergeFileInput,
+  MergeProgress,
+  MergeResult,
+  MergeWorkerInput
+} from '../workers/merge.worker.runtime'
 
 export type { MergeFileInput, MergeResult }
 
@@ -28,7 +33,9 @@ export function mergeXmls(
   const input: MergeWorkerInput = { ...rest, dbPath: getDbPath() }
 
   return new Promise<MergeResult>((resolve, reject) => {
-    const worker = new Worker(resolveWorkerPath(__dirname, 'merge.worker.js'), { workerData: input })
+    const worker = new Worker(resolveWorkerPath(__dirname, 'merge.worker.js'), {
+      workerData: input
+    })
 
     worker.on('message', (msg: MergeProgress) => {
       if (msg.phase === 'done') {
