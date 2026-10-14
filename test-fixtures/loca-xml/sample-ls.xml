@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<contentList>
+	<content contentuid="h00000001_v1" version="1">Goblin Attack</content>
+	<content contentuid="h00000002_v1" version="3">He said, &quot;Fire!&quot; &amp; ran &lt;fast&gt;</content>
+	<content contentuid="h00000003_v2" version="2">	<LSTag type="Literal" tooltipValueObject="torch">	</LSTag> Ablaze</content>
+	<content contentuid="h00000004_v1" version="1">Line one
+line two &amp; all &lt;good&gt;</content>
+	<content contentuid="h00000005_v1" version="1"/>
+	<content contentuid="h00000006_v1" version="7">&amp;amp; literal first amp</content>
+</contentList>

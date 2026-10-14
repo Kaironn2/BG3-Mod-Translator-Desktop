@@ -1,0 +1,27 @@
+[
+  {
+    "contentuid": "h00000001_v1",
+    "version": "1",
+    "text": "Goblin Attack"
+  },
+  {
+    "contentuid": "h00000002_v1",
+    "version": "3",
+    "text": "He said, &quot;Fire!&quot; &amp; ran &lt;fast&gt;"
+  },
+  {
+    "contentuid": "h00000003_v2",
+    "version": "2",
+    "text": "\t<LSTag type=\"Literal\" tooltipValueObject=\"torch\">\t</LSTag> Ablaze"
+  },
+  {
+    "contentuid": "h00000004_v1",
+    "version": "1",
+    "text": "Line one\nline two &amp; all &lt;good&gt;"
+  },
+  {
+    "contentuid": "h00000006_v1",
+    "version": "7",
+    "text": "&amp;amp; literal first amp"
+  }
+]

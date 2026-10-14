@@ -1,0 +1,11 @@
+{
+  "cases": [
+    { "name": "plain", "input": "Goblin Attack" },
+    { "name": "entities", "input": "&lt;LSTag tooltip=&quot;fire&quot;/&gt; &amp; Charge" },
+    { "name": "nbsp-and-spaces", "input": "  Totter\u00a0 Step\u00a0\u00a0 " },
+    { "name": "mixed-entity-double-amp", "input": "&amp;amp; folded" },
+    { "name": "unicode", "input": "Épée — Teste de Resistência" },
+    { "name": "empty", "input": "" },
+    { "name": "only-spaces", "input": "   " }
+  ]
+}

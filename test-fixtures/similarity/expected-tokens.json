@@ -1,0 +1,46 @@
+[
+  {
+    "source": "Goblin Attack",
+    "tokens": [
+      "goblin",
+      "attack"
+    ]
+  },
+  {
+    "source": "Goblin Gnasher",
+    "tokens": [
+      "goblin",
+      "gnasher"
+    ]
+  },
+  {
+    "source": "goblin attack",
+    "tokens": [
+      "goblin",
+      "attack"
+    ]
+  },
+  {
+    "source": "Goblin, Gnashing Teeth",
+    "tokens": [
+      "goblin",
+      "gnashing",
+      "teeth"
+    ]
+  },
+  {
+    "source": "Saving Throw",
+    "tokens": [
+      "saving",
+      "throw"
+    ]
+  },
+  {
+    "source": "Saving Throw: Strength",
+    "tokens": [
+      "saving",
+      "throw",
+      "strength"
+    ]
+  }
+]
